@@ -9,6 +9,7 @@ import { createDb } from './db';
 
 const INITIAL_MERCHANTS = [
   { name: 'NAS Trends', slug: 'nastrends', domain: 'nastrends.com', connectorType: 'shopify' },
+  { name: 'Antikka', slug: 'antikka', domain: 'antikkaeg.com', connectorType: 'shopify' },
 ];
 
 async function main(): Promise<void> {
