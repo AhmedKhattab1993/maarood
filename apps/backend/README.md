@@ -95,15 +95,14 @@ npm run db:migrate --workspace @maarood/schema
 
 ## Deploy to Cloud Run
 
-Build and deploy the image (the Dockerfile builds the monorepo and runs this backend):
+The backend ships as a Cloud Run **service** (`apps/backend/Dockerfile` builds the monorepo and runs `apps/backend/dist/main.js`). The scraper is a separate Cloud Run **job** (`apps/scraper/Dockerfile`). Production uses Neon Postgres.
+
+See [`deploy/README.md`](../../deploy/README.md) for the full runbook (prerequisites, first deploy, smoke test, updates) and `deploy/deploy.sh` for the parameterized `gcloud` commands. Quick start:
 
 ```bash
-gcloud run deploy maarood-backend \
-  --source . \
-  --region run-tp4e2mii3a \
-  --port 8080 \
-  --set-env-vars NODE_ENV=production \
-  --set-secrets DATABASE_URL=maarood-database-url:latest
+# set PROJECT_ID, DATABASE_URL, ADMIN_TOKEN in ~/.maarood.env first
+./deploy/deploy.sh setup     # enable APIs, create secrets
+./deploy/deploy.sh backend   # build + deploy the service
 ```
 
-Use Secret Manager (`--set-secrets`) for `DATABASE_URL` and any API keys — never deploy secrets via `--set-env-vars`. Project keys not required for the MVP (e.g. `GCS_BUCKET_NAME`) are optional in the schema.
+Secrets (`DATABASE_URL`, `ADMIN_TOKEN`) live in Secret Manager and are mounted via `--set-secrets` — never via `--set-env-vars`.

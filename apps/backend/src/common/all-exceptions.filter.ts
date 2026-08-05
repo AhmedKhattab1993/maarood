@@ -72,7 +72,11 @@ export class AllExceptionsFilter implements ExceptionFilter {
       // pass them through as `details` (minus the standard message/error/statusCode keys).
       let details: unknown;
       if (res && typeof res === 'object' && !Array.isArray(res)) {
-        const { message: _m, error: _e, statusCode: _s, ...rest } = res as Record<string, unknown>;
+        const obj = res as Record<string, unknown>;
+        const rest = { ...obj };
+        delete rest.message;
+        delete rest.error;
+        delete rest.statusCode;
         details = Object.keys(rest).length > 0 ? rest : undefined;
       }
       body = {
