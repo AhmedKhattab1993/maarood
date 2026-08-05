@@ -13,19 +13,23 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "db:up": "docker compose up -d db && docker compose exec -T db pg_isready -U maarood -d maarood",
     "db:down": "docker compose down",
     "db:migrate": "npm run db:migrate --workspace @maarood/schema",
     "seed": "npm run build --workspace @maarood/scraper --if-present && node apps/scraper/dist/seed.js",
     "scrape": "npm run build --workspace @maarood/scraper --if-present && node apps/scraper/dist/main.js",
-    "scrape:all": "npm run build --workspace @maarood/scraper --if-present && node apps/scraper/dist/run-all.js"
+    "scrape:all": "npm run build --workspace @maarood/scraper --if-present && node apps/scraper/dist/run-all.js",
+    "recategorize": "npm run build --workspace @maarood/scraper --if-present && node apps/scraper/dist/recategorize.js"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
     "eslint": "^9.0.0",
     "prettier": "^3.3.0",
     "typescript": "^5.5.0",
-    "typescript-eslint": "^8.0.0"
+    "typescript-eslint": "^8.0.0",
+    "vitest": "^2.0.0"
   },
   "engines": {
     "node": ">=20"

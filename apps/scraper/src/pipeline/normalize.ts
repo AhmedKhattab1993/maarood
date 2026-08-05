@@ -2,12 +2,14 @@
  * Normalize a Shopify product into the Maaroud canonical Product shape,
  * and compute its material-change checksum.
  *
- * Category/size/color matching (pipeline stage 6) is intentionally simple in
- * the MVP: Shopify product_type → category; variant titles → sizes; tags with
- * a 'color_' prefix → colors. Refined taxonomy mapping arrives later.
+ * Category is derived via the shared Maaroud taxonomy (packages/schema/taxonomy):
+ * Shopify product_type alone is sparse, so we match title/type/tags/handle
+ * against canonical category keywords (English + Arabic). Variant titles → sizes;
+ * tags with a 'color_' prefix → colors.
  */
 
 import type { ShopifyProduct, ShopifyVariant } from '../connectors/shopify/shopify-source.schema';
+import { categorize } from '@maarood/schema';
 import { productSchema, type Product, type Availability } from '@maarood/schema';
 import { materialChecksum } from './checksum';
 
@@ -57,14 +59,25 @@ export function normalizeShopifyProduct(
     .map((t) => t.slice('color_'.length).trim())
     .filter(Boolean);
 
+  // Derive category from the shared taxonomy. Shopify product_type is sparse,
+  // so we match across title/type/tags/handle. Source product_type is preserved
+  // as subcategory when it carries useful detail.
+  const sourceProductType = (raw.productType ?? '').trim();
+  const { category, subcategory: taxoSub } = categorize({
+    title: raw.title,
+    productType: sourceProductType,
+    tags,
+    handle: raw.handle,
+  });
+
   const canonical = {
     merchantId,
     sourceUrl: `https://${domain}/products/${raw.handle}`,
     merchantProductId: String(raw.id),
     title: raw.title,
     description: raw.bodyHtml?.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() ?? '',
-    category: raw.productType?.trim() ?? '',
-    subcategory: '',
+    category,
+    subcategory: taxoSub || sourceProductType,
     currentPrice,
     previousPrice,
     currency: 'EGP', // Egyptian market focus; refined per-merchant if needed later.
