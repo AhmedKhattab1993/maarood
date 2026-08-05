@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { AdminModule } from './admin/admin.module.js';
 import { DbModule } from './db/db.module.js';
 import { HealthModule } from './health/health.module.js';
 
@@ -10,6 +11,7 @@ import { HealthModule } from './health/health.module.js';
     ConfigModule.forRoot({ isGlobal: true, validate: () => process.env }),
     DbModule,
     HealthModule,
+    AdminModule,
   ],
 })
 export class AppModule {}
