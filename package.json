@@ -15,7 +15,9 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "db:up": "docker compose up -d db && docker compose exec -T db pg_isready -U maarood -d maarood",
     "db:down": "docker compose down",
-    "db:migrate": "npm run db:migrate --workspace @maarood/schema"
+    "db:migrate": "npm run db:migrate --workspace @maarood/schema",
+    "seed": "npm run build --workspace @maarood/scraper --if-present && node apps/scraper/dist/seed.js",
+    "scrape": "npm run build --workspace @maarood/scraper --if-present && node apps/scraper/dist/main.js"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",

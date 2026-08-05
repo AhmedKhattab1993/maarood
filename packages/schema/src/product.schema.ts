@@ -58,6 +58,7 @@ export const productSchema = z.object({
   imageUrls: z.array(z.string().url()).default([]),
   redirectUrl: z.string().url().nullable().default(null),
   sourceChecksum: z.string().trim().default(''),
+  revisionNumber: z.number().int().nonnegative().default(1),
   lastSeenAt: z.coerce.date(),
   lastUpdatedAt: z.coerce.date().nullable().default(null),
 });
@@ -76,7 +77,32 @@ export const merchantSchema = z.object({
   domain: z.string().trim().min(1),
   /** Per-store crawl cadence, in minutes. */
   crawlFrequencyMinutes: z.number().int().positive().default(1440),
+  /** Connector implementation to use, e.g. 'shopify'. */
+  connectorType: z.string().trim().min(1),
   createdAt: z.coerce.date(),
 });
 
 export type Merchant = z.infer<typeof merchantSchema>;
+
+/**
+ * Fields that constitute a "material change" — i.e. a change that should
+ * produce a new revision. Timestamps and internal ids are excluded so that
+ * unchanged re-crawls don't create spurious revisions.
+ */
+export const MATERIAL_CHANGE_FIELDS = [
+  'sourceUrl',
+  'merchantProductId',
+  'title',
+  'description',
+  'category',
+  'subcategory',
+  'currentPrice',
+  'previousPrice',
+  'currency',
+  'availability',
+  'variants',
+  'sizes',
+  'colors',
+  'imageUrls',
+  'redirectUrl',
+] as const satisfies readonly (keyof Product)[];
