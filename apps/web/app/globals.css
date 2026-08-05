@@ -1,0 +1,125 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens come from @maarood/tokens — the same values the future React
+ * Native app will consume from JS. We map them into Tailwind v4's @theme so
+ * utilities like `bg-warm-ivory`, `text-ink-black`, `text-base`, `rounded-md`
+ * resolve to Maaroud's locked palette and scales.
+ */
+@theme {
+  /* Color — locked by 03_VISUAL_IDENTITY.md */
+  --color-maaroud-blue: #1d4ed8;
+  --color-indigo: #6366f1;
+  --color-warm-ivory: #faf7f0;
+  --color-ink-black: #111111;
+  --color-stone-grey: #e6e3de;
+  --color-cool-grey: #8b9099;
+  --color-success-green: #22c55e;
+  --color-alert-red: #ef4444;
+  --color-warm-sand: #dbc4a3;
+
+  /* Spacing — 4px base */
+  --spacing: 4px;
+
+  /* Radius — calm, minimal */
+  --radius-sm: 2px;
+  --radius-default: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-pill: 9999px;
+
+  /* Container widths */
+  --container-max: 1280px;
+  --container-prose: 720px;
+
+  /* Type scale — restrained modular (ratio ~1.2) */
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --font-size-4xl: 2.25rem;
+  --font-size-5xl: 3rem;
+
+  --line-height-tight: 1.15;
+  --line-height-snug: 1.3;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.7;
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+
+  /* Arabic-first font pairing (see README). Latin fallback inline. */
+  --font-sans: "IBM Plex Sans Arabic", "Inter", system-ui, sans-serif;
+  --font-latin: "Inter", system-ui, sans-serif;
+}
+
+:root {
+  color-scheme: light;
+  --background: var(--color-warm-ivory);
+  --foreground: var(--color-ink-black);
+  --muted: var(--color-cool-grey);
+  --border: var(--color-stone-grey);
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* RTL/LTR-aware defaults. dir is set per locale on <html>. */
+[dir="rtl"] {
+  text-align: right;
+}
+[dir="ltr"] {
+  text-align: left;
+}
+
+/* Respect users who prefer reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Subtle skeleton shimmer for loading states. */
+@keyframes maarood-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.maarood-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-stone-grey) 25%,
+    var(--color-warm-ivory) 50%,
+    var(--color-stone-grey) 75%
+  );
+  background-size: 200% 100%;
+  animation: maarood-shimmer 1.4s ease-in-out infinite;
+}

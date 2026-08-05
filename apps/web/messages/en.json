@@ -1,0 +1,100 @@
+{
+  "Brand": {
+    "name": "Maaroud",
+    "tagline": "Everything you're looking for, on display",
+    "promise": "Discover products from Egyptian brands and buy directly from the brand."
+  },
+  "Nav": {
+    "home": "Home",
+    "search": "Search",
+    "brands": "Brands",
+    "saved": "Saved",
+    "categories": "Categories",
+    "language": "العربية"
+  },
+  "Search": {
+    "placeholder": "Search brands or products…",
+    "submit": "Search",
+    "resultsFor": "Results for: {query}",
+    "noResults": "No results found",
+    "noResultsHint": "Try a different term or adjust the filters."
+  },
+  "Filters": {
+    "title": "Filters",
+    "brand": "Brand",
+    "category": "Category",
+    "price": "Price",
+    "minPrice": "Min price",
+    "maxPrice": "Max price",
+    "color": "Color",
+    "size": "Size",
+    "availability": "Availability",
+    "in_stock": "In stock",
+    "out_of_stock": "Out of stock",
+    "unknown": "Unknown",
+    "apply": "Apply",
+    "clear": "Clear filters",
+    "showFilters": "Filters",
+    "hideFilters": "Hide"
+  },
+  "Sort": {
+    "label": "Sort",
+    "newest": "Newest",
+    "price_asc": "Price: Low to High",
+    "price_desc": "Price: High to Low",
+    "relevance": "Most relevant"
+  },
+  "Product": {
+    "buyFromBrand": "Buy from brand",
+    "checkoutAt": "Checkout on {brand}",
+    "viewDetails": "View details",
+    "save": "Save",
+    "saved": "Saved",
+    "unsave": "Remove",
+    "sizes": "Sizes",
+    "colors": "Colors",
+    "category": "Category",
+    "notFound": "Product not found",
+    "stale": "This information may be out of date",
+    "outOfStock": "Currently out of stock",
+    "lastUpdated": "Last updated {date}"
+  },
+  "Brand": {
+    "productsCount": "{count} products",
+    "visitStore": "Visit store",
+    "notFound": "Brand not found"
+  },
+  "Saved": {
+    "title": "Saved",
+    "empty": "No saved products yet",
+    "emptyHint": "Save products you'd like to come back to.",
+    "browse": "Browse products"
+  },
+  "Home": {
+    "heroTitle": "Discover Egyptian brands",
+    "heroSubtitle": "Products from many Egyptian brands, in one place.",
+    "newArrivals": "New arrivals",
+    "browseBrands": "Browse brands",
+    "browseCategories": "Categories",
+    "viewAll": "View all"
+  },
+  "State": {
+    "loading": "Loading…",
+    "error": "Something went wrong",
+    "retry": "Try again",
+    "empty": "Nothing here yet"
+  },
+  "Footer": {
+    "about": "Maaroud is a product discovery platform. Checkout always happens directly with the brand.",
+    "rights": "© {year} Maaroud"
+  },
+  "Meta": {
+    "homeTitle": "Maaroud — Discover Egyptian brands",
+    "homeDescription": "A discovery platform for Egyptian brand products. Buy directly from the brand.",
+    "searchTitle": "Search: {query} — Maaroud",
+    "categoryTitle": "{category} — Maaroud",
+    "brandsTitle": "Brands — Maaroud",
+    "brandTitle": "{brand} — Maaroud",
+    "savedTitle": "Saved — Maaroud"
+  }
+}

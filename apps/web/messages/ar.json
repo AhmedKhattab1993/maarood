@@ -1,0 +1,100 @@
+{
+  "Brand": {
+    "name": "معروض",
+    "tagline": "كل اللي بتدور عليه، معروض",
+    "promise": "اكتشف منتجات من البراندات المصرية واشتري مباشرة من البراند."
+  },
+  "Nav": {
+    "home": "الرئيسية",
+    "search": "بحث",
+    "brands": "البراندات",
+    "saved": "المحفوظات",
+    "categories": "التصنيفات",
+    "language": "English"
+  },
+  "Search": {
+    "placeholder": "دوّر على براند أو منتج…",
+    "submit": "بحث",
+    "resultsFor": "نتائج البحث عن: {query}",
+    "noResults": "لا توجد نتائج",
+    "noResultsHint": "جرّب كلمة تانية أو عدّل الفلاتر."
+  },
+  "Filters": {
+    "title": "الفلاتر",
+    "brand": "البراند",
+    "category": "التصنيف",
+    "price": "السعر",
+    "minPrice": "أقل سعر",
+    "maxPrice": "أعلى سعر",
+    "color": "اللون",
+    "size": "المقاس",
+    "availability": "التوفّر",
+    "in_stock": "متوفّر",
+    "out_of_stock": "غير متوفّر",
+    "unknown": "غير معروف",
+    "apply": "تطبيق",
+    "clear": "مسح الفلاتر",
+    "showFilters": "الفلاتر",
+    "hideFilters": "إخفاء"
+  },
+  "Sort": {
+    "label": "ترتيب",
+    "newest": "الأحدث",
+    "price_asc": "السعر: من الأقل للأعلى",
+    "price_desc": "السعر: من الأعلى للأقل",
+    "relevance": "الأكثر صلة"
+  },
+  "Product": {
+    "buyFromBrand": "اشترِ من البراند",
+    "checkoutAt": "الشراء يتم على موقع {brand}",
+    "viewDetails": "عرض التفاصيل",
+    "save": "حفظ",
+    "saved": "محفوظ",
+    "unsave": "إزالة",
+    "sizes": "المقاسات",
+    "colors": "الألوان",
+    "category": "التصنيف",
+    "notFound": "المنتج غير موجود",
+    "stale": "قد لا تكون هذه المعلومات محدّثة",
+    "outOfStock": "غير متوفّر حاليًا",
+    "lastUpdated": "آخر تحديث {date}"
+  },
+  "Brand": {
+    "productsCount": "{count} منتج",
+    "visitStore": "زيارة المتجر",
+    "notFound": "البراند غير موجود"
+  },
+  "Saved": {
+    "title": "المحفوظات",
+    "empty": "لسه مفيش منتجات محفوظة",
+    "emptyHint": "احفظ المنتجات اللي عايز ترجعلها بعدين.",
+    "browse": "تصفّح المنتجات"
+  },
+  "Home": {
+    "heroTitle": "اكتشف البراندات المصرية",
+    "heroSubtitle": "منتجات من براندات مصرية كتير في مكان واحد.",
+    "newArrivals": "وصل حديثًا",
+    "browseBrands": "تصفّح البراندات",
+    "browseCategories": "التصنيفات",
+    "viewAll": "عرض الكل"
+  },
+  "State": {
+    "loading": "بيتم التحميل…",
+    "error": "في مشكلة حصلت",
+    "retry": "حاول تاني",
+    "empty": "مفيش محتوى لسه"
+  },
+  "Footer": {
+    "about": "معروض منصّة لاكتشاف المنتجات. الشراء يتم دايمًا من البراند مباشرة.",
+    "rights": "© {year} معروض"
+  },
+  "Meta": {
+    "homeTitle": "معروض — اكتشف البراندات المصرية",
+    "homeDescription": "منصّة لاكتشاف منتجات البراندات المصرية والشراء مباشرة من البراند.",
+    "searchTitle": "بحث: {query} — معروض",
+    "categoryTitle": "{category} — معروض",
+    "brandsTitle": "البراندات — معروض",
+    "brandTitle": "{brand} — معروض",
+    "savedTitle": "المحفوظات — معروض"
+  }
+}

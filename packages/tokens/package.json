@@ -1,0 +1,16 @@
+{
+  "name": "@maarood/tokens",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Maarood shared design tokens — palette, spacing, typography. Framework-agnostic; consumed by web (CSS variables) and, later, React Native.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0"
+  }
+}
