@@ -12,7 +12,7 @@
 #   ./deploy/deploy.sh scheduler   # one-time: create the crawl scheduler
 #   ./deploy/deploy.sh all         # setup + backend + scraper + scheduler
 #
-# Required env (set in ~/.maarood.env or your shell):
+# Required env (read automatically from ~/.maarood.env — your single source of truth):
 #   PROJECT_ID   — your GCP project id
 #   DATABASE_URL — Neon connection string (postgres://..., include ?sslmode=require)
 #   ADMIN_TOKEN  — strong secret (>= 16 chars) for /admin/*
@@ -22,8 +22,19 @@
 #   SCHEDULE="0 */6 * * *"        # every 6 hours (UTC)
 #
 # This script is intentionally explicit and idempotent — no Terraform, no magic.
+# Process env (if any) takes precedence over the file, same as the app loaders.
 
 set -euo pipefail
+
+# Auto-source ~/.maarood.env so this script reads from the same single file the
+# app does. Inline `KEY=value` in the shell still overrides the file.
+MAAROOD_ENV="${MAAROOD_ENV:-$HOME/.maarood.env}"
+if [[ -f "$MAAROOD_ENV" ]]; then
+  # shellcheck disable=SC1090
+  set -a
+  source "$MAAROOD_ENV"
+  set +a
+fi
 
 REGION="${REGION:-europe-west1}"
 SCHEDULE="${SCHEDULE:-0 */6 * * *}"
@@ -34,7 +45,7 @@ SCHEDULER_JOB="maarood-crawl-scheduler"
 require_env() {
   local name="$1"
   if [[ -z "${!name:-}" ]]; then
-    echo "ERROR: $name is not set. Set it in ~/.maarood.env or your shell." >&2
+    echo "ERROR: $name is not set. Add it to $MAAROOD_ENV (~/.maarood.env)." >&2
     exit 1
   fi
 }
