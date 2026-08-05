@@ -46,7 +46,7 @@ function PaginationInner({
   const pages = useMemo(() => window(page, pageCount), [page, pageCount]);
 
   return (
-    <nav aria-label={t("loading")} className="flex items-center justify-center gap-1 py-8">
+    <nav aria-label={t("pagination")} className="flex items-center justify-center gap-1 py-8">
       <PagerButton disabled={page <= 1} onClick={() => goto(page - 1)}>
         ‹
       </PagerButton>

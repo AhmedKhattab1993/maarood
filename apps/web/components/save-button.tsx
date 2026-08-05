@@ -31,8 +31,7 @@ export function SaveButton({
         }
       } catch (err) {
         // Surface the backend message if available; savedProducts is non-critical.
-        const message =
-          err instanceof ApiError ? err.message : t("error" as never);
+        const message = err instanceof ApiError ? err.message : t("error");
         // Avoid blocking the UI; could be wired to a toast later.
         console.warn("save toggle failed", message);
       }

@@ -176,7 +176,7 @@ function Gallery({
 }) {
   if (imageUrls.length === 0) {
     return (
-      <div className="flex aspect-[4/5] w-full items-center justify-center rounded-md bg-stone-grey text-cool-grey">
+      <div className="flex aspect-[4/5] w-full items-center justify-center bg-stone-grey text-cool-grey">
         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" aria-hidden>
           <rect x="3" y="3" width="18" height="18" rx="2" />
           <circle cx="8.5" cy="8.5" r="1.5" />
@@ -193,7 +193,7 @@ function Gallery({
       <img
         src={imageUrls[0]}
         alt={title}
-        className="aspect-[4/5] w-full rounded-md bg-stone-grey object-cover"
+        className="aspect-[4/5] w-full bg-stone-grey object-cover"
       />
       {imageUrls.length > 1 && (
         <ul className="grid grid-cols-4 gap-2">

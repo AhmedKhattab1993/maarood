@@ -54,7 +54,7 @@ export default async function BrandsPage({
             <li key={b.id}>
               <Link
                 href={{ pathname: "/brands/[slug]", params: { slug: b.slug } }}
-                className="flex h-full flex-col justify-between rounded-md border border-stone-grey bg-white p-4 text-ink-black transition-colors hover:border-ink-black"
+                className="flex h-full flex-col justify-between border border-stone-grey bg-white p-4 text-ink-black transition-colors hover:border-ink-black"
               >
                 <span className="text-base font-semibold">{b.name}</span>
                 <span className="mt-1 text-xs text-cool-grey">

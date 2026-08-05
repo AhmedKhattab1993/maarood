@@ -13,9 +13,9 @@ interface ProductCardProps {
 }
 
 /**
- * Uniform product card — consistent aspect ratio, spacing, typography, and
- * metadata placement per 04:78. SSENSE-restrained: neutral chrome, product
- * imagery carries the color.
+ * Uniform product card — Nike-style discovery look: square corners, image on a
+ * neutral tile, tight meta, brand subtitle above the title. Consistent aspect
+ * ratio and metadata placement per 04:78.
  */
 export function ProductCard({ product, brands, priority }: ProductCardProps) {
   const t = useTranslations("Product");
@@ -31,7 +31,7 @@ export function ProductCard({ product, brands, priority }: ProductCardProps) {
       href={{ pathname: "/p/[id]", params: { id: product.id } }}
       className="group flex flex-col"
     >
-      <div className="relative aspect-[3/4] w-full overflow-hidden rounded-md bg-stone-grey">
+      <div className="relative aspect-[3/4] w-full overflow-hidden bg-stone-grey">
         {cover ? (
           <NextImage
             src={cover}
@@ -39,7 +39,7 @@ export function ProductCard({ product, brands, priority }: ProductCardProps) {
             fill
             sizes="(max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
             priority={priority}
-            className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+            className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
             unoptimized
           />
         ) : (
@@ -57,11 +57,11 @@ export function ProductCard({ product, brands, priority }: ProductCardProps) {
 
       <div className="mt-2 flex flex-col gap-0.5">
         {brand && (
-          <span className="text-xs uppercase tracking-wide text-cool-grey">
+          <span className="text-[0.6875rem] uppercase tracking-wide text-cool-grey">
             {brand.name}
           </span>
         )}
-        <h3 className="line-clamp-2 text-sm font-medium text-ink-black">
+        <h3 className="line-clamp-1 text-sm font-medium text-ink-black">
           {product.title}
         </h3>
         <div className="flex items-baseline gap-2">
@@ -88,11 +88,11 @@ function Badge({
 }) {
   const cls =
     tone === "alert"
-      ? "bg-alert-red/90 text-white"
-      : "bg-ink-black/70 text-white";
+      ? "bg-alert-red text-white"
+      : "bg-ink-black text-white";
   return (
     <span
-      className={`absolute end-2 top-2 rounded-pill px-2 py-0.5 text-[0.625rem] font-medium ${cls}`}
+      className={`absolute start-2 top-2 px-1.5 py-0.5 text-[0.625rem] font-medium uppercase tracking-wide ${cls}`}
     >
       {children}
     </span>

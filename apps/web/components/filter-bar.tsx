@@ -2,14 +2,22 @@
 
 import { useTranslations } from "next-intl";
 import { useQueryParams } from "@/lib/use-query-params";
-import { Suspense, useCallback, type ChangeEvent } from "react";
+import {
+  Suspense,
+  useCallback,
+  useState,
+  type ChangeEvent,
+  type ReactNode,
+} from "react";
 import type { BrandSummary, CategorySummary } from "@/lib/api/types";
 
 /**
- * Filter + sort bar. Builds query params by merging the current search params
- * with the changed filter, then navigates. Each control is a real form input so
- * the page degrades without JS (the listing pages also read the same params
- * server-side).
+ * Nike-style filter rail. Vertical list of collapsible facets on desktop (a
+ * sticky sidebar); on mobile the same facets live inside a slide-over drawer
+ * opened by a "Filters" button. Builds query params by merging the current
+ * search params with the changed filter, then navigates. Each control is a real
+ * form input so the page degrades without JS (the listing pages also read the
+ * same params server-side).
  */
 export function FilterBar({
   brands,
@@ -38,6 +46,7 @@ function FilterBarInner({
 }) {
   const t = useTranslations("Filters");
   const { searchParams, pushParams } = useQueryParams();
+  const [open, setOpen] = useState(false);
 
   const update = useCallback(
     (key: string, value: string) => {
@@ -67,27 +76,104 @@ function FilterBarInner({
     !!current.size ||
     !!current.availability;
 
+  const facets = (
+    <FacetList
+      brands={brands}
+      categories={categories}
+      current={current}
+      update={update}
+    />
+  );
+
+  const header = (
+    <div className="flex items-center justify-between">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-black">
+        {t("title")}
+      </h2>
+      {hasActiveFilters && (
+        <button
+          type="button"
+          onClick={clearAll}
+          className="text-xs text-maaroud-blue hover:underline"
+        >
+          {t("clear")}
+        </button>
+      )}
+    </div>
+  );
+
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-cool-grey">
-          {t("title")}
-        </h2>
-        {hasActiveFilters && (
+    <>
+      {/* Mobile trigger */}
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="inline-flex w-full items-center justify-center gap-2 border border-stone-grey px-4 py-2 text-sm font-medium text-ink-black md:hidden"
+      >
+        {t("showFilters")}
+      </button>
+
+      {/* Desktop rail */}
+      <aside className="hidden w-60 shrink-0 md:block">
+        <div className="sticky top-20 flex flex-col gap-5">
+          {header}
+          {facets}
+        </div>
+      </aside>
+
+      {/* Mobile drawer */}
+      {open && (
+        <div className="fixed inset-0 z-50 md:hidden">
           <button
             type="button"
-            onClick={clearAll}
-            className="text-xs text-maaroud-blue hover:underline"
-          >
-            {t("clear")}
-          </button>
-        )}
-      </div>
+            aria-label={t("hideFilters")}
+            onClick={() => setOpen(false)}
+            className="absolute inset-0 bg-ink-black/40"
+          />
+          <div className="absolute inset-y-0 start-0 flex w-[85%] max-w-sm flex-col gap-5 bg-white p-4 shadow-xl">
+            <div className="flex items-center justify-between">
+              {header}
+              <button
+                type="button"
+                aria-label={t("hideFilters")}
+                onClick={() => setOpen(false)}
+                className="text-cool-grey hover:text-ink-black"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto">{facets}</div>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="border border-ink-black bg-ink-black px-4 py-2.5 text-sm font-medium text-white"
+            >
+              {t("apply")}
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-        {brands.length > 0 && (
+function FacetList({
+  brands,
+  categories,
+  current,
+  update,
+}: {
+  brands: BrandSummary[];
+  categories: CategorySummary[];
+  current: Record<string, string | undefined>;
+  update: (key: string, value: string) => void;
+}) {
+  const t = useTranslations("Filters");
+  return (
+    <div className="flex flex-col divide-y divide-stone-grey">
+      {brands.length > 0 && (
+        <Facet label={t("brand")}>
           <Select
-            label={t("brand")}
             value={current.brand ?? ""}
             onChange={(e) => update("brand", e.target.value)}
             options={[
@@ -95,10 +181,11 @@ function FilterBarInner({
               ...brands.map((b) => ({ value: b.slug, label: b.name })),
             ]}
           />
-        )}
-        {categories.length > 0 && (
+        </Facet>
+      )}
+      {categories.length > 0 && (
+        <Facet label={t("category")}>
           <Select
-            label={t("category")}
             value={current.category ?? ""}
             onChange={(e) => update("category", e.target.value)}
             options={[
@@ -106,21 +193,25 @@ function FilterBarInner({
               ...categories.map((c) => ({ value: c.name, label: c.name })),
             ]}
           />
-        )}
-        <NumberField
-          label={t("minPrice")}
-          value={current.minPrice ?? ""}
-          onChange={(e) => update("minPrice", e.target.value)}
-          placeholder="0"
-        />
-        <NumberField
-          label={t("maxPrice")}
-          value={current.maxPrice ?? ""}
-          onChange={(e) => update("maxPrice", e.target.value)}
-          placeholder="∞"
-        />
+        </Facet>
+      )}
+      <Facet label={t("price")}>
+        <div className="flex items-center gap-2">
+          <NumberField
+            value={current.minPrice ?? ""}
+            onChange={(e) => update("minPrice", e.target.value)}
+            placeholder="0"
+          />
+          <span className="text-cool-grey">–</span>
+          <NumberField
+            value={current.maxPrice ?? ""}
+            onChange={(e) => update("maxPrice", e.target.value)}
+            placeholder="∞"
+          />
+        </div>
+      </Facet>
+      <Facet label={t("availability")}>
         <Select
-          label={t("availability")}
           value={current.availability ?? ""}
           onChange={(e) => update("availability", e.target.value)}
           options={[
@@ -130,110 +221,100 @@ function FilterBarInner({
             { value: "unknown", label: t("unknown") },
           ]}
         />
+      </Facet>
+      <Facet label={t("color")}>
         <TextField
-          label={t("color")}
           value={current.color ?? ""}
           onChange={(e) => update("color", e.target.value)}
         />
+      </Facet>
+      <Facet label={t("size")}>
         <TextField
-          label={t("size")}
           value={current.size ?? ""}
           onChange={(e) => update("size", e.target.value)}
         />
-      </div>
+      </Facet>
     </div>
   );
 }
 
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+/** A collapsible facet section. Native <details> keeps it JS-free and RTL-safe. */
+function Facet({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <label className="flex flex-col gap-1 text-xs text-cool-grey">
-      <span>{label}</span>
-      {children}
-    </label>
+    <details open className="group py-3">
+      <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-medium text-ink-black">
+        {label}
+        <span className="text-cool-grey transition-transform group-open:rotate-45">
+          +
+        </span>
+      </summary>
+      <div className="mt-3">{children}</div>
+    </details>
   );
 }
 
 function Select({
-  label,
   value,
   onChange,
   options,
 }: {
-  label: string;
   value: string;
   onChange: (e: ChangeEvent<HTMLSelectElement>) => void;
   options: Array<{ value: string; label: string }>;
 }) {
   return (
-    <Field label={label}>
-      <select
-        value={value}
-        onChange={onChange}
-        className="rounded-default border border-stone-grey bg-white px-2 py-1.5 text-sm text-ink-black outline-none focus:border-maaroud-blue"
-      >
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
-    </Field>
+    <select
+      value={value}
+      onChange={onChange}
+      className="w-full border border-stone-grey bg-white px-2 py-1.5 text-sm text-ink-black outline-none focus:border-ink-black"
+    >
+      {options.map((o) => (
+        <option key={o.value} value={o.value}>
+          {o.label}
+        </option>
+      ))}
+    </select>
   );
 }
 
 function TextField({
-  label,
   value,
   onChange,
   placeholder,
 }: {
-  label: string;
   value: string;
   onChange: (e: ChangeEvent<HTMLInputElement>) => void;
   placeholder?: string;
 }) {
   return (
-    <Field label={label}>
-      <input
-        type="text"
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        className="rounded-default border border-stone-grey bg-white px-2 py-1.5 text-sm text-ink-black outline-none focus:border-maaroud-blue"
-      />
-    </Field>
+    <input
+      type="text"
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      className="w-full border border-stone-grey bg-white px-2 py-1.5 text-sm text-ink-black outline-none focus:border-ink-black"
+    />
   );
 }
 
 function NumberField({
-  label,
   value,
   onChange,
   placeholder,
 }: {
-  label: string;
   value: string;
   onChange: (e: ChangeEvent<HTMLInputElement>) => void;
   placeholder?: string;
 }) {
   return (
-    <Field label={label}>
-      <input
-        type="number"
-        inputMode="numeric"
-        min="0"
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        className="rounded-default border border-stone-grey bg-white px-2 py-1.5 text-sm text-ink-black outline-none focus:border-maaroud-blue"
-      />
-    </Field>
+    <input
+      type="number"
+      inputMode="numeric"
+      min="0"
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      className="w-full border border-stone-grey bg-white px-2 py-1.5 text-sm text-ink-black outline-none focus:border-ink-black"
+    />
   );
 }

@@ -1,13 +1,14 @@
 @import "tailwindcss";
 
 /*
- * Design tokens come from @maarood/tokens — the same values the future React
- * Native app will consume from JS. We map them into Tailwind v4's @theme so
- * utilities like `bg-warm-ivory`, `text-ink-black`, `text-base`, `rounded-md`
- * resolve to Maaroud's locked palette and scales.
+ * Design tokens mapped into Tailwind v4's @theme so utilities like `bg-white`,
+ * `text-ink-black`, `text-base`, `rounded-md` resolve. Visual system follows
+ * Nike's product-discovery look: flat white canvas, near-black type, square
+ * product cards, dense borderless grids. Arabic-first font pairing is loaded
+ * via next/font in the locale layout (var --font-sans / --font-latin).
  */
 @theme {
-  /* Color — locked by 03_VISUAL_IDENTITY.md */
+  /* Color */
   --color-maaroud-blue: #1d4ed8;
   --color-indigo: #6366f1;
   --color-warm-ivory: #faf7f0;
@@ -21,7 +22,7 @@
   /* Spacing — 4px base */
   --spacing: 4px;
 
-  /* Radius — calm, minimal */
+  /* Radius — Nike leans square for product chrome; keep scales for other UI. */
   --radius-sm: 2px;
   --radius-default: 4px;
   --radius-md: 6px;
@@ -52,14 +53,18 @@
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
 
-  /* Arabic-first font pairing (see README). Latin fallback inline. */
-  --font-sans: "IBM Plex Sans Arabic", "Inter", system-ui, sans-serif;
-  --font-latin: "Inter", system-ui, sans-serif;
+  /*
+   * --font-sans and --font-latin are intentionally NOT defined here: they are
+   * set by next/font (see app/[locale]/layout.tsx) on <html> so the self-hosted
+   * IBM Plex Sans Arabic + Inter webfonts load for real, with the font loader's
+   * own fallback chain. body and logo read them via raw var().
+   */
 }
 
 :root {
   color-scheme: light;
-  --background: var(--color-warm-ivory);
+  /* Nike-style flat white canvas. */
+  --background: #ffffff;
   --foreground: var(--color-ink-black);
   --muted: var(--color-cool-grey);
   --border: var(--color-stone-grey);
@@ -117,7 +122,7 @@ body {
   background: linear-gradient(
     90deg,
     var(--color-stone-grey) 25%,
-    var(--color-warm-ivory) 50%,
+    #ffffff 50%,
     var(--color-stone-grey) 75%
   );
   background-size: 200% 100%;

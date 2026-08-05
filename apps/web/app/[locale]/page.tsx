@@ -42,7 +42,7 @@ export default async function HomePage({
 
   return (
     <div className="mx-auto max-w-[var(--container-max)] px-4 py-6 md:py-10">
-      {/* Hero — restrained, gallery-like. Aritzia storytelling reference. */}
+      {/* Hero — flat, product-discovery forward. */}
       <section className="mb-10 flex flex-col gap-3 border-b border-stone-grey pb-10 text-center md:mb-14">
         <h1 className="text-3xl font-semibold tracking-tight text-ink-black md:text-5xl">
           {t("heroTitle")}
@@ -61,7 +61,7 @@ export default async function HomePage({
               <li key={c.name}>
                 <Link
                   href={{ pathname: "/c/[category]", params: { category: c.name } }}
-                  className="rounded-pill border border-stone-grey bg-white px-4 py-2 text-sm capitalize text-ink-black transition-colors hover:border-ink-black"
+                  className="border border-stone-grey bg-white px-4 py-2 text-sm capitalize text-ink-black transition-colors hover:border-ink-black"
                 >
                   {c.name}
                 </Link>
@@ -93,7 +93,7 @@ export default async function HomePage({
               <li key={b.id}>
                 <Link
                   href={{ pathname: "/brands/[slug]", params: { slug: b.slug } }}
-                  className="flex items-center justify-between rounded-md border border-stone-grey bg-white px-4 py-3 text-sm text-ink-black transition-colors hover:border-ink-black"
+                  className="flex items-center justify-between border border-stone-grey bg-white px-4 py-3 text-sm text-ink-black transition-colors hover:border-ink-black"
                 >
                   <span className="font-medium">{b.name}</span>
                   <span className="text-xs text-cool-grey">{b.productCount}</span>

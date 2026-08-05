@@ -5,7 +5,11 @@
     "promise": "Discover products from Egyptian brands and buy directly from the brand.",
     "productsCount": "{count} products",
     "visitStore": "Visit store",
-    "notFound": "Brand not found"
+    "notFound": "Brand not found",
+    "shopByCategory": "Shop by category"
+  },
+  "Category": {
+    "brandsIn": "Brands in {category}"
   },
   "Nav": {
     "home": "Home",
@@ -60,7 +64,8 @@
     "notFound": "Product not found",
     "stale": "This information may be out of date",
     "outOfStock": "Currently out of stock",
-    "lastUpdated": "Last updated {date}"
+    "lastUpdated": "Last updated {date}",
+    "error": "Could not save the product. Try again."
   },
   "Saved": {
     "title": "Saved",
@@ -80,7 +85,8 @@
     "loading": "Loading…",
     "error": "Something went wrong",
     "retry": "Try again",
-    "empty": "Nothing here yet"
+    "empty": "Nothing here yet",
+    "pagination": "Pagination"
   },
   "Footer": {
     "about": "Maaroud is a product discovery platform. Checkout always happens directly with the brand.",

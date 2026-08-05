@@ -12,7 +12,7 @@ import { SearchBar } from "./search-bar";
 export async function SiteHeader() {
   const t = await getTranslations("Nav");
   return (
-    <header className="sticky top-0 z-40 border-b border-stone-grey bg-warm-ivory/90 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-stone-grey bg-white/90 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-[var(--container-max)] items-center gap-4 px-4 md:gap-6">
         <Logo />
         <nav className="hidden items-center gap-1 text-sm md:flex">

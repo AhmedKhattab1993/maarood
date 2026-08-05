@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { getBrand } from "@/lib/api/client";
+import { getBrand, getCategories } from "@/lib/api/client";
 import { ProductListing } from "@/components/product-listing";
+import { FacetNav } from "@/components/facet-nav";
 import { ErrorState } from "@/components/state-views";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { NotFoundError } from "@/lib/api/types";
@@ -39,6 +40,7 @@ export default async function BrandPage({
 
   const current = {
     brand: slug,
+    category: str(sp.category),
     minPrice: str(sp.minPrice),
     maxPrice: str(sp.maxPrice),
     availability: str(sp.availability),
@@ -48,18 +50,20 @@ export default async function BrandPage({
 
   let body: React.ReactNode;
   try {
-    const { brand, products } = await getBrand(slug, {
-      minPrice: toNumber(current.minPrice),
-      maxPrice: toNumber(current.maxPrice),
-      availability: current.availability as never,
-      color: current.color,
-      size: current.size,
-      // Backend ignores sort on brand page (always lastSeenAt desc), but we
-      // pass it for consistency with the listing UI.
-      sort: toSort(sp.sort),
-      page: toNumber(sp.page) ?? 1,
-      limit: 24,
-    });
+    const [{ brand, products }, brandCategories] = await Promise.all([
+      getBrand(slug, {
+        category: current.category,
+        minPrice: toNumber(current.minPrice),
+        maxPrice: toNumber(current.maxPrice),
+        availability: current.availability as never,
+        color: current.color,
+        size: current.size,
+        sort: toSort(sp.sort),
+        page: toNumber(sp.page) ?? 1,
+        limit: 24,
+      }),
+      getCategories(slug).catch(() => []),
+    ]);
 
     body = (
       <>
@@ -76,6 +80,18 @@ export default async function BrandPage({
             {brand.domain} ↗
           </a>
         </header>
+        <FacetNav
+          title={t("Brand.shopByCategory")}
+          paramKey="category"
+          activeValue={current.category || undefined}
+          basePath="/brands/[slug]"
+          baseQuery={{ slug, ...withoutCategory(sp) }}
+          items={brandCategories.map((c) => ({
+            label: c.name,
+            count: c.productCount,
+            value: c.name,
+          }))}
+        />
         <ProductListing
           result={products}
           current={current}
@@ -106,4 +122,16 @@ export default async function BrandPage({
 
 function str(v: string | string[] | undefined): string {
   return typeof v === "string" ? v : "";
+}
+
+/** Build a query object from the raw params, excluding the category key. */
+function withoutCategory(
+  sp: Record<string, string | string[] | undefined>,
+): Record<string, string | undefined> {
+  const out: Record<string, string | undefined> = {};
+  for (const [k, v] of Object.entries(sp)) {
+    if (k === "category") continue;
+    out[k] = str(v);
+  }
+  return out;
 }

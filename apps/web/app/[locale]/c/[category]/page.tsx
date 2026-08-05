@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { getProducts, getBrands, getCategories } from "@/lib/api/client";
 import { ProductListing } from "@/components/product-listing";
+import { FacetNav } from "@/components/facet-nav";
 import { ErrorState } from "@/components/state-views";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { toNumber, toSort } from "@/lib/query";
@@ -42,7 +43,10 @@ export default async function CategoryPage({
     size: str(sp.size),
   };
 
-  const [brands, categories] = await Promise.allSettled([getBrands(), getCategories()]);
+  const [brands, categories] = await Promise.allSettled([
+    getBrands(categoryValue),
+    getCategories(),
+  ]);
   const brandList = brands.status === "fulfilled" ? brands.value : [];
   const categoryList = categories.status === "fulfilled" ? categories.value : [];
 
@@ -61,15 +65,29 @@ export default async function CategoryPage({
       limit: 24,
     });
     body = (
-      <ProductListing
-        result={result}
-        brands={brandList}
-        categories={categoryList}
-        current={current}
-        sort={toSort(sp.sort) ?? "newest"}
-        emptyTitle={t("Search.noResults")}
-        emptyHint={t("Search.noResultsHint")}
-      />
+      <>
+        <FacetNav
+          title={t("Category.brandsIn", { category: categoryValue })}
+          paramKey="brand"
+          activeValue={current.brand || undefined}
+          basePath="/c/[category]"
+          baseQuery={{ category: categoryValue, ...withoutBrand(sp) }}
+          items={brandList.map((b) => ({
+            label: b.name,
+            count: b.productCount,
+            value: b.slug,
+          }))}
+        />
+        <ProductListing
+          result={result}
+          brands={brandList}
+          categories={categoryList}
+          current={current}
+          sort={toSort(sp.sort) ?? "newest"}
+          emptyTitle={t("Search.noResults")}
+          emptyHint={t("Search.noResultsHint")}
+        />
+      </>
     );
   } catch (err) {
     body = <ErrorState error={err} />;
@@ -93,6 +111,18 @@ export default async function CategoryPage({
 
 function str(v: string | string[] | undefined): string {
   return typeof v === "string" ? v : "";
+}
+
+/** Build a query object from the raw params, excluding the brand key. */
+function withoutBrand(
+  sp: Record<string, string | string[] | undefined>,
+): Record<string, string | undefined> {
+  const out: Record<string, string | undefined> = {};
+  for (const [k, v] of Object.entries(sp)) {
+    if (k === "brand") continue;
+    out[k] = str(v);
+  }
+  return out;
 }
 
 /** Category in the URL may be the raw value or kebab-encoded. */
