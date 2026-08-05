@@ -79,11 +79,25 @@ create_secret() {
   fi
 }
 
+grant_secret_access() {
+  # Cloud Run revisions run under the project's default compute SA; it needs
+  # Secret Manager Accessor to mount --set-secrets. Idempotent.
+  local project_number
+  project_number=$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')
+  local run_sa="${project_number}-compute@developer.gserviceaccount.com"
+  echo ">> Granting roles/secretmanager.secretAccessor to $run_sa"
+  gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+    --member "serviceAccount:$run_sa" \
+    --role roles/secretmanager.secretAccessor \
+    --condition=None --quiet >/dev/null
+}
+
 setup() {
   preflight
   enable_apis
   create_secret "maarood-database-url" "$DATABASE_URL"
   create_secret "maarood-admin-token" "$ADMIN_TOKEN"
+  grant_secret_access
   echo ">> Setup complete."
 }
 
