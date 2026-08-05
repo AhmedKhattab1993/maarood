@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Environment files — secrets never live in the repo.
+# Convention: real values live in ~/.maarood.env (user-level, outside the repo).
+.env
+.env.*
+dev.env
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Drizzle
+drizzle/meta/
+
+# GCP
+gcp-service-account*.json
+
+# Local agent metadata
+.zcode/

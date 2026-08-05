@@ -1,0 +1,40 @@
+# Multi-stage build for the Maarood backend on Cloud Run.
+# Builds the whole monorepo (workspaces), runs only the backend.
+
+# ---- build ----
+FROM node:20-bookworm-slim AS build
+WORKDIR /app
+
+# Install workspace manifests first for better layer caching.
+COPY package.json package-lock.json* ./
+COPY packages/schema/package.json ./packages/schema/package.json
+COPY apps/backend/package.json ./apps/backend/package.json
+RUN npm install --workspaces --include-workspace-root
+
+# Copy sources and compile.
+COPY tsconfig.base.json ./
+COPY packages/schema ./packages/schema
+COPY apps/backend ./apps/backend
+RUN npm run build --workspace @maarood/schema
+RUN npm run build --workspace @maarood/backend
+
+# Prune devDependencies for the runtime image.
+RUN npm prune --omit=dev
+
+# ---- runtime ----
+FROM node:20-bookworm-slim AS runtime
+ENV NODE_ENV=production
+WORKDIR /app
+
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/packages/schema/dist ./packages/schema/dist
+COPY --from=build /app/packages/schema/package.json ./packages/schema/package.json
+COPY --from=build /app/apps/backend/dist ./apps/backend/dist
+COPY --from=build /app/apps/backend/package.json ./apps/backend/package.json
+COPY --from=build /app/package.json ./package.json
+
+# Cloud Run injects PORT; the app reads it from env at boot.
+ENV PORT=8080
+EXPOSE 8080
+
+CMD ["node", "apps/backend/dist/main.js"]
