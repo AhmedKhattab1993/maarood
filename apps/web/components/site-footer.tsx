@@ -1,7 +1,7 @@
-import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 
-export function SiteFooter() {
-  const t = useTranslations("Footer");
+export async function SiteFooter() {
+  const t = await getTranslations("Footer");
   const year = new Date().getFullYear();
   return (
     <footer className="border-t border-stone-grey bg-warm-ivory">

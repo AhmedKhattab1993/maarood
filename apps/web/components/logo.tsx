@@ -1,4 +1,4 @@
-import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 
 /**
@@ -6,9 +6,13 @@ import { Link } from "@/i18n/navigation";
  * hierarchy"). The Arabic wordmark معروض carries the brand identity; the Latin
  * "MAAROUD" is secondary. A Warm Sand dot at the lower-right echoes the
  * locked symbol direction (open display frame + product dot).
+ *
+ * Server component — uses getTranslations (not the useTranslations hook) so the
+ * message resolves reliably during static prerender, where the hook's request
+ * context can be absent during RSC serialization.
  */
-export function Logo({ compact = false }: { compact?: boolean }) {
-  const t = useTranslations("Brand");
+export async function Logo({ compact = false }: { compact?: boolean }) {
+  const t = await getTranslations("Brand");
   return (
     <Link
       href={{ pathname: "/" }}

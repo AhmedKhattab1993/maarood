@@ -1,15 +1,16 @@
-import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { Logo } from "./logo";
 import { LanguageSwitcher } from "./language-switcher";
 import { SearchBar } from "./search-bar";
 
 /**
- * Desktop top navigation. Mobile uses the bottom tab bar (mobile-tab-bar.tsx);
- * the header shows the logo + search on all breakpoints.
+ * Desktop top navigation (server component). Mobile uses the bottom tab bar
+ * (mobile-tab-bar.tsx); the header shows the logo + search on all breakpoints.
+ * Async so it can await the Logo server component and getTranslations.
  */
-export function SiteHeader() {
-  const t = useTranslations("Nav");
+export async function SiteHeader() {
+  const t = await getTranslations("Nav");
   return (
     <header className="sticky top-0 z-40 border-b border-stone-grey bg-warm-ivory/90 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-[var(--container-max)] items-center gap-4 px-4 md:gap-6">

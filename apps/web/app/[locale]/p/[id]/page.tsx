@@ -68,7 +68,7 @@ export default async function ProductPage({
                   label: brand.name,
                   href: {
                     pathname: "/brands/[slug]",
-                    query: { slug: brand.slug },
+                    params: { slug: brand.slug },
                   } as const,
                 },
               ]

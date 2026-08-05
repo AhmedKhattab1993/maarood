@@ -53,7 +53,7 @@ export default async function BrandsPage({
           {brands.map((b) => (
             <li key={b.id}>
               <Link
-                href={{ pathname: "/brands/[slug]", query: { slug: b.slug } }}
+                href={{ pathname: "/brands/[slug]", params: { slug: b.slug } }}
                 className="flex h-full flex-col justify-between rounded-md border border-stone-grey bg-white p-4 text-ink-black transition-colors hover:border-ink-black"
               >
                 <span className="text-base font-semibold">{b.name}</span>

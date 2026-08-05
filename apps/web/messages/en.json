@@ -2,7 +2,10 @@
   "Brand": {
     "name": "Maaroud",
     "tagline": "Everything you're looking for, on display",
-    "promise": "Discover products from Egyptian brands and buy directly from the brand."
+    "promise": "Discover products from Egyptian brands and buy directly from the brand.",
+    "productsCount": "{count} products",
+    "visitStore": "Visit store",
+    "notFound": "Brand not found"
   },
   "Nav": {
     "home": "Home",
@@ -58,11 +61,6 @@
     "stale": "This information may be out of date",
     "outOfStock": "Currently out of stock",
     "lastUpdated": "Last updated {date}"
-  },
-  "Brand": {
-    "productsCount": "{count} products",
-    "visitStore": "Visit store",
-    "notFound": "Brand not found"
   },
   "Saved": {
     "title": "Saved",

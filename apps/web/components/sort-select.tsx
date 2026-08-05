@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useRouter, usePathname } from "@/i18n/navigation";
+import { useRouter, usePathname, toHref } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, type ChangeEvent } from "react";
 import type { ProductSort } from "@/lib/api/types";
@@ -27,7 +27,7 @@ function SortSelectInner({ current }: { current: ProductSort }) {
       const params = new URLSearchParams(searchParams.toString());
       params.set("sort", e.target.value);
       params.delete("page");
-      router.push(`${pathname}?${params.toString()}`);
+      router.push(toHref(pathname, params));
     },
     [pathname, router, searchParams],
   );

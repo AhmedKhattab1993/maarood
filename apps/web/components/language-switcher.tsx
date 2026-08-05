@@ -14,7 +14,9 @@ export function LanguageSwitcher() {
   const next: Locale = locale === "ar" ? "en" : "ar";
 
   function switchTo() {
-    router.replace(pathname, { locale: next });
+    // pathname is always a valid declared route at runtime; cast satisfies the
+    // typed router which can't infer this from the usePathname() union.
+    router.replace(pathname as never, { locale: next });
   }
 
   return (

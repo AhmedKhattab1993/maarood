@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useRouter, usePathname } from "@/i18n/navigation";
+import { useRouter, usePathname, toHref } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useMemo } from "react";
 
@@ -41,7 +41,7 @@ function PaginationInner({
     (target: number) => {
       const params = new URLSearchParams(searchParams.toString());
       params.set("page", String(target));
-      router.push(`${pathname}?${params.toString()}`);
+      router.push(toHref(pathname, params));
     },
     [pathname, router, searchParams],
   );

@@ -60,7 +60,7 @@ export default async function HomePage({
             {categoryList.map((c) => (
               <li key={c.name}>
                 <Link
-                  href={{ pathname: "/c/[category]", query: { category: c.name } }}
+                  href={{ pathname: "/c/[category]", params: { category: c.name } }}
                   className="rounded-pill border border-stone-grey bg-white px-4 py-2 text-sm capitalize text-ink-black transition-colors hover:border-ink-black"
                 >
                   {c.name}
@@ -92,7 +92,7 @@ export default async function HomePage({
             {brandList.slice(0, 8).map((b) => (
               <li key={b.id}>
                 <Link
-                  href={{ pathname: "/brands/[slug]", query: { slug: b.slug } }}
+                  href={{ pathname: "/brands/[slug]", params: { slug: b.slug } }}
                   className="flex items-center justify-between rounded-md border border-stone-grey bg-white px-4 py-3 text-sm text-ink-black transition-colors hover:border-ink-black"
                 >
                   <span className="font-medium">{b.name}</span>

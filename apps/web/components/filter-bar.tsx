@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useRouter, usePathname } from "@/i18n/navigation";
+import { useRouter, usePathname, toHref } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, type ChangeEvent } from "react";
 import type { BrandSummary, CategorySummary } from "@/lib/api/types";
@@ -49,7 +49,7 @@ function FilterBarInner({
       else params.delete(key);
       // Reset to first page whenever filters change.
       params.delete("page");
-      router.push(`${pathname}?${params.toString()}`);
+      router.push(toHref(pathname, params));
     },
     [pathname, router, searchParams],
   );
@@ -60,7 +60,7 @@ function FilterBarInner({
     const q = params.get("q");
     const kept = new URLSearchParams();
     if (q) kept.set("q", q);
-    router.push(`${pathname}?${kept.toString()}`);
+    router.push(toHref(pathname, kept));
   };
 
   const hasActiveFilters =
