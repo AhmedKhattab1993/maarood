@@ -57,13 +57,26 @@ Study for:
 - Typography and spacing.
 - Organizing products by collection, occasion, and color.
 
-### Nike product finders — Guided-discovery reference
+### Nike — Guided-discovery and product-discovery visual reference
 
 Study for:
 
 - Short guided product-selection flows.
 - Needs-based filtering.
 - Future conversational or AI-assisted product discovery.
+- **Product-discovery visual system** (added 2026-08-06): the look of the
+  product grid, filter rail, and listing pages — flat white canvas, near-black
+  type, square-cornered product cards, dense borderless grid, left filter rail,
+  sticky minimal header, hover affordances.
+
+> **Direction change (2026-08-06):** Nike is now the visual lead for all
+> product-*discovery* surfaces (home grid, search, category, brand listings).
+> This supersedes the earlier Locked decision that kept Nike interaction-only.
+> Rationale: a focused, image-forward discovery look is the strongest fit for
+> browsing a normalized multi-brand catalog, and Nike's system is the clearest
+> expression of it. SSENSE and Aritzia remain the visual lead for the
+> *product-detail* page (restrained, product-first presentation) and as
+> secondary influences on typography and spacing. See "Two independent axes".
 
 ## Target Maaroud experience mix — Locked
 
@@ -71,30 +84,32 @@ Study for:
 - **20% curated discovery**
 - **10% brand storytelling**
 
-## Two independent axes — Locked
+## Two independent axes — Locked (revised 2026-08-06)
 
 References serve two separate purposes and must not be conflated:
 
 - **Interaction / UX flow** — how the product behaves. Lead references: **Nike product finders** (guided discovery) and **Shop by Shopify** (save, follow, mobile navigation).
-- **Visual craft / system** — what the product looks like. Lead references: **SSENSE** and **Aritzia**, the only multi-brand retailers in the set and therefore the only ones that have solved Maaroud's core visual problem: framing many visually different brands in one neutral, editorial gallery without competing with them.
+- **Visual craft / system** — what the product looks like. Split by surface:
+  - **Product-discovery surfaces** (home grid, search, category, brand listings, filter rail): lead reference is **Nike** — flat white canvas, near-black type, square product cards, dense borderless grid. See the Nike section above.
+  - **Product-detail page**: lead references remain **SSENSE** and **Aritzia** — restrained, product-first presentation, where the editorial gallery framing still applies.
 
-Nike is single-brand and owns checkout; its strong visual identity would compete with hosted brands, so it is an interaction reference only. Shop is neutral but utilitarian, below the editorial craft bar in `02`, so it is a retention-interaction reference only.
+The earlier rationale that Nike's identity would "compete with hosted brands" no longer holds for the discovery surfaces: Maarood's grid treats every product uniformly on a neutral white canvas, so the visual system does not favor any one brand. Product detail keeps the editorial SSENSE/Aritzia treatment where per-product framing matters most.
 
 ## Per-page reference map — Locked
 
 Each Maaroud page is modeled on the reference best suited to its structure. Page types that only multi-brand retailers have built (brand pages, deep category grids) are taken from SSENSE/Aritzia/Farfetch; Nike and Shop each own specific pages they uniquely model.
 
-| Maaroud page | Structural reference | Why |
+| Maaroud page | Structural reference | Visual reference |
 |---|---|---|
-| Home / discovery (logged-out) | **Aritzia** | Collection storytelling, merchandising |
-| Home / discovery (logged-in) | **Shop by Shopify** | Following/feed surface, when introduced |
-| Search results | **SSENSE** | Disciplined grid, dense filtering |
-| Category listing | **SSENSE / Aritzia** | Deep multi-brand taxonomy |
-| Brand page | **Aritzia / Farfetch** | Only references with this page type |
-| Product detail | **SSENSE** | Restrained, product-first presentation |
-| Discovery finder (when built) | **Nike product finders** | Guided question → ranked results |
-| Mobile navigation shell | **Shop by Shopify** | Bottom-tab navigation |
-| Saved products | **Shop by Shopify** | Save and return journeys |
+| Home / discovery (logged-out) | **Aritzia** (merchandising) | **Nike** (grid) |
+| Home / discovery (logged-in) | **Shop by Shopify** | Nike grid, when introduced |
+| Search results | **SSENSE** (dense filtering) | **Nike** |
+| Category listing | **SSENSE / Aritzia** (taxonomy) | **Nike** |
+| Brand page | **Aritzia / Farfetch** | **Nike** |
+| Product detail | **SSENSE** | **SSENSE** (editorial) |
+| Discovery finder (when built) | **Nike product finders** | Nike |
+| Mobile navigation shell | **Shop by Shopify** | Nike chrome |
+| Saved products | **Shop by Shopify** | Nike grid |
 
 ## Design principles
 
