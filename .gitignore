@@ -32,3 +32,6 @@ gcp-service-account*.json
 
 # Local agent metadata
 .zcode/
+
+# Vercel (local project link + env)
+.vercel
