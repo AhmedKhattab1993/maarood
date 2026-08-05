@@ -1,0 +1,26 @@
+{
+  "name": "@maarood/scraper",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Maarood ingestion pipeline — batch job (Cloud Run Job) with per-store connectors.",
+  "main": "./dist/main.js",
+  "scripts": {
+    "build": "tsc -b",
+    "dev": "ts-node src/main.ts",
+    "start": "node dist/main.js",
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@maarood/schema": "*",
+    "drizzle-orm": "^0.33.0",
+    "pg": "^8.12.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/pg": "^8.11.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.5.0"
+  }
+}

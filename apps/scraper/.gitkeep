@@ -1,7 +1,0 @@
-# Scraper package (scaffold)
-
-Reserved for the Crawlee + Cheerio + Playwright ingestion services
-described in `07_SCRAPING_AND_CATALOG_INGESTION.md`.
-
-Intentionally empty in the backend foundation step. Connectors, crawl
-orchestration, and normalization logic land here in Phase 1.
