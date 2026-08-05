@@ -5,6 +5,11 @@
 - These guidelines govern project development and maintenance work, including changes to code, tests, configuration, tooling, and technical documentation.
 - If a repository supports content generation, follow its repository-specific content-generation skills and workflow instructions for that activity.
 
+## Communication
+
+- Keep responses concise. Convey full information without preamble, filler, or redundant restatement of the request.
+- Omit non-essential commentary; do not sacrifice accuracy or relevant caveats.
+
 ## Simplicity-First Engineering
 
 - Prefer the simplest design that fully satisfies the current requirement.
