@@ -9,6 +9,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   Inject,
@@ -19,7 +20,7 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, count, desc, eq, isNotNull } from 'drizzle-orm';
 import {
   crawlRuns,
   merchants,
@@ -28,7 +29,7 @@ import {
   products,
 } from '@maarood/schema';
 import { DRIZZLE, type DrizzleDB } from '../db/db.module';
-import { createMerchantBody } from './admin.dto';
+import { createMerchantBody, updateMerchantBody } from './admin.dto';
 
 @Controller('admin')
 export class AdminController {
@@ -59,6 +60,31 @@ export class AdminController {
       })
       .returning();
     return created;
+  }
+
+  @Patch('merchants/:slug')
+  async updateMerchant(@Param('slug') slug: string, @Body() body: unknown) {
+    const parsed = updateMerchantBody.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.flatten());
+    }
+    const [updated] = await this.db
+      .update(merchants)
+      .set(parsed.data)
+      .where(eq(merchants.slug, slug))
+      .returning();
+    if (!updated) throw new NotFoundException('Merchant not found');
+    return updated;
+  }
+
+  @Delete('products/:id')
+  @HttpCode(204)
+  async deleteProduct(@Param('id') id: string) {
+    const [deleted] = await this.db
+      .delete(products)
+      .where(eq(products.id, id))
+      .returning({ id: products.id });
+    if (!deleted) throw new NotFoundException('Product not found');
   }
 
   // ---- Crawl runs ----
@@ -123,5 +149,85 @@ export class AdminController {
       .from(productRevisions)
       .where(eq(productRevisions.productId, id))
       .orderBy(productRevisions.revisionNumber);
+  }
+
+  // ---- Ingestion health (freshness, failures, staleness) ----
+
+  @Get('health/ingestion')
+  async ingestionHealth() {
+    // Active merchants only.
+    const active = await this.db
+      .select()
+      .from(merchants)
+      .where(eq(merchants.optedOut, false));
+
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    const freshness = await Promise.all(
+      active.map(async (m) => {
+        // Most recent successful crawl for this merchant.
+        const lastSuccess = await this.db
+          .select()
+          .from(crawlRuns)
+          .where(and(eq(crawlRuns.merchantId, m.id), eq(crawlRuns.status, 'completed')))
+          .orderBy(desc(crawlRuns.startedAt))
+          .limit(1);
+
+        // Most recent crawl of any status.
+        const lastAny = await this.db
+          .select()
+          .from(crawlRuns)
+          .where(eq(crawlRuns.merchantId, m.id))
+          .orderBy(desc(crawlRuns.startedAt))
+          .limit(1);
+
+        const lastRun = lastAny[0]?.startedAt ?? null;
+        const ageMin = lastRun ? (Date.now() - lastRun.getTime()) / 60000 : null;
+
+        let state: 'never_crawled' | 'failed' | 'overdue' | 'fresh';
+        if (!lastRun) state = 'never_crawled';
+        else if (lastAny[0]?.status === 'failed') state = 'failed';
+        else if (ageMin !== null && ageMin > m.crawlFrequencyMinutes) state = 'overdue';
+        else state = 'fresh';
+
+        return {
+          slug: m.slug,
+          name: m.name,
+          lastCrawlStartedAt: lastRun,
+          lastCrawlStatus: lastAny[0]?.status ?? null,
+          ageMinutes: ageMin !== null ? Math.round(ageMin) : null,
+          frequencyMinutes: m.crawlFrequencyMinutes,
+          state,
+          lastSuccessfulStartedAt: lastSuccess[0]?.startedAt ?? null,
+        };
+      }),
+    );
+
+    const failed = await this.db
+      .select()
+      .from(crawlRuns)
+      .where(and(eq(crawlRuns.status, 'failed'), isNotNull(crawlRuns.startedAt)))
+      .orderBy(desc(crawlRuns.startedAt))
+      .limit(20);
+    const recentFailures = failed.filter((r) => r.startedAt >= sevenDaysAgo);
+
+    // Stale product counts per merchant.
+    const staleRows = await this.db
+      .select({ merchantId: products.merchantId, n: count() })
+      .from(products)
+      .where(isNotNull(products.staleAt))
+      .groupBy(products.merchantId);
+    const staleByMerchantId = new Map(staleRows.map((r) => [r.merchantId, Number(r.n)]));
+    const staleProducts = active.map((m) => ({
+      slug: m.slug,
+      staleCount: staleByMerchantId.get(m.id) ?? 0,
+    }));
+
+    return {
+      generatedAt: new Date().toISOString(),
+      freshness,
+      recentFailures,
+      staleProducts,
+    };
   }
 }

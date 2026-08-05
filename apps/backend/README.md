@@ -46,6 +46,22 @@ npm run lint
 
 `GET /health` returns `{ "status": "ok" }`; `GET /health?deep=true` also pings the DB with `SELECT 1` (useful to confirm `DATABASE_URL` is wired correctly).
 
+## Admin API
+
+JSON only (no UI). **No authentication yet** — public exposure must be gated by Cloud Run IAM before production.
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/admin/merchants` | List merchants |
+| POST | `/admin/merchants` | Register a merchant |
+| PATCH | `/admin/merchants/:slug` | Update opt-out / notes / crawl frequency |
+| GET | `/admin/crawl-runs` | Recent crawl runs (`?merchantSlug=` filter) |
+| GET | `/admin/review-queue` | Product-error review queue (`?status=` filter) |
+| PATCH | `/admin/review-queue/:id` | Resolve a flagged record |
+| DELETE | `/admin/products/:id` | Manually remove a product (admin correction) |
+| GET | `/admin/products/:id/revisions` | Full change history for a product |
+| GET | `/admin/health/ingestion` | Freshness, failures, staleness across merchants |
+
 ## Database
 
 ```bash

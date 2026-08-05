@@ -15,3 +15,11 @@ export const createMerchantBody = z.object({
 });
 
 export type CreateMerchantBody = z.infer<typeof createMerchantBody>;
+
+export const updateMerchantBody = z.object({
+  optedOut: z.boolean().optional(),
+  notes: z.string().nullable().optional(),
+  crawlFrequencyMinutes: z.number().int().positive().optional(),
+});
+
+export type UpdateMerchantBody = z.infer<typeof updateMerchantBody>;
