@@ -19,14 +19,20 @@ Use Vercel for the user-facing web experience and Google Cloud Platform for APIs
 - Uses the same backend API, authentication, catalog, and design system as the web product
 - Built after the web experience is validated
 
-## Backend API
+## Backend API — Locked
 
-Choose one implementation language for the main application backend:
+- **NestJS (TypeScript)** as the main application backend.
+- Host the API on **Google Cloud Run**.
 
-- **NestJS** if prioritizing a TypeScript-first stack.
-- **FastAPI** if prioritizing Python and future ML integration.
+### Rationale
 
-Host the API on **Google Cloud Run**.
+- The scraping layer is locked as TypeScript with **Zod** schema validation. NestJS shares the same language and the canonical product schema directly across ingestion, normalization, and API, avoiding duplicate schema definitions and drift.
+- TypeScript also unifies the backend with the Next.js frontend (shared request/response types, single toolchain).
+- The only argument for the alternative (FastAPI/Python) is future ML work, which is deferred to Phase 6 experiments and is not an MVP dependency. Adding a narrow Python microservice later is cheap if a validated ML need arises; rewriting the core API is not.
+
+### Python carve-out
+
+If a specific, validated ML need emerges (for example, real semantic search with embeddings), add a small Python service on Cloud Run for that capability only. Do not retroactively rewrite the core backend in Python.
 
 ## Background and ingestion workloads
 

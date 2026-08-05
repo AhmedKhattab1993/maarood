@@ -8,6 +8,7 @@
 - Product imagery: use original merchant images in the MVP.
 - Web: Next.js on Vercel.
 - Mobile: React Native with Expo after web validation.
+- Backend API: NestJS (TypeScript) on Cloud Run.
 - Backend and jobs: Cloud Run.
 - Database: PostgreSQL.
 - Scraping: Crawlee + Cheerio + Playwright.
