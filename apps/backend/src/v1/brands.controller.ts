@@ -13,18 +13,22 @@ import {
   Param,
   Query,
 } from '@nestjs/common';
-import { count, desc, eq } from 'drizzle-orm';
+import { and, count, desc, eq } from 'drizzle-orm';
 import { merchants, products } from '@maarood/schema';
 import { DRIZZLE, type DrizzleDB } from '../db/db.module';
 import { productQuery } from './products/products.dto';
 import { mapProduct, type PaginatedResult, type PublicProduct } from './products/product-mapper';
+import { buildFilters, sortSql } from './products/product-filter';
 
 @Controller('v1/brands')
 export class BrandsController {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   @Get()
-  async list() {
+  async list(@Query('category') category?: string) {
+    // Group by merchant. When `category` is given, product counts reflect only
+    // brands that sell in that category (powers "brands in this category").
+    const productMatch = category ? and(eq(products.merchantId, merchants.id), eq(products.category, category)) : eq(products.merchantId, merchants.id);
     const rows = await this.db
       .select({
         id: merchants.id,
@@ -34,11 +38,13 @@ export class BrandsController {
         productCount: count(products.id),
       })
       .from(merchants)
-      .leftJoin(products, eq(products.merchantId, merchants.id))
+      .leftJoin(products, productMatch)
       .where(eq(merchants.optedOut, false))
       .groupBy(merchants.id)
       .orderBy(desc(merchants.name));
-    return rows.map((r) => ({ ...r, productCount: Number(r.productCount) }));
+    return rows
+      .map((r) => ({ ...r, productCount: Number(r.productCount) }))
+      .filter((r) => (category ? r.productCount > 0 : true));
   }
 
   @Get(':slug')
@@ -50,7 +56,10 @@ export class BrandsController {
     if (!parsed.success) throw new BadRequestException(parsed.error.flatten());
     const q = parsed.data;
 
-    const where = eq(products.merchantId, brand[0]!.id);
+    // The brand is fixed by the path; the remaining filters (category, price,
+    // availability, color, size) and sort apply on top of it.
+    const resolved = { id: brand[0]!.id, slug: brand[0]!.slug };
+    const where = buildFilters(q, resolved);
     const totalRows = await this.db.select({ n: count() }).from(products).where(where);
     const total = Number(totalRows[0]?.n ?? 0);
     const offset = (q.page - 1) * q.limit;
@@ -58,7 +67,7 @@ export class BrandsController {
       .select()
       .from(products)
       .where(where)
-      .orderBy(desc(products.lastSeenAt))
+      .orderBy(sortSql(q.sort))
       .limit(q.limit)
       .offset(offset);
 

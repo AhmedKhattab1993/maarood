@@ -71,8 +71,10 @@ export async function getProduct(id: string): Promise<PublicProduct> {
   return fetchJson<PublicProduct>(`/v1/products/${encodeURIComponent(id)}`);
 }
 
-export async function getBrands(): Promise<BrandSummary[]> {
-  return fetchJson<BrandSummary[]>(`/v1/brands`);
+export async function getBrands(category?: string): Promise<BrandSummary[]> {
+  return fetchJson<BrandSummary[]>(
+    `/v1/brands${buildSearchParams({ category })}`,
+  );
 }
 
 export async function getBrand(
@@ -86,8 +88,10 @@ export async function getBrand(
   );
 }
 
-export async function getCategories(): Promise<CategorySummary[]> {
-  return fetchJson<CategorySummary[]>(`/v1/categories`);
+export async function getCategories(brand?: string): Promise<CategorySummary[]> {
+  return fetchJson<CategorySummary[]>(
+    `/v1/categories${buildSearchParams({ brand })}`,
+  );
 }
 
 export async function searchProducts(
