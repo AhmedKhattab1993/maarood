@@ -90,14 +90,14 @@ setup() {
 deploy_backend() {
   preflight
   echo ">> Deploying backend service ($BACKEND_SERVICE)..."
-  # Build context is apps/backend (where the Dockerfile lives).
+  # Build from the repo ROOT (Dockerfile is there; TARGET defaults to backend).
   gcloud run deploy "$BACKEND_SERVICE" \
     --project "$PROJECT_ID" \
-    --source apps/backend \
+    --source . \
     --region "$REGION" \
     --port 8080 \
     --allow-unauthenticated \
-    --set-env-vars "NODE_ENV=production,CORS_ORIGIN=*" \
+    --set-env-vars "NODE_ENV=production,TARGET=backend,CORS_ORIGIN=*" \
     --set-secrets "DATABASE_URL=maarood-database-url:latest,ADMIN_TOKEN=maarood-admin-token:latest"
   echo ">> Backend deployed. URL:"
   gcloud run services describe "$BACKEND_SERVICE" --project "$PROJECT_ID" --region "$REGION" \
@@ -107,13 +107,15 @@ deploy_backend() {
 deploy_scraper() {
   preflight
   echo ">> Deploying scraper job ($SCRAPER_JOB)..."
-  # Cloud Run Jobs: build context is the scraper dir.
+  # Build from the repo ROOT. TARGET is a RUNTIME env var (the Dockerfile CMD
+  # picks the scraper entrypoint from it); gcloud run jobs deploy has no
+  # --build-env-vars support, so target selection happens at runtime, not build.
   gcloud run jobs deploy "$SCRAPER_JOB" \
     --project "$PROJECT_ID" \
-    --source apps/scraper \
+    --source . \
     --region "$REGION" \
     --task-timeout 30m \
-    --set-env-vars "NODE_ENV=production" \
+    --set-env-vars "NODE_ENV=production,TARGET=scraper" \
     --set-secrets "DATABASE_URL=maarood-database-url:latest"
   echo ">> Scraper job deployed. Run manually:"
   echo "   gcloud run jobs execute $SCRAPER_JOB --project $PROJECT_ID --region $REGION"
@@ -122,7 +124,20 @@ deploy_scraper() {
 create_scheduler() {
   preflight
   echo ">> Creating/updating Cloud Scheduler ($SCHEDULER_JOB)..."
-  # Cloud Scheduler triggers the job via the run execute endpoint with OIDC auth.
+  # Dedicated invoker SA. New GCP projects ship without the App Engine default
+  # SA, so we create a project-local SA and grant it roles/run.invoker on the job.
+  local invoker_sa="maarood-scheduler@${PROJECT_ID}.iam.gserviceaccount.com"
+  if ! gcloud iam service-accounts describe "$invoker_sa" --project "$PROJECT_ID" >/dev/null 2>&1; then
+    echo ">> Creating invoker service account: $invoker_sa"
+    gcloud iam service-accounts create maarood-scheduler \
+      --project "$PROJECT_ID" --display-name "Maarood scheduler invoker"
+  fi
+  # Grant run.invoker on the scraper job (idempotent — re-applying is a no-op).
+  gcloud run jobs add-iam-policy-binding "$SCRAPER_JOB" \
+    --project "$PROJECT_ID" --region "$REGION" \
+    --member "serviceAccount:$invoker_sa" --role roles/run.invoker >/dev/null
+
+  # Cloud Scheduler triggers the job via the run execute endpoint.
   local job_endpoint
   job_endpoint="https://$REGION-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/$PROJECT_ID/jobs/$SCRAPER_JOB:run"
   # Idempotent: delete then recreate (simplest way to update schedule/target).
@@ -130,8 +145,6 @@ create_scheduler() {
     echo ">> Scheduler exists — deleting to recreate."
     gcloud scheduler jobs delete "$SCHEDULER_JOB" --location "$REGION" --project "$PROJECT_ID" --quiet || true
   fi
-  # The service account running the scheduler must have roles/run.invoker on the job.
-  local invoker_sa="${PROJECT_ID}@appspot.gserviceaccount.com"
   gcloud scheduler jobs create http "$SCHEDULER_JOB" \
     --project "$PROJECT_ID" \
     --location "$REGION" \
@@ -140,11 +153,8 @@ create_scheduler() {
     --http-method POST \
     --uri "$job_endpoint" \
     --oauth-service-account-email "$invoker_sa" \
-    --oauth-service-account-scope "https://www.googleapis.com/auth/cloud-platform"
-  echo ">> Scheduler created with schedule '$SCHEDULE'. Grant the invoker role:"
-  echo "   gcloud run jobs set-iam-policy-binding $SCRAPER_JOB \\"
-  echo "     --member serviceAccount:$invoker_sa --role roles/run.invoker \\"
-  echo "     --region $REGION --project $PROJECT_ID"
+    --oauth-token-scope "https://www.googleapis.com/auth/cloud-platform"
+  echo ">> Scheduler created with schedule '$SCHEDULE' invoking $invoker_sa."
 }
 
 main() {
