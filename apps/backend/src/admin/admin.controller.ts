@@ -1,9 +1,7 @@
 /**
  * Admin endpoints — JSON only, no UI.
- *
- * SECURITY GAP (intentional for this step): no authentication. Public API
- * exposure must be gated by Cloud Run IAM / an auth layer before production.
- * Auth is a Phase 2 concern per the build order.
+ * Protected by a shared-secret bearer token (AdminAuthGuard, ADMIN_TOKEN env).
+ * Send: Authorization: Bearer <ADMIN_TOKEN>.
  */
 
 import {
@@ -17,6 +15,7 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
@@ -30,8 +29,10 @@ import {
 } from '@maarood/schema';
 import { DRIZZLE, type DrizzleDB } from '../db/db.module';
 import { createMerchantBody, updateMerchantBody } from './admin.dto';
+import { AdminAuthGuard } from './admin-auth.guard';
 
 @Controller('admin')
+@UseGuards(AdminAuthGuard)
 export class AdminController {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 

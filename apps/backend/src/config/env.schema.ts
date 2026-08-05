@@ -17,6 +17,15 @@ export const envSchema = z.object({
     .trim()
     .min(1, 'DATABASE_URL is required — set it in ~/.maarood.env or the process env'),
 
+  /** Shared secret required on all /admin/* requests (Authorization: Bearer <token>). */
+  ADMIN_TOKEN: z
+    .string()
+    .trim()
+    .min(16, 'ADMIN_TOKEN must be at least 16 characters — set it in ~/.maarood.env'),
+
+  /** Allowed CORS origin(s). '*' by default for the MVP; set to the frontend origin in production. */
+  CORS_ORIGIN: z.string().trim().default('*'),
+
   GCS_BUCKET_NAME: z.string().trim().optional(),
 
   // Reserved for future use; intentionally not validated as required yet (YAGNI).
