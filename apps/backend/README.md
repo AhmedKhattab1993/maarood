@@ -46,6 +46,27 @@ npm run lint
 
 `GET /health` returns `{ "status": "ok" }`; `GET /health?deep=true` also pings the DB with `SELECT 1` (useful to confirm `DATABASE_URL` is wired correctly).
 
+## Public API (`/v1`)
+
+The public API serves the future web frontend and mobile app. No authentication; saved products are anonymous (keyed by a client-generated `X-Device-Id` UUID header).
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/v1/products` | Paginated list with filters (`brand`, `category`, `minPrice`, `maxPrice`, `availability`, `color`, `size`, `sort`, `page`, `limit`) |
+| GET | `/v1/products/:id` | Single product |
+| GET | `/v1/products/:id/redirect` | Log outbound click → 302 to merchant (primary success metric) |
+| GET | `/v1/brands` | Brands with product counts |
+| GET | `/v1/brands/:slug` | Brand detail + paginated products |
+| GET | `/v1/categories` | Distinct categories with counts |
+| GET | `/v1/search?q=` | Full-text search (FTS + typo-tolerant trigram) with the same filters |
+| GET | `/v1/saved` | Saved products for `X-Device-Id` |
+| POST | `/v1/saved/:productId` | Save a product (requires `X-Device-Id`) |
+| DELETE | `/v1/saved/:productId` | Unsave a product |
+
+Pagination: `?page=1&limit=24` (max 60); responses return `{ items, page, limit, total }`.
+
+Search uses PostgreSQL full-text (tsvector over title/description/category) plus `pg_trgm` similarity for typo tolerance, with a simple Arabic+English normalizer. Synonyms and semantic search are deferred per `06_TECHNICAL_ARCHITECTURE.md`.
+
 ## Admin API
 
 JSON only (no UI). **No authentication yet** — public exposure must be gated by Cloud Run IAM before production.
