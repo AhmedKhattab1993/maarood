@@ -61,6 +61,7 @@ export const productSchema = z.object({
   revisionNumber: z.number().int().nonnegative().default(1),
   lastSeenAt: z.coerce.date(),
   lastUpdatedAt: z.coerce.date().nullable().default(null),
+  staleAt: z.coerce.date().nullable().default(null),
 });
 
 export type Product = z.infer<typeof productSchema>;
@@ -79,6 +80,8 @@ export const merchantSchema = z.object({
   crawlFrequencyMinutes: z.number().int().positive().default(1440),
   /** Connector implementation to use, e.g. 'shopify'. */
   connectorType: z.string().trim().min(1),
+  optedOut: z.boolean().default(false),
+  notes: z.string().nullable().default(null),
   createdAt: z.coerce.date(),
 });
 

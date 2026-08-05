@@ -15,6 +15,13 @@
       "when": 1785938091475,
       "tag": "0001_misty_viper",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785939268191,
+      "tag": "0002_big_rick_jones",
+      "breakpoints": true
     }
   ]
 }

@@ -16,6 +16,7 @@ import {
   index,
   jsonb,
   uniqueIndex,
+  boolean,
 } from 'drizzle-orm/pg-core';
 import type { Availability, CurrencyCode } from '../product.schema';
 
@@ -37,6 +38,10 @@ export const merchants = pgTable(
     crawlFrequencyMinutes: integer('crawl_frequency_minutes').notNull().default(1440),
     /** Connector implementation to use, e.g. 'shopify'. Selects the ingestion strategy. */
     connectorType: text('connector_type').notNull(),
+    /** When true, the merchant is excluded from all crawls (opt-out / removal hook). */
+    optedOut: boolean('opted_out').notNull().default(false),
+    /** Free-form admin notes (corrections, contacts, context). */
+    notes: text('notes'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
@@ -75,6 +80,11 @@ export const products = pgTable(
     revisionNumber: integer('revision_number').notNull().default(1),
     lastSeenAt: timestamp('last_seen_at', { withTimezone: true }).notNull(),
     lastUpdatedAt: timestamp('last_updated_at', { withTimezone: true }),
+    /**
+     * Set when a product was not seen in the latest crawl of its merchant
+     * (i.e. it disappeared from the source). Cleared if it reappears.
+     */
+    staleAt: timestamp('stale_at', { withTimezone: true }),
   },
   (t) => ({
     merchantProductIdx: index('products_merchant_product_idx').on(t.merchantId, t.merchantProductId),

@@ -40,7 +40,12 @@ export async function storeProduct(
   normalized: NormalizedProduct,
 ): Promise<StoreResult> {
   const existing = await db
-    .select({ id: products.id, checksum: products.sourceChecksum, revision: products.revisionNumber })
+    .select({
+      id: products.id,
+      checksum: products.sourceChecksum,
+      revision: products.revisionNumber,
+      staleAt: products.staleAt,
+    })
     .from(products)
     .where(
       and(
@@ -119,10 +124,11 @@ export async function storeProduct(
   const row = existing[0]!;
   if (row.checksum === normalized.sourceChecksum) {
     // Unchanged — bump only last_seen_at. No revision.
-    await db
-      .update(products)
-      .set({ lastSeenAt: now })
-      .where(eq(products.id, row.id));
+    // If the product was stale (reappeared after going missing), restore it.
+    const restore = row.staleAt !== null
+      ? { lastSeenAt: now, staleAt: null, availability: normalized.availability }
+      : { lastSeenAt: now };
+    await db.update(products).set(restore).where(eq(products.id, row.id));
     return { outcome: 'unchanged', productId: row.id };
   }
 
@@ -150,6 +156,7 @@ export async function storeProduct(
       revisionNumber: nextRevision,
       lastSeenAt: now,
       lastUpdatedAt: now,
+      staleAt: null, // a material change means the product is back / current
     })
     .where(eq(products.id, row.id));
 
