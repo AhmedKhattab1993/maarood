@@ -207,6 +207,47 @@ export const productErrors = pgTable(
   }),
 );
 
+/** Anonymous saved-product list, keyed by a client-generated device UUID. */
+export const savedProducts = pgTable(
+  'saved_products',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    deviceId: uuid('device_id').notNull(),
+    productId: uuid('product_id')
+      .notNull()
+      .references(() => products.id, { onDelete: 'cascade' }),
+    savedAt: timestamp('saved_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    deviceProductUnique: uniqueIndex('saved_products_device_product_idx').on(t.deviceId, t.productId),
+    deviceIdx: index('saved_products_device_idx').on(t.deviceId),
+  }),
+);
+
+/** Outbound-click log — Maaroud's primary success metric (qualified clicks to merchants). */
+export const outboundClicks = pgTable(
+  'outbound_clicks',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    productId: uuid('product_id')
+      .notNull()
+      .references(() => products.id),
+    merchantId: uuid('merchant_id')
+      .notNull()
+      .references(() => merchants.id),
+    /** Optional anonymous device id for attribution. */
+    deviceId: uuid('device_id'),
+    destinationUrl: text('destination_url').notNull(),
+    referer: text('referer'),
+    clickedAt: timestamp('clicked_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    productIdx: index('outbound_clicks_product_idx').on(t.productId),
+    merchantIdx: index('outbound_clicks_merchant_idx').on(t.merchantId),
+    clickedIdx: index('outbound_clicks_clicked_idx').on(t.clickedAt),
+  }),
+);
+
 export type ProductRow = typeof products.$inferSelect;
 export type MerchantRow = typeof merchants.$inferSelect;
 export type NewProductRow = typeof products.$inferInsert;
@@ -219,3 +260,7 @@ export type RawSnapshotRow = typeof rawSnapshots.$inferSelect;
 export type NewRawSnapshotRow = typeof rawSnapshots.$inferInsert;
 export type ProductErrorRow = typeof productErrors.$inferSelect;
 export type NewProductErrorRow = typeof productErrors.$inferInsert;
+export type SavedProductRow = typeof savedProducts.$inferSelect;
+export type NewSavedProductRow = typeof savedProducts.$inferInsert;
+export type OutboundClickRow = typeof outboundClicks.$inferSelect;
+export type NewOutboundClickRow = typeof outboundClicks.$inferInsert;
