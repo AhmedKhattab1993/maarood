@@ -1,8 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useRouter, usePathname, toHref } from "@/i18n/navigation";
-import { useSearchParams } from "next/navigation";
+import { useQueryParams } from "@/lib/use-query-params";
 import { Suspense, useCallback, type ChangeEvent } from "react";
 import type { BrandSummary, CategorySummary } from "@/lib/api/types";
 
@@ -38,20 +37,16 @@ function FilterBarInner({
   current: Record<string, string | undefined>;
 }) {
   const t = useTranslations("Filters");
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const { searchParams, pushParams } = useQueryParams();
 
   const update = useCallback(
     (key: string, value: string) => {
       const params = new URLSearchParams(searchParams.toString());
       if (value) params.set(key, value);
       else params.delete(key);
-      // Reset to first page whenever filters change.
-      params.delete("page");
-      router.push(toHref(pathname, params));
+      pushParams(params, true);
     },
-    [pathname, router, searchParams],
+    [pushParams, searchParams],
   );
 
   const clearAll = () => {
@@ -60,7 +55,7 @@ function FilterBarInner({
     const q = params.get("q");
     const kept = new URLSearchParams();
     if (q) kept.set("q", q);
-    router.push(toHref(pathname, kept));
+    pushParams(kept);
   };
 
   const hasActiveFilters =

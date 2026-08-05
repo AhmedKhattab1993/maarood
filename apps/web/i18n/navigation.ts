@@ -25,21 +25,3 @@ export const { Link, redirect, usePathname, useRouter, getPathname } =
     locales: [...locales],
     pathnames,
   });
-
-/**
- * Build a navigation target for `router.push` from the current pathname plus a
- * URLSearchParams. The typed next-intl router doesn't accept a raw query-string,
- * so we pass `{ pathname, query }` with the params as a plain record. `pathname`
- * is cast because the typed union from usePathname() can't be expressed here
- * without generics; the value is always a real declared pathname at runtime.
- */
-export function toHref(
-  pathname: string,
-  params: URLSearchParams,
-): { pathname: never; query: Record<string, string> } {
-  const query: Record<string, string> = {};
-  params.forEach((value, key) => {
-    query[key] = value;
-  });
-  return { pathname: pathname as never, query };
-}

@@ -1,8 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useRouter, usePathname, toHref } from "@/i18n/navigation";
-import { useSearchParams } from "next/navigation";
+import { useQueryParams } from "@/lib/use-query-params";
 import { Suspense, useCallback, type ChangeEvent } from "react";
 import type { ProductSort } from "@/lib/api/types";
 
@@ -18,18 +17,15 @@ export function SortSelect({ current = "newest" }: { current?: ProductSort }) {
 
 function SortSelectInner({ current }: { current: ProductSort }) {
   const t = useTranslations("Sort");
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const { searchParams, pushParams } = useQueryParams();
 
   const onChange = useCallback(
     (e: ChangeEvent<HTMLSelectElement>) => {
       const params = new URLSearchParams(searchParams.toString());
       params.set("sort", e.target.value);
-      params.delete("page");
-      router.push(toHref(pathname, params));
+      pushParams(params, true);
     },
-    [pathname, router, searchParams],
+    [pushParams, searchParams],
   );
 
   return (

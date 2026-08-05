@@ -1,8 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useRouter, usePathname, toHref } from "@/i18n/navigation";
-import { useSearchParams } from "next/navigation";
+import { useQueryParams } from "@/lib/use-query-params";
 import { Suspense, useCallback, useMemo } from "react";
 
 /** Simple page-based pagination. Backend limit maxes at 60 (products.dto.ts). */
@@ -33,17 +32,15 @@ function PaginationInner({
   pageCount: number;
 }) {
   const t = useTranslations("State");
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const { searchParams, pushParams } = useQueryParams();
 
   const goto = useCallback(
     (target: number) => {
       const params = new URLSearchParams(searchParams.toString());
       params.set("page", String(target));
-      router.push(toHref(pathname, params));
+      pushParams(params);
     },
-    [pathname, router, searchParams],
+    [pushParams, searchParams],
   );
 
   const pages = useMemo(() => window(page, pageCount), [page, pageCount]);
