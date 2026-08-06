@@ -29,13 +29,13 @@ function SortSelectInner({ current }: { current: ProductSort }) {
   );
 
   return (
-    <label className="flex items-center gap-2 text-sm text-cool-grey">
-      <span className="hidden sm:inline">{t("label")}</span>
+    <label className="flex items-center gap-1 text-sm font-medium text-ink-black">
+      <span>{t("label")}</span>
       <select
         value={current}
         onChange={onChange}
         aria-label={t("label")}
-        className="rounded-default border border-stone-grey bg-white px-2 py-1.5 text-sm text-ink-black outline-none focus:border-maaroud-blue"
+        className="cursor-pointer appearance-none bg-transparent pr-4 text-sm font-medium text-ink-black outline-none"
       >
         {SORTS.map((s) => (
           <option key={s} value={s}>
@@ -43,6 +43,9 @@ function SortSelectInner({ current }: { current: ProductSort }) {
           </option>
         ))}
       </select>
+      <span aria-hidden className="-ms-4 pointer-events-none text-ink-black">
+        ▾
+      </span>
     </label>
   );
 }

@@ -9,7 +9,13 @@
     "shopByCategory": "Shop by category"
   },
   "Category": {
-    "brandsIn": "Brands in {category}"
+    "brandsIn": "Brands in {category}",
+    "apparel": "Apparel",
+    "footwear": "Shoes",
+    "accessories": "Accessories",
+    "bags": "Bags",
+    "jewelry": "Jewelry",
+    "other": "Other"
   },
   "Nav": {
     "home": "Home",
@@ -76,6 +82,9 @@
   "Home": {
     "heroTitle": "Discover Egyptian brands",
     "heroSubtitle": "Products from many Egyptian brands, in one place.",
+    "heroCta": "Shop new arrivals",
+    "shopByCategory": "Shop by category",
+    "shopByBrand": "Shop by brand",
     "newArrivals": "New arrivals",
     "browseBrands": "Browse brands",
     "browseCategories": "Categories",
@@ -90,7 +99,17 @@
   },
   "Footer": {
     "about": "Maaroud is a product discovery platform. Checkout always happens directly with the brand.",
-    "rights": "© {year} Maaroud"
+    "rights": "© {year} Maaroud",
+    "redirectNote": "Checkout always happens directly with the brand.",
+    "discover": "Discover",
+    "shop": "Shop",
+    "help": "Help",
+    "company": "Maaroud",
+    "shipping": "Shipping",
+    "returns": "Returns",
+    "contact": "Contact",
+    "privacy": "Privacy",
+    "terms": "Terms"
   },
   "Meta": {
     "homeTitle": "Maaroud — Discover Egyptian brands",

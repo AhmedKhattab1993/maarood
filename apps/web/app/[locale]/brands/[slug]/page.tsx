@@ -67,19 +67,16 @@ export default async function BrandPage({
 
     body = (
       <>
-        <header className="mb-6 flex flex-col gap-2 border-b border-stone-grey pb-6">
-          <h1 className="text-2xl font-semibold text-ink-black md:text-3xl">
-            {brand.name}
-          </h1>
+        <div className="mb-4 flex items-center gap-2 text-sm text-cool-grey">
           <a
             href={`https://${brand.domain}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm text-maaroud-blue hover:underline"
+            className="text-maaroud-blue hover:underline"
           >
             {brand.domain} ↗
           </a>
-        </header>
+        </div>
         <FacetNav
           title={t("Brand.shopByCategory")}
           paramKey="category"
@@ -96,6 +93,7 @@ export default async function BrandPage({
           result={products}
           current={current}
           sort={toSort(sp.sort) ?? "newest"}
+          title={brand.name}
           emptyTitle={t("Search.noResults")}
           emptyHint={t("Search.noResultsHint")}
         />

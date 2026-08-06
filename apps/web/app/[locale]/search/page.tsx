@@ -80,6 +80,7 @@ export default async function SearchPage({
           categories={categoryList}
           current={current}
           sort={toSort(current.sort)}
+          title={t("resultsFor", { query: q })}
           emptyTitle={t("noResults")}
           emptyHint={t("noResultsHint")}
         />
@@ -91,11 +92,6 @@ export default async function SearchPage({
 
   return (
     <div className="mx-auto max-w-[var(--container-max)] px-4 py-6 md:py-10">
-      {q && (
-        <h1 className="mb-6 text-xl font-semibold text-ink-black md:text-2xl">
-          {t("resultsFor", { query: q })}
-        </h1>
-      )}
       {body}
     </div>
   );

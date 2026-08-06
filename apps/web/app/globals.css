@@ -32,6 +32,7 @@
 
   /* Container widths */
   --container-max: 1280px;
+  --container-wide: 1600px;
   --container-prose: 720px;
 
   /* Type scale — restrained modular (ratio ~1.2) */

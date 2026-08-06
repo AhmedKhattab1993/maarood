@@ -5,32 +5,42 @@ import { useQueryParams } from "@/lib/use-query-params";
 import {
   Suspense,
   useCallback,
-  useState,
   type ChangeEvent,
   type ReactNode,
 } from "react";
 import type { BrandSummary, CategorySummary } from "@/lib/api/types";
+import { categoryName } from "@/lib/categories";
 
 /**
- * Nike-style filter rail. Vertical list of collapsible facets on desktop (a
- * sticky sidebar); on mobile the same facets live inside a slide-over drawer
- * opened by a "Filters" button. Builds query params by merging the current
- * search params with the changed filter, then navigates. Each control is a real
- * form input so the page degrades without JS (the listing pages also read the
- * same params server-side).
+ * Nike-style filter controls. Owns the query-param mutation logic and renders:
+ *  - a borderless "Show Filters"/"Hide Filters" toggle (placed in the wall-header)
+ *  - the facet list (placed in the rail/drawer by the caller)
+ *
+ * The caller (product-listing) owns the `open` state so it can place the toggle
+ * and the rail in different layout regions.
  */
 export function FilterBar({
   brands,
   categories,
   current,
+  open,
+  onToggle,
 }: {
   brands: BrandSummary[];
   categories: CategorySummary[];
   current: Record<string, string | undefined>;
+  open: boolean;
+  onToggle: () => void;
 }) {
   return (
     <Suspense fallback={null}>
-      <FilterBarInner brands={brands} categories={categories} current={current} />
+      <FilterBarInner
+        brands={brands}
+        categories={categories}
+        current={current}
+        open={open}
+        onToggle={onToggle}
+      />
     </Suspense>
   );
 }
@@ -39,14 +49,18 @@ function FilterBarInner({
   brands,
   categories,
   current,
+  open,
+  onToggle,
 }: {
   brands: BrandSummary[];
   categories: CategorySummary[];
   current: Record<string, string | undefined>;
+  open: boolean;
+  onToggle: () => void;
 }) {
   const t = useTranslations("Filters");
+  const tCat = useTranslations("Category");
   const { searchParams, pushParams } = useQueryParams();
-  const [open, setOpen] = useState(false);
 
   const update = useCallback(
     (key: string, value: string) => {
@@ -60,66 +74,38 @@ function FilterBarInner({
 
   const clearAll = () => {
     const params = new URLSearchParams(searchParams.toString());
-    // Keep the search query (q) if present; drop everything else.
     const q = params.get("q");
     const kept = new URLSearchParams();
     if (q) kept.set("q", q);
     pushParams(kept);
   };
 
-  const hasActiveFilters =
-    !!current.brand ||
-    !!current.category ||
-    !!current.minPrice ||
-    !!current.maxPrice ||
-    !!current.color ||
-    !!current.size ||
-    !!current.availability;
-
-  const facets = (
-    <FacetList
-      brands={brands}
-      categories={categories}
-      current={current}
-      update={update}
-    />
-  );
-
-  const header = (
-    <div className="flex items-center justify-between">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-black">
-        {t("title")}
-      </h2>
-      {hasActiveFilters && (
-        <button
-          type="button"
-          onClick={clearAll}
-          className="text-xs text-maaroud-blue hover:underline"
-        >
-          {t("clear")}
-        </button>
-      )}
-    </div>
-  );
+  const activeCount =
+    (current.brand ? 1 : 0) +
+    (current.category ? 1 : 0) +
+    (current.minPrice ? 1 : 0) +
+    (current.maxPrice ? 1 : 0) +
+    (current.color ? 1 : 0) +
+    (current.size ? 1 : 0) +
+    (current.availability ? 1 : 0);
 
   return (
     <>
-      {/* Mobile trigger */}
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="inline-flex w-full items-center justify-center gap-2 border border-stone-grey px-4 py-2 text-sm font-medium text-ink-black md:hidden"
-      >
-        {t("showFilters")}
-      </button>
-
       {/* Desktop rail */}
-      <aside className="hidden w-60 shrink-0 md:block">
-        <div className="sticky top-20 flex flex-col gap-5">
-          {header}
-          {facets}
-        </div>
-      </aside>
+      {open && (
+        <aside className="hidden w-60 shrink-0 md:block">
+          <div className="sticky top-20 flex flex-col gap-5">
+            <FilterHeader onClear={clearAll} showClear={activeCount > 0} />
+            <FacetList
+              brands={brands}
+              categories={categories}
+              current={current}
+              update={update}
+              tCat={tCat}
+            />
+          </div>
+        </aside>
+      )}
 
       {/* Mobile drawer */}
       {open && (
@@ -127,25 +113,33 @@ function FilterBarInner({
           <button
             type="button"
             aria-label={t("hideFilters")}
-            onClick={() => setOpen(false)}
+            onClick={onToggle}
             className="absolute inset-0 bg-ink-black/40"
           />
           <div className="absolute inset-y-0 start-0 flex w-[85%] max-w-sm flex-col gap-5 bg-white p-4 shadow-xl">
             <div className="flex items-center justify-between">
-              {header}
+              <FilterHeader onClear={clearAll} showClear={activeCount > 0} />
               <button
                 type="button"
                 aria-label={t("hideFilters")}
-                onClick={() => setOpen(false)}
+                onClick={onToggle}
                 className="text-cool-grey hover:text-ink-black"
               >
                 ✕
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto">{facets}</div>
+            <div className="flex-1 overflow-y-auto">
+              <FacetList
+                brands={brands}
+                categories={categories}
+                current={current}
+                update={update}
+                tCat={tCat}
+              />
+            </div>
             <button
               type="button"
-              onClick={() => setOpen(false)}
+              onClick={onToggle}
               className="border border-ink-black bg-ink-black px-4 py-2.5 text-sm font-medium text-white"
             >
               {t("apply")}
@@ -157,16 +151,44 @@ function FilterBarInner({
   );
 }
 
+function FilterHeader({
+  onClear,
+  showClear,
+}: {
+  onClear: () => void;
+  showClear: boolean;
+}) {
+  const t = useTranslations("Filters");
+  return (
+    <div className="flex items-center justify-between">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-black">
+        {t("title")}
+      </h2>
+      {showClear && (
+        <button
+          type="button"
+          onClick={onClear}
+          className="text-xs text-maaroud-blue hover:underline"
+        >
+          {t("clear")}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function FacetList({
   brands,
   categories,
   current,
   update,
+  tCat,
 }: {
   brands: BrandSummary[];
   categories: CategorySummary[];
   current: Record<string, string | undefined>;
   update: (key: string, value: string) => void;
+  tCat: (key: string) => string;
 }) {
   const t = useTranslations("Filters");
   return (
@@ -190,7 +212,10 @@ function FacetList({
             onChange={(e) => update("category", e.target.value)}
             options={[
               { value: "", label: "—" },
-              ...categories.map((c) => ({ value: c.name, label: c.name })),
+              ...categories.map((c) => ({
+                value: c.name,
+                label: categoryName(c.name, tCat),
+              })),
             ]}
           />
         </Facet>

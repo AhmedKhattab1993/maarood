@@ -9,7 +9,13 @@
     "shopByCategory": "تسوّق حسب التصنيف"
   },
   "Category": {
-    "brandsIn": "براندات في {category}"
+    "brandsIn": "براندات في {category}",
+    "apparel": "ملابس",
+    "footwear": "أحذية",
+    "accessories": "إكسسوارات",
+    "bags": "حقائب",
+    "jewelry": "مجوهرات",
+    "other": "أخرى"
   },
   "Nav": {
     "home": "الرئيسية",
@@ -76,6 +82,9 @@
   "Home": {
     "heroTitle": "اكتشف البراندات المصرية",
     "heroSubtitle": "منتجات من براندات مصرية كتير في مكان واحد.",
+    "heroCta": "تسوّق وصل حديثًا",
+    "shopByCategory": "تسوّق حسب التصنيف",
+    "shopByBrand": "تسوّق حسب البراند",
     "newArrivals": "وصل حديثًا",
     "browseBrands": "تصفّح البراندات",
     "browseCategories": "التصنيفات",
@@ -90,7 +99,17 @@
   },
   "Footer": {
     "about": "معروض منصّة لاكتشاف المنتجات. الشراء يتم دايمًا من البراند مباشرة.",
-    "rights": "© {year} معروض"
+    "rights": "© {year} معروض",
+    "redirectNote": "الشراء يتم دايمًا مباشرة من البراند.",
+    "discover": "اكتشف",
+    "shop": "تسوّق",
+    "help": "مساعدة",
+    "company": "معروض",
+    "shipping": "الشحن",
+    "returns": "الإرجاع",
+    "contact": "تواصل معنا",
+    "privacy": "الخصوصية",
+    "terms": "الشروط"
   },
   "Meta": {
     "homeTitle": "معروض — اكتشف البراندات المصرية",

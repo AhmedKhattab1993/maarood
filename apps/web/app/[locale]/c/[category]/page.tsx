@@ -8,6 +8,7 @@ import { Breadcrumbs } from "@/components/breadcrumbs";
 import { toNumber, toSort } from "@/lib/query";
 import { notFound } from "next/navigation";
 import { isLocale } from "@/i18n/config";
+import { categoryName } from "@/lib/categories";
 
 export async function generateMetadata({
   params,
@@ -31,6 +32,7 @@ export default async function CategoryPage({
   setRequestLocale(locale);
   const sp = await searchParams;
   const t = await getTranslations({ locale });
+  const tCat = await getTranslations({ locale, namespace: "Category" });
 
   const categoryValue = decodeCategory(category);
   const current = {
@@ -67,7 +69,7 @@ export default async function CategoryPage({
     body = (
       <>
         <FacetNav
-          title={t("Category.brandsIn", { category: categoryValue })}
+          title={t("Category.brandsIn", { category: categoryName(categoryValue, tCat) })}
           paramKey="brand"
           activeValue={current.brand || undefined}
           basePath={`/c/${categoryValue}`}
@@ -84,6 +86,7 @@ export default async function CategoryPage({
           categories={categoryList}
           current={current}
           sort={toSort(sp.sort) ?? "newest"}
+          title={categoryName(categoryValue, tCat)}
           emptyTitle={t("Search.noResults")}
           emptyHint={t("Search.noResultsHint")}
         />
@@ -98,13 +101,10 @@ export default async function CategoryPage({
       <Breadcrumbs
         items={[
           { label: t("Nav.home"), href: { pathname: "/" } },
-          { label: categoryValue },
+          { label: categoryName(categoryValue, tCat) },
         ]}
       />
-      <h1 className="mb-6 mt-2 text-2xl font-semibold capitalize text-ink-black md:text-3xl">
-        {categoryValue}
-      </h1>
-      {body}
+      <div className="mt-4">{body}</div>
     </div>
   );
 }
