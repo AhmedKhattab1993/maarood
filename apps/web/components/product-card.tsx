@@ -13,9 +13,9 @@ interface ProductCardProps {
 }
 
 /**
- * Uniform product card — Nike-style discovery look: square corners, image on a
- * neutral tile, tight meta, brand subtitle above the title. Consistent aspect
- * ratio and metadata placement per 04:78.
+ * Uniform product card — Nike-style discovery look: square 1:1 image on a
+ * transparent (page-color) tile, square corners, tight meta. Title is regular
+ * weight at 16px; brand subtitle in Nike's neutral grey (#707072).
  */
 export function ProductCard({ product, brands, priority }: ProductCardProps) {
   const t = useTranslations("Product");
@@ -31,7 +31,7 @@ export function ProductCard({ product, brands, priority }: ProductCardProps) {
       href={{ pathname: "/p/[id]", params: { id: product.id } }}
       className="group flex flex-col"
     >
-      <div className="relative aspect-[3/4] w-full overflow-hidden bg-stone-grey">
+      <div className="relative aspect-square w-full overflow-hidden">
         {cover ? (
           <NextImage
             src={cover}
@@ -57,19 +57,19 @@ export function ProductCard({ product, brands, priority }: ProductCardProps) {
 
       <div className="mt-2 flex flex-col gap-0.5">
         {brand && (
-          <span className="text-[0.6875rem] uppercase tracking-wide text-cool-grey">
+          <span className="text-[0.6875rem] uppercase tracking-wide text-nike-grey">
             {brand.name}
           </span>
         )}
-        <h3 className="line-clamp-1 text-sm font-medium text-ink-black">
+        <h3 className="line-clamp-1 text-base font-normal text-ink-black">
           {product.title}
         </h3>
         <div className="flex items-baseline gap-2">
-          <span className="text-sm font-semibold text-ink-black">
+          <span className="text-base font-normal text-ink-black">
             {formatPrice(product.currentPrice, product.currency, locale)}
           </span>
           {discounted && (
-            <span className="text-xs text-cool-grey line-through">
+            <span className="text-sm text-cool-grey line-through">
               {formatPrice(product.previousPrice as number, product.currency, locale)}
             </span>
           )}

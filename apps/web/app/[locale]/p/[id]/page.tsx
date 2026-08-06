@@ -193,7 +193,7 @@ function Gallery({
       <img
         src={imageUrls[0]}
         alt={title}
-        className="aspect-[4/5] w-full bg-stone-grey object-cover"
+        className="aspect-[4/5] w-full object-cover"
       />
       {imageUrls.length > 1 && (
         <ul className="grid grid-cols-4 gap-2">
