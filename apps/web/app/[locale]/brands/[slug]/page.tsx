@@ -84,8 +84,8 @@ export default async function BrandPage({
           title={t("Brand.shopByCategory")}
           paramKey="category"
           activeValue={current.category || undefined}
-          basePath="/brands/[slug]"
-          baseQuery={{ slug, ...withoutCategory(sp) }}
+          basePath={`/brands/${slug}`}
+          baseQuery={withoutCategory(sp)}
           items={brandCategories.map((c) => ({
             label: c.name,
             count: c.productCount,

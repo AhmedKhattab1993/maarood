@@ -1,5 +1,8 @@
 import { Link } from "@/i18n/navigation";
 
+/** The href shape accepted by the locale-aware Link. */
+type Href = Parameters<typeof Link>[0]["href"];
+
 /**
  * Horizontal chip nav for the bidirectional brand↔category relationship.
  * Used on the brand page (to jump between that brand's categories) and on the
@@ -14,14 +17,12 @@ export interface FacetNavItem {
   value: string;
 }
 
-/** The href shape accepted by the locale-aware Link. */
-type Href = Parameters<typeof Link>[0]["href"];
-
 export function FacetNav({
   title,
   items,
   paramKey,
   activeValue,
+  /** Concrete pathname with the dynamic segment already filled, e.g. "/brands/nastrends". */
   basePath,
   /** Current query params to preserve (already excludes `paramKey`). */
   baseQuery,
@@ -30,7 +31,6 @@ export function FacetNav({
   items: FacetNavItem[];
   paramKey: "category" | "brand";
   activeValue?: string;
-  /** Route template next-intl can interpolate [param] from (e.g. "/brands/[slug]"). */
   basePath: string;
   baseQuery?: Record<string, string | undefined>;
 }) {
@@ -48,10 +48,18 @@ export function FacetNav({
           const query: Record<string, string | undefined> = { ...baseQuery };
           if (active) delete query[paramKey];
           else query[paramKey] = item.value;
+          // Build a concrete href string (basePath already has its segment
+          // filled). A string href avoids next-intl template interpolation,
+          // which can't be satisfied with a dynamic pathname at runtime.
+          const qs = new URLSearchParams();
+          for (const [k, v] of Object.entries(query)) {
+            if (v !== undefined && v !== "") qs.set(k, v);
+          }
+          const href = qs.toString() ? `${basePath}?${qs}` : basePath;
           return (
             <li key={item.value}>
               <Link
-                href={{ pathname: basePath, query } as Href}
+                href={href as Href}
                 aria-current={active ? "page" : undefined}
                 className={`inline-flex items-center gap-1.5 border px-3 py-1.5 text-sm transition-colors ${
                   active

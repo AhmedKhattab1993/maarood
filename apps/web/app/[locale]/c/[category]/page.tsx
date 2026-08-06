@@ -70,8 +70,8 @@ export default async function CategoryPage({
           title={t("Category.brandsIn", { category: categoryValue })}
           paramKey="brand"
           activeValue={current.brand || undefined}
-          basePath="/c/[category]"
-          baseQuery={{ category: categoryValue, ...withoutBrand(sp) }}
+          basePath={`/c/${categoryValue}`}
+          baseQuery={withoutBrand(sp)}
           items={brandList.map((b) => ({
             label: b.name,
             count: b.productCount,

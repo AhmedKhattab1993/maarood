@@ -1,22 +1,33 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import { usePathname, useRouter } from "@/i18n/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { type Locale } from "@/i18n/config";
 
-/** Toggle between Arabic and English, preserving the current path. */
+/**
+ * Toggle between Arabic and English, preserving the current path + query.
+ *
+ * Uses Next.js's router/pathname (not next-intl's) because next-intl's
+ * `usePathname` returns the route template (`/c/[category]`) which can't be
+ * pushed back, and its router re-applies the current locale prefix on replace.
+ * We read the concrete path, swap the locale segment, and navigate plainly.
+ */
 export function LanguageSwitcher() {
   const locale = useLocale() as Locale;
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const t = useTranslations("Nav");
 
   const next: Locale = locale === "ar" ? "en" : "ar";
 
   function switchTo() {
-    // pathname is always a valid declared route at runtime; cast satisfies the
-    // typed router which can't infer this from the usePathname() union.
-    router.replace(pathname as never, { locale: next });
+    // pathname is concrete, e.g. "/ar/c/apparel". Swap the locale segment.
+    const stripped = pathname.replace(/^\/(ar|en)(?=\/|$)/, "");
+    const rest = stripped === "" ? "/" : stripped;
+    const target = `/${next}${rest === "/" ? "" : rest}`;
+    const qs = searchParams.toString();
+    router.replace(qs ? `${target}?${qs}` : target);
   }
 
   return (
