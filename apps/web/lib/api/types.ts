@@ -14,7 +14,15 @@ export interface Variant {
   size?: string;
   color?: string;
   sku?: string;
+  price?: number;
+  compareAtPrice?: number | null;
   availability: Availability;
+}
+
+/** Structured option group, e.g. { name: "Size", values: ["S","M","L"] }. */
+export interface ProductOption {
+  name: string;
+  values: string[];
 }
 
 /**
@@ -28,6 +36,7 @@ export interface PublicProduct {
   merchantProductId: string;
   title: string;
   description: string;
+  vendor: string;
   category: string;
   subcategory: string;
   currentPrice: number;
@@ -35,6 +44,7 @@ export interface PublicProduct {
   currency: CurrencyCode;
   availability: Availability;
   variants: Variant[];
+  options: ProductOption[];
   sizes: string[];
   colors: string[];
   imageUrls: string[];

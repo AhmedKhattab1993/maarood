@@ -3,7 +3,7 @@
  * API shape. Parses variants/sizes/colors/imageUrls back into real arrays/objects.
  */
 
-import type { Availability, CurrencyCode, Variant } from '@maarood/schema';
+import type { Availability, CurrencyCode, ProductOption, Variant } from '@maarood/schema';
 
 export interface PublicProduct {
   id: string;
@@ -12,6 +12,7 @@ export interface PublicProduct {
   merchantProductId: string;
   title: string;
   description: string;
+  vendor: string;
   category: string;
   subcategory: string;
   currentPrice: number;
@@ -19,6 +20,7 @@ export interface PublicProduct {
   currency: CurrencyCode;
   availability: Availability;
   variants: Variant[];
+  options: ProductOption[];
   sizes: string[];
   colors: string[];
   imageUrls: string[];
@@ -47,6 +49,7 @@ export function mapProduct(row: Record<string, unknown>): PublicProduct {
     merchantProductId: row.merchantProductId as string,
     title: row.title as string,
     description: row.description as string,
+    vendor: (row.vendor as string) ?? '',
     category: row.category as string,
     subcategory: row.subcategory as string,
     currentPrice: Number(row.currentPrice),
@@ -54,6 +57,7 @@ export function mapProduct(row: Record<string, unknown>): PublicProduct {
     currency: row.currency as CurrencyCode,
     availability: row.availability as Availability,
     variants: safeParseArray<Variant>(row.variants),
+    options: safeParseArray<ProductOption>(row.options),
     sizes: safeParseArray<string>(row.sizes),
     colors: safeParseArray<string>(row.colors),
     imageUrls: safeParseArray<string>(row.imageUrls),

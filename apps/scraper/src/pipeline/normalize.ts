@@ -41,28 +41,50 @@ export function normalizeShopifyProduct(
   const images = raw.images ?? [];
   const tags = parseTags(raw.tags);
 
-  // First available variant's price is the displayed price; fall back to min price.
-  const prices = variants.map((v) => Number(v.price)).filter((n) => !Number.isNaN(n));
-  const currentPrice = prices.length > 0 ? Math.min(...prices) : 0;
+  // Per-variant prices (Shopify strings → numbers). Used both for the product
+  // roll-up and preserved per variant so shoppers see the full price ladder.
+  const variantPrices = variants.map((v) => Number(v.price)).filter((n) => !Number.isNaN(n));
+  const currentPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : 0;
 
-  const comparePrices = variants
-    .map((v) => (v.compareAtPrice ? Number(v.compareAtPrice) : null))
+  const variantCompares = variants
+    .map((v) => (v.compare_at_price ? Number(v.compare_at_price) : null))
     .filter((n): n is number => n !== null && !Number.isNaN(n) && n > currentPrice);
-  const previousPrice = comparePrices.length > 0 ? Math.max(...comparePrices) : null;
+  const previousPrice = variantCompares.length > 0 ? Math.max(...variantCompares) : null;
+
+  // Structured options: prefer Shopify option1 (typically Size) and option2
+  // (typically Color) over guessing from the variant title. Fall back to title.
+  const sizeFromOption = (v: ShopifyVariant): string | undefined => {
+    const o1 = v.option1?.trim();
+    if (o1) return o1;
+    const t = v.title?.trim();
+    return t || undefined;
+  };
+  const colorFromOption = (v: ShopifyVariant): string | undefined => v.option2?.trim() || undefined;
 
   const sizes = Array.from(
-    new Set(variants.map((v) => v.title?.trim()).filter((s): s is string => Boolean(s))),
+    new Set(variants.map(sizeFromOption).filter((s): s is string => Boolean(s))),
   ).sort();
 
-  const colors = tags
+  // Colors: from structured option2 values AND legacy color_* tags (union).
+  const optionColors = variants.map(colorFromOption).filter((c): c is string => Boolean(c));
+  const tagColors = tags
     .filter((t) => t.toLowerCase().startsWith('color_'))
     .map((t) => t.slice('color_'.length).trim())
     .filter(Boolean);
+  const colors = Array.from(new Set([...optionColors, ...tagColors]));
+
+  // Structured option groups straight from Shopify (e.g. Size: S/M/L).
+  // Drop Shopify's placeholder option for single-variant products ("Title" /
+  // "Default Title"), which carries no useful information.
+  const options = (raw.options ?? [])
+    .filter((o) => o.values.length > 0 && !(o.values.length === 1 && o.values[0]?.toLowerCase() === 'default title'))
+    .filter((o) => o.name.toLowerCase() !== 'title')
+    .map((o) => ({ name: o.name.trim(), values: o.values.map((v) => v.trim()).filter(Boolean) }));
 
   // Derive category from the shared taxonomy. Shopify product_type is sparse,
   // so we match across title/type/tags/handle. Source product_type is preserved
   // as subcategory when it carries useful detail.
-  const sourceProductType = (raw.productType ?? '').trim();
+  const sourceProductType = (raw.product_type ?? '').trim();
   const { category, subcategory: taxoSub } = categorize({
     title: raw.title,
     productType: sourceProductType,
@@ -75,19 +97,29 @@ export function normalizeShopifyProduct(
     sourceUrl: `https://${domain}/products/${raw.handle}`,
     merchantProductId: String(raw.id),
     title: raw.title,
-    description: raw.bodyHtml?.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() ?? '',
+    description: raw.body_html?.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() ?? '',
+    vendor: (raw.vendor ?? '').trim(),
     category,
     subcategory: taxoSub || sourceProductType,
     currentPrice,
     previousPrice,
     currency: 'EGP', // Egyptian market focus; refined per-merchant if needed later.
     availability: toAvailability(variants),
-    variants: variants.map((v) => ({
-      label: v.title,
-      size: v.title?.trim() || undefined,
-      sku: v.sku ?? undefined,
-      availability: v.available ? 'in_stock' : ('out_of_stock' as Availability),
-    })),
+    variants: variants.map((v) => {
+      const price = Number(v.price);
+      const compare = v.compare_at_price ? Number(v.compare_at_price) : null;
+      return {
+        label: v.title,
+        size: sizeFromOption(v),
+        color: colorFromOption(v),
+        sku: v.sku ?? undefined,
+        price: Number.isNaN(price) ? undefined : price,
+        compareAtPrice:
+          compare !== null && !Number.isNaN(compare) && compare > price ? compare : null,
+        availability: v.available ? 'in_stock' : ('out_of_stock' as Availability),
+      };
+    }),
+    options,
     sizes,
     colors,
     imageUrls: images.map((i) => i.src),

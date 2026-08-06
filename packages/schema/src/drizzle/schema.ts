@@ -60,6 +60,8 @@ export const products = pgTable(
     merchantProductId: text('merchant_product_id').notNull(),
     title: text('title').notNull(),
     description: text('description').notNull().default(''),
+    /** Brand/manufacturer reported by the source (distinct from the merchant). */
+    vendor: text('vendor').notNull().default(''),
     category: text('category').notNull().default(''),
     subcategory: text('subcategory').notNull().default(''),
     /** Numeric precision preserved for EGP prices; 2 decimals is sufficient for retail. */
@@ -71,6 +73,8 @@ export const products = pgTable(
     availability: text('availability', { enum: availabilityEnum }).notNull().default('unknown'),
     /** JSON columns defer structure enforcement to the Zod schema on read/write. */
     variants: text('variants').notNull().default('[]'),
+    /** Structured option groups, e.g. [{name:'Size', values:['S','M','L']}]. */
+    options: text('options').notNull().default('[]'),
     sizes: text('sizes').notNull().default('[]'),
     colors: text('colors').notNull().default('[]'),
     imageUrls: text('image_urls').notNull().default('[]'),
@@ -111,6 +115,7 @@ export const productRevisions = pgTable(
     merchantProductId: text('merchant_product_id').notNull(),
     title: text('title').notNull(),
     description: text('description').notNull(),
+    vendor: text('vendor').notNull().default(''),
     category: text('category').notNull(),
     subcategory: text('subcategory').notNull(),
     currentPrice: numeric('current_price', { precision: 12, scale: 2 }).notNull(),
@@ -120,6 +125,7 @@ export const productRevisions = pgTable(
       .$type<CurrencyCode>(),
     availability: text('availability', { enum: availabilityEnum }).notNull(),
     variants: text('variants').notNull(),
+    options: text('options').notNull().default('[]'),
     sizes: text('sizes').notNull(),
     colors: text('colors').notNull(),
     imageUrls: text('image_urls').notNull(),

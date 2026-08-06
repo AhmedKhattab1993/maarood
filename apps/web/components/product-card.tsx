@@ -69,9 +69,14 @@ export function ProductCard({ product, brands, priority }: ProductCardProps) {
             {formatPrice(product.currentPrice, product.currency, locale)}
           </span>
           {discounted && (
-            <span className="text-sm text-cool-grey line-through">
-              {formatPrice(product.previousPrice as number, product.currency, locale)}
-            </span>
+            <>
+              <span className="text-sm text-cool-grey line-through">
+                {formatPrice(product.previousPrice as number, product.currency, locale)}
+              </span>
+              <span className="text-xs font-medium text-alert-red">
+                -{Math.round((1 - product.currentPrice / (product.previousPrice as number)) * 100)}%
+              </span>
+            </>
           )}
         </div>
       </div>

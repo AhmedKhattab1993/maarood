@@ -70,8 +70,14 @@
     "notFound": "المنتج غير موجود",
     "stale": "قد لا تكون هذه المعلومات محدّثة",
     "outOfStock": "غير متوفّر حاليًا",
+    "inStock": "متوفّر",
+    "unknown": "غير معروف",
     "lastUpdated": "آخر تحديث {date}",
-    "error": "تعذّر حفظ المنتج. حاول تاني."
+    "error": "تعذّر حفظ المنتج. حاول تاني.",
+    "onSale": "خصم {percent}%",
+    "priceLabel": "السعر",
+    "availabilityLabel": "التوفّر",
+    "sizeAndAvailability": "المقاسات والتوفّر"
   },
   "Saved": {
     "title": "المحفوظات",

@@ -70,8 +70,14 @@
     "notFound": "Product not found",
     "stale": "This information may be out of date",
     "outOfStock": "Currently out of stock",
+    "inStock": "In stock",
+    "unknown": "Unknown",
     "lastUpdated": "Last updated {date}",
-    "error": "Could not save the product. Try again."
+    "error": "Could not save the product. Try again.",
+    "onSale": "{percent}% off",
+    "priceLabel": "Price",
+    "availabilityLabel": "Availability",
+    "sizeAndAvailability": "Sizes & availability"
   },
   "Saved": {
     "title": "Saved",

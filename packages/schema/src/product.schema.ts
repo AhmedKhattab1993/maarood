@@ -25,16 +25,28 @@ export type CurrencyCode = z.infer<typeof currencyCode>;
 export const availabilitySchema = z.enum(['in_stock', 'out_of_stock', 'unknown']);
 export type Availability = z.infer<typeof availabilitySchema>;
 
-/** Per-variant record. Optional in the MVP; populated when the merchant exposes variants. */
+/** Per-variant record. Populated when the merchant exposes variants. */
 export const variantSchema = z.object({
   label: z.string().trim(),
   size: z.string().trim().optional(),
   color: z.string().trim().optional(),
   sku: z.string().trim().optional(),
+  /** This variant's current price, when the merchant prices per variant. */
+  price: z.number().nonnegative().optional(),
+  /** This variant's original (pre-discount) price, when discounted. */
+  compareAtPrice: z.number().nonnegative().nullable().optional(),
   availability: availabilitySchema.default('unknown'),
 });
 
 export type Variant = z.infer<typeof variantSchema>;
+
+/** Structured option group, e.g. { name: 'Size', values: ['S','M','L'] }. */
+export const productOptionSchema = z.object({
+  name: z.string().trim(),
+  values: z.array(z.string().trim()),
+});
+
+export type ProductOption = z.infer<typeof productOptionSchema>;
 
 /**
  * Normalized, canonical product record. This is the shape stored in the
@@ -46,6 +58,8 @@ export const productSchema = z.object({
   merchantProductId: z.string().trim(),
   title: z.string().trim().min(1),
   description: z.string().trim().default(''),
+  /** Brand/manufacturer reported by the source (distinct from the merchant/store). */
+  vendor: z.string().trim().default(''),
   category: z.string().trim().default(''),
   subcategory: z.string().trim().default(''),
   currentPrice: z.number().nonnegative(),
@@ -53,6 +67,8 @@ export const productSchema = z.object({
   currency: currencyCode,
   availability: availabilitySchema.default('unknown'),
   variants: z.array(variantSchema).default([]),
+  /** Structured option groups (e.g. Size: S/M/L, Color: Black/White). */
+  options: z.array(productOptionSchema).default([]),
   sizes: z.array(z.string().trim()).default([]),
   colors: z.array(z.string().trim()).default([]),
   imageUrls: z.array(z.string().url()).default([]),
@@ -97,6 +113,7 @@ export const MATERIAL_CHANGE_FIELDS = [
   'merchantProductId',
   'title',
   'description',
+  'vendor',
   'category',
   'subcategory',
   'currentPrice',
@@ -104,6 +121,7 @@ export const MATERIAL_CHANGE_FIELDS = [
   'currency',
   'availability',
   'variants',
+  'options',
   'sizes',
   'colors',
   'imageUrls',
