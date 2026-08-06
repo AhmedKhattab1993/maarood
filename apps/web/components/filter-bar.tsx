@@ -93,8 +93,8 @@ function FilterBarInner({
     <>
       {/* Desktop rail */}
       {open && (
-        <aside className="hidden w-60 shrink-0 md:block">
-          <div className="sticky top-20 flex flex-col gap-5">
+        <aside className="hidden w-48 shrink-0 md:block">
+          <div className="sticky top-20 flex flex-col gap-4">
             <FilterHeader onClear={clearAll} showClear={activeCount > 0} />
             <FacetList
               brands={brands}
@@ -160,10 +160,8 @@ function FilterHeader({
 }) {
   const t = useTranslations("Filters");
   return (
-    <div className="flex items-center justify-between">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-black">
-        {t("title")}
-      </h2>
+    <div className="flex items-center justify-between border-b border-stone-grey pb-3">
+      <h2 className="text-base font-medium text-ink-black">{t("title")}</h2>
       {showClear && (
         <button
           type="button"
@@ -266,14 +264,14 @@ function FacetList({
 /** A collapsible facet section. Native <details> keeps it JS-free and RTL-safe. */
 function Facet({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <details open className="group py-3">
-      <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-medium text-ink-black">
+    <details open className="group border-b border-stone-grey py-3">
+      <summary className="flex cursor-pointer list-none items-center justify-between py-1 text-sm font-medium text-ink-black">
         {label}
-        <span className="text-cool-grey transition-transform group-open:rotate-45">
-          +
+        <span className="text-cool-grey transition-transform group-open:rotate-180">
+          ▾
         </span>
       </summary>
-      <div className="mt-3">{children}</div>
+      <div className="mt-3 flex flex-col gap-2">{children}</div>
     </details>
   );
 }

@@ -3,18 +3,28 @@ import type { BrandSummary, PublicProduct } from "@/lib/api/types";
 
 /**
  * Responsive product grid — Nike-style discovery: dense, square-cornered tiles.
- * 2 cols mobile, 3–4 desktop. `priority` is set on the first few cards to
- * prioritize LCP image loading.
+ * Column count depends on viewport AND whether the filter rail is open (Nike
+ * shows more columns when filters are hidden, fewer when the rail takes width).
+ * `priority` is set on the first few cards to prioritize LCP image loading.
+ *
+ * dense = rail closed → more columns; rail open → fewer columns.
  */
 export function ProductGrid({
   products,
   brands,
+  dense = false,
 }: {
   products: PublicProduct[];
   brands?: BrandSummary[];
+  /** When true (filter rail closed), show extra columns. */
+  dense?: boolean;
 }) {
+  // Rail open (not dense): 2 / 3 / 3 cols. Rail closed (dense): 2 / 3 / 4 cols.
+  const cols = dense
+    ? "grid-cols-2 gap-x-2 gap-y-6 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+    : "grid-cols-2 gap-x-2 gap-y-6 md:grid-cols-3";
   return (
-    <ul className="grid grid-cols-2 gap-x-2 gap-y-6 md:grid-cols-3 lg:grid-cols-4">
+    <ul className={`grid ${cols}`}>
       {products.map((product, i) => (
         <li key={product.id}>
           <ProductCard

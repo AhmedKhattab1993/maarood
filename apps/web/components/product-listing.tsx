@@ -99,7 +99,7 @@ export function ProductListing({
           onToggle={() => setFiltersOpen((o) => !o)}
         />
         <div className="flex min-w-0 flex-1 flex-col gap-5">
-          <ProductGrid products={result.items} brands={brands} />
+          <ProductGrid products={result.items} brands={brands} dense={!filtersOpen} />
           <Pagination
             page={result.page}
             limit={result.limit}
