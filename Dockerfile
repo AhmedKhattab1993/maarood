@@ -32,6 +32,10 @@ RUN npm prune --omit=dev
 
 # ---- runtime (single stage; TARGET picks the entrypoint) ----
 FROM node:20-bookworm-slim AS runtime
+# curl is required by the Shopify connector: many stores sit behind Cloudflare,
+# which fingerprints Node's TLS stack and serves a sanitized feed (discounts
+# stripped). curl's TLS fingerprint receives the true product payload.
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates && rm -rf /var/lib/apt/lists/*
 # TARGET is a RUNTIME env var set by deploy.sh (default: backend).
 ENV NODE_ENV=production
 ENV TARGET=backend
