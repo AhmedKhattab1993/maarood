@@ -8,10 +8,10 @@
  * tags with a 'color_' prefix → colors.
  */
 
-import type { ShopifyProduct, ShopifyVariant } from '../connectors/shopify/shopify-source.schema';
-import { categorize } from '@maarood/schema';
-import { productSchema, type Product, type Availability } from '@maarood/schema';
-import { materialChecksum } from './checksum';
+import type { ShopifyProduct, ShopifyVariant } from './shopify-source.schema';
+import { categorize, productSchema, type Availability } from '@maarood/schema';
+import { materialChecksum } from '../../pipeline/checksum';
+import type { NormalizedProduct } from '../types';
 
 function toAvailability(variants: ShopifyVariant[]): Availability {
   if (variants.length === 0) return 'unknown';
@@ -28,18 +28,15 @@ function parseTags(tags: ShopifyProduct['tags']): string[] {
     .filter(Boolean);
 }
 
-export interface NormalizedProduct extends Product {
-  sourceChecksum: string;
-}
-
 export function normalizeShopifyProduct(
-  raw: ShopifyProduct,
+  raw: unknown,
   merchantId: string,
   domain: string,
 ): NormalizedProduct {
-  const variants = raw.variants ?? [];
-  const images = raw.images ?? [];
-  const tags = parseTags(raw.tags);
+  const r = raw as ShopifyProduct;
+  const variants = r.variants ?? [];
+  const images = r.images ?? [];
+  const tags = parseTags(r.tags);
 
   // Per-variant prices (Shopify strings → numbers). Used both for the product
   // roll-up and preserved per variant so shoppers see the full price ladder.
@@ -76,7 +73,7 @@ export function normalizeShopifyProduct(
   // Structured option groups straight from Shopify (e.g. Size: S/M/L).
   // Drop Shopify's placeholder option for single-variant products ("Title" /
   // "Default Title"), which carries no useful information.
-  const options = (raw.options ?? [])
+  const options = (r.options ?? [])
     .filter((o) => o.values.length > 0 && !(o.values.length === 1 && o.values[0]?.toLowerCase() === 'default title'))
     .filter((o) => o.name.toLowerCase() !== 'title')
     .map((o) => ({ name: o.name.trim(), values: o.values.map((v) => v.trim()).filter(Boolean) }));
@@ -84,21 +81,21 @@ export function normalizeShopifyProduct(
   // Derive category from the shared taxonomy. Shopify product_type is sparse,
   // so we match across title/type/tags/handle. Source product_type is preserved
   // as subcategory when it carries useful detail.
-  const sourceProductType = (raw.product_type ?? '').trim();
+  const sourceProductType = (r.product_type ?? '').trim();
   const { category, subcategory: taxoSub } = categorize({
-    title: raw.title,
+    title: r.title,
     productType: sourceProductType,
     tags,
-    handle: raw.handle,
+    handle: r.handle,
   });
 
   const canonical = {
     merchantId,
-    sourceUrl: `https://${domain}/products/${raw.handle}`,
-    merchantProductId: String(raw.id),
-    title: raw.title,
-    description: raw.body_html?.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() ?? '',
-    vendor: (raw.vendor ?? '').trim(),
+    sourceUrl: `https://${domain}/products/${r.handle}`,
+    merchantProductId: String(r.id),
+    title: r.title,
+    description: r.body_html?.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() ?? '',
+    vendor: (r.vendor ?? '').trim(),
     category,
     subcategory: taxoSub || sourceProductType,
     currentPrice,
@@ -123,9 +120,9 @@ export function normalizeShopifyProduct(
     sizes,
     colors,
     imageUrls: images.map((i) => i.src),
-    redirectUrl: `https://${domain}/products/${raw.handle}`,
+    redirectUrl: `https://${domain}/products/${r.handle}`,
     sourceChecksum: '', // filled below
-    revisionNumber: 1, // filled by store stage for existing products
+    revisionNumber: 1, // filled by the store stage for existing products
     lastSeenAt: new Date(),
     lastUpdatedAt: null,
   };

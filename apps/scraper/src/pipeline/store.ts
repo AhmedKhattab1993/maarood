@@ -20,7 +20,7 @@ import {
   type NewRawSnapshotRow,
 } from '@maarood/schema';
 import type { ScraperDb } from '../db';
-import type { NormalizedProduct } from './normalize';
+import type { NormalizedProduct } from '../connectors/types';
 
 export type StoreOutcome = 'inserted' | 'changed' | 'unchanged';
 
@@ -38,6 +38,7 @@ export async function storeProduct(
   db: ScraperDb,
   crawlRunId: string,
   normalized: NormalizedProduct,
+  sourceType: string,
 ): Promise<StoreResult> {
   const existing = await db
     .select({
@@ -62,7 +63,7 @@ export async function storeProduct(
     merchantId: normalized.merchantId,
     merchantProductId: normalized.merchantProductId,
     rawPayload: normalized as unknown as Record<string, unknown>,
-    sourceType: 'shopify_json',
+    sourceType,
     checksum: normalized.sourceChecksum,
   };
   await db.insert(rawSnapshots).values(snapshot);

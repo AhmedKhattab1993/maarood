@@ -21,7 +21,6 @@ import {
 } from '@maarood/schema';
 import type { ScraperDb } from '../db';
 import { connectors } from '../connectors';
-import { normalizeShopifyProduct } from './normalize';
 import { storeProduct } from './store';
 import { withRetry } from './retry';
 
@@ -48,8 +47,8 @@ export async function runPipeline(db: ScraperDb, merchantSlug: string): Promise<
     throw new Error(`Merchant '${merchantSlug}' is opted out and will not be crawled.`);
   }
 
-  const factory = connectors[m.connectorType];
-  if (!factory) {
+  const def = connectors[m.connectorType];
+  if (!def) {
     throw new Error(`No connector registered for type '${m.connectorType}'`);
   }
 
@@ -70,17 +69,17 @@ export async function runPipeline(db: ScraperDb, merchantSlug: string): Promise<
 
   try {
     // Stages 1-3: discover + retrieve (with retry) + extract raw records.
-    const connector = factory({ merchantId: m.id, domain: m.domain });
+    const connector = def.factory({ merchantId: m.id, domain: m.domain });
     const rawProducts = await withRetry(() => connector.fetchRawProducts(), { retries: 3 });
     counts.extracted = rawProducts.length;
 
     for (const raw of rawProducts) {
       try {
         // Stage 5-6: normalize (validates source + canonical schemas internally).
-        const normalized = normalizeShopifyProduct(raw as never, m.id, m.domain);
+        const normalized = def.normalize(raw, m.id, m.domain);
 
         // Stages 7-9: change detection + upsert + snapshot.
-        const result = await storeProduct(db, run!.id, normalized);
+        const result = await storeProduct(db, run!.id, normalized, def.sourceType);
         seenProductIds.add(result.productId);
         counts.upserted += 1;
         if (result.outcome === 'inserted' || result.outcome === 'changed') {
