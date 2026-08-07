@@ -24,3 +24,4 @@ npm-debug.log*
 
 # Vercel (local project link)
 .vercel
+.env*
