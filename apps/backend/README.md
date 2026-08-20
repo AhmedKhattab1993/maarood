@@ -1,6 +1,6 @@
 # Maarood Backend
 
-NestJS + TypeScript + Drizzle + PostgreSQL, deployed to Google Cloud Run.
+NestJS + TypeScript + Drizzle + PostgreSQL, deployed as a containerized Vercel Service. The scraper pipeline runs in-process behind `GET /admin/crawl` (Vercel Cron).
 
 Shared canonical schema lives in [`packages/schema`](../../packages/schema) and is consumed by both this backend and the future scraper package — the contract for ingestion and the API cannot drift.
 
@@ -24,7 +24,7 @@ Naming: `UPPER_SNAKE_CASE`; project keys are prefixed where domain-specific. Sec
 
 ## Local development
 
-The MVP runs entirely locally — no GCP services are needed for development. GCP (Cloud Run + Neon) is only the deploy target.
+The MVP runs entirely locally — no cloud services are needed for development. Vercel (Service + Cron) + Neon is only the deploy target.
 
 ```bash
 # from repo root
@@ -69,11 +69,12 @@ Search uses PostgreSQL full-text (tsvector over title/description/category) plus
 
 ## Admin API
 
-JSON only (no UI). **No authentication yet** — public exposure must be gated by Cloud Run IAM before production.
+JSON only (no UI). All routes require `Authorization: Bearer <ADMIN_TOKEN>`.
 
 | Method | Path | Purpose |
 |---|---|---|
 | GET | `/admin/merchants` | List merchants |
+| GET | `/admin/crawl` | Trigger the due-merchant crawl (used by Vercel Cron; responds with the summary; overlaps return `started:false`) |
 | POST | `/admin/merchants` | Register a merchant |
 | PATCH | `/admin/merchants/:slug` | Update opt-out / notes / crawl frequency |
 | GET | `/admin/crawl-runs` | Recent crawl runs (`?merchantSlug=` filter) |
@@ -93,16 +94,8 @@ npm run db:generate --workspace @maarood/schema
 npm run db:migrate --workspace @maarood/schema
 ```
 
-## Deploy to Cloud Run
+## Deploy to Vercel
 
-The backend ships as a Cloud Run **service** (`apps/backend/Dockerfile` builds the monorepo and runs `apps/backend/dist/main.js`). The scraper is a separate Cloud Run **job** (`apps/scraper/Dockerfile`). Production uses Neon Postgres.
+The backend ships as a container built from the repo-root `Dockerfile.vercel` and runs as a **Vercel Service**. Vercel Cron (repo-root `vercel.json`) triggers `GET /admin/crawl` every 6h; the crawl runs in-process, guarded by a Postgres advisory lock and a resumable soft deadline. Production uses Neon Postgres.
 
-See [`deploy/README.md`](../../deploy/README.md) for the full runbook (prerequisites, first deploy, smoke test, updates) and `deploy/deploy.sh` for the parameterized `gcloud` commands. Quick start:
-
-```bash
-# set PROJECT_ID, DATABASE_URL, ADMIN_TOKEN in ~/.maarood.env first
-./deploy/deploy.sh setup     # enable APIs, create secrets
-./deploy/deploy.sh backend   # build + deploy the service
-```
-
-Secrets (`DATABASE_URL`, `ADMIN_TOKEN`) live in Secret Manager and are mounted via `--set-secrets` — never via `--set-env-vars`.
+See [`deploy/README.md`](../../deploy/README.md) for the full runbook (project setup, env vars — including `CRON_SECRET` = `ADMIN_TOKEN` — first deploy, smoke test) and the GCP teardown checklist.

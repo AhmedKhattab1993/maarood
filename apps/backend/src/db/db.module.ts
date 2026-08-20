@@ -11,6 +11,9 @@ import { Pool } from 'pg';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '@maarood/schema';
 
+/** DI token for the raw pg Pool — advisory-lock sessions need a dedicated client. */
+export const PG_POOL = Symbol('PG_POOL');
+
 /** DI token for the Drizzle instance. */
 export const DRIZZLE = Symbol('DRIZZLE');
 
@@ -19,15 +22,17 @@ export type DrizzleDB = NodePgDatabase<typeof schema>;
 @Module({
   providers: [
     {
-      provide: DRIZZLE,
+      provide: PG_POOL,
       inject: [ConfigService],
-      useFactory: (config: ConfigService): DrizzleDB => {
-        const databaseUrl = config.getOrThrow<string>('DATABASE_URL');
-        const pool = new Pool({ connectionString: databaseUrl });
-        return drizzle(pool, { schema });
-      },
+      useFactory: (config: ConfigService): Pool =>
+        new Pool({ connectionString: config.getOrThrow<string>('DATABASE_URL') }),
+    },
+    {
+      provide: DRIZZLE,
+      inject: [PG_POOL],
+      useFactory: (pool: Pool): DrizzleDB => drizzle(pool, { schema }),
     },
   ],
-  exports: [DRIZZLE],
+  exports: [DRIZZLE, PG_POOL],
 })
 export class DbModule {}

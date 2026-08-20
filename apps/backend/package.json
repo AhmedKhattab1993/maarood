@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@maarood/schema": "*",
+    "@maarood/scraper": "*",
     "@nestjs/common": "^10.3.0",
     "@nestjs/config": "^3.2.0",
     "@nestjs/core": "^10.3.0",

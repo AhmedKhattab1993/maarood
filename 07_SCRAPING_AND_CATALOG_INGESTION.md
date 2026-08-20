@@ -16,9 +16,9 @@ Optional Python components:
 
 ## Hosting — Locked
 
-- Scraper services and scheduled import jobs run on **Google Cloud Run Jobs**.
-- Scheduling through **Cloud Scheduler**.
-- Queues and retries through **Cloud Tasks** or **Pub/Sub**.
+- The scraper runs **in-process inside the backend's Vercel Service** (containerized).
+- Scheduling through **Vercel Cron** (`vercel.json` → `GET /admin/crawl`).
+- Queues and retries are deferred (QStash / `pg-boss` on Postgres) until a validated need.
 
 ## Retrieval priority — Locked
 

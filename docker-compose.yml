@@ -1,5 +1,5 @@
 # Local development database only.
-# Production uses Neon (or later Cloud SQL); Cloud Run is the deploy target.
+# Production uses Neon (or later a dedicated managed Postgres); Vercel is the deploy target.
 
 services:
   db:

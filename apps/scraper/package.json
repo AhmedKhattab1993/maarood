@@ -2,8 +2,8 @@
   "name": "@maarood/scraper",
   "version": "0.1.0",
   "private": true,
-  "description": "Maarood ingestion pipeline — batch job (Cloud Run Job) with per-store connectors.",
-  "main": "./dist/main.js",
+  "description": "Maarood ingestion pipeline — callable library + CLI; in production it runs inside the backend service (Vercel Cron -> /admin/crawl).",
+  "main": "./dist/index.js",
   "scripts": {
     "build": "tsc -b",
     "dev": "ts-node src/main.ts",

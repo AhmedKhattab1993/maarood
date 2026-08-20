@@ -2,7 +2,7 @@
 
 ## Architecture principle — Locked
 
-Use Vercel for the user-facing web experience and Google Cloud Platform for APIs, scraping, background work, and operational infrastructure.
+Use Vercel for the user-facing web experience and for APIs, scraping, and background work; Neon Postgres as the managed database.
 
 ## Frontend
 
@@ -22,7 +22,7 @@ Use Vercel for the user-facing web experience and Google Cloud Platform for APIs
 ## Backend API — Locked
 
 - **NestJS (TypeScript)** as the main application backend.
-- Host the API on **Google Cloud Run**.
+- Host the API as a containerized **Vercel Service** (`Dockerfile.vercel`), region `fra1` (Frankfurt, next to Neon).
 
 ### Rationale
 
@@ -32,23 +32,23 @@ Use Vercel for the user-facing web experience and Google Cloud Platform for APIs
 
 ### Python carve-out
 
-If a specific, validated ML need emerges (for example, real semantic search with embeddings), add a small Python service on Cloud Run for that capability only. Do not retroactively rewrite the core backend in Python.
+If a specific, validated ML need emerges (for example, real semantic search with embeddings), add a small Python container service for that capability only. Do not retroactively rewrite the core backend in Python.
 
 ## Background and ingestion workloads
 
-- **Cloud Run Jobs** for scraping and catalog imports.
-- **Cloud Scheduler** for recurring crawl schedules.
-- **Cloud Tasks** or **Pub/Sub** for queues, retries, and asynchronous processing.
+- The scraper runs **in-process inside the backend service**: Vercel Cron (`vercel.json`) calls `GET /admin/crawl` every 6h with a bearer token; a Postgres advisory lock prevents overlapping runs; a soft deadline under the function-duration limit leaves unvisited merchants due so the next run resumes them.
+- The scraper CLI (`npm run scrape` / `scrape:all`) remains the local and fallback path.
+- Queues/retries (QStash, Inngest, or `pg-boss` on Postgres) are deferred until a validated need — the cron + due-logic batch covers current requirements.
 
 ## Database
 
 - **PostgreSQL** as the primary database.
 - Initial managed option: **Neon** or **Supabase**.
-- Later migration option: **Google Cloud SQL** when scale, reliability requirements, or GCP integration justify the additional baseline cost.
+- Later migration option: a dedicated managed Postgres (e.g., Cloud SQL) when scale or reliability requirements justify the additional baseline cost.
 
 ## Files and images
 
-- **Google Cloud Storage** for product-image copies, cached media, exports, and operational files where storing them is legally and technically appropriate.
+- **Vercel Blob** for product-image copies, cached media, exports, and operational files where storing them is legally and technically appropriate (when the need materializes).
 - Preserve original merchant image URLs and attribution in the product record.
 
 ## Search

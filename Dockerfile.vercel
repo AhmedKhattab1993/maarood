@@ -1,10 +1,10 @@
-# Single Dockerfile for BOTH deployables (backend service + scraper job).
-# The build context is the REPO ROOT, so all workspace packages are in scope:
-#   gcloud run deploy      maarood-backend  --source .                          # backend (default TARGET)
-#   gcloud run jobs deploy maarood-scraper --source .                          # scraper (TARGET=scraper set at runtime)
-# Cloud Run with --source always builds <source-dir>/Dockerfile (this file) and
-# does not expose a Dockerfile --target flag. Both apps are therefore compiled
-# into one image, and the TARGET RUNTIME env var selects which entrypoint runs.
+# Container image for the Maarood backend on Vercel (Vercel Services).
+# The build context is the REPO ROOT because the backend imports workspace
+# packages: @maarood/schema (canonical Drizzle schema) and @maarood/scraper
+# (crawl pipeline — the backend runs crawls in-process, triggered by Vercel
+# Cron via GET /admin/crawl).
+#
+# Vercel injects PORT; the backend reads it at boot (default 8080 locally).
 
 # ---- build ----
 FROM node:20-bookworm-slim AS build
@@ -17,28 +17,28 @@ COPY apps/backend/package.json ./apps/backend/package.json
 COPY apps/scraper/package.json ./apps/scraper/package.json
 RUN npm install --workspaces --include-workspace-root
 
-# Compile shared schema first (backend & scraper both import it), then both apps.
+# Compile in dependency order: schema -> scraper -> backend (the backend
+# type-checks against the other two packages' dist output).
 COPY tsconfig.base.json ./
 COPY packages/schema ./packages/schema
 RUN npm run build --workspace @maarood/schema
 
-COPY apps/backend ./apps/backend
 COPY apps/scraper ./apps/scraper
-RUN npm run build --workspace @maarood/backend \
- && npm run build --workspace @maarood/scraper
+RUN npm run build --workspace @maarood/scraper
+
+COPY apps/backend ./apps/backend
+RUN npm run build --workspace @maarood/backend
 
 # Prune devDependencies for the runtime image.
 RUN npm prune --omit=dev
 
-# ---- runtime (single stage; TARGET picks the entrypoint) ----
+# ---- runtime ----
 FROM node:20-bookworm-slim AS runtime
 # curl is required by the Shopify connector: many stores sit behind Cloudflare,
 # which fingerprints Node's TLS stack and serves a sanitized feed (discounts
 # stripped). curl's TLS fingerprint receives the true product payload.
 RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates && rm -rf /var/lib/apt/lists/*
-# TARGET is a RUNTIME env var set by deploy.sh (default: backend).
 ENV NODE_ENV=production
-ENV TARGET=backend
 WORKDIR /app
 
 COPY --from=build /app/node_modules ./node_modules
@@ -50,10 +50,7 @@ COPY --from=build /app/apps/backend/package.json ./apps/backend/package.json
 COPY --from=build /app/apps/scraper/dist ./apps/scraper/dist
 COPY --from=build /app/apps/scraper/package.json ./apps/scraper/package.json
 
-# Cloud Run service: PORT is injected; the backend reads it at boot.
 ENV PORT=8080
 EXPOSE 8080
 
-# TARGET selects the entrypoint: scraper runs once per job execution and exits,
-# backend is the always-on service.
-CMD ["sh", "-c", "if [ \"$TARGET\" = scraper ]; then exec node apps/scraper/dist/run-all.js; else exec node apps/backend/dist/main.js; fi"]
+CMD ["node", "apps/backend/dist/main.js"]
