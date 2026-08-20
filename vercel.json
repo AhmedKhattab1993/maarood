@@ -1,5 +1,18 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "api": {
+      "root": ".",
+      "entrypoint": "Dockerfile.vercel",
+      "runtime": "container",
+      "functions": {
+        "**": {
+          "maxDuration": 800
+        }
+      }
+    }
+  },
+  "rewrites": [{ "source": "/(.*)", "destination": { "service": "api" } }],
   "crons": [
     {
       "path": "/admin/crawl",

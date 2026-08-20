@@ -3,7 +3,7 @@
 Maarood production runs entirely on **Vercel + Neon Postgres**:
 
 - **Web** (Next.js) — Vercel project, already deployed.
-- **Backend** (NestJS API + in-process crawler) — Vercel project built from `Dockerfile.vercel` (Vercel Services).
+- **Backend** (NestJS API + in-process crawler) — Vercel project built from `Dockerfile.vercel` via the `services` config in `vercel.json` (container runtime → Vercel Function with Fluid compute). Available on all plans — no waitlist.
 - **Crawl schedule** — Vercel Cron (`vercel.json`, every 6h) calling `GET /admin/crawl` on the backend.
 - **Database** — Neon Postgres `eu-central-1` (Frankfurt), unchanged.
 
@@ -34,14 +34,20 @@ No CI/CD, no Terraform — deploys are `git push` (or `vercel deploy`).
 The crawl runs **inside the backend request** (Vercel's Fluid instances pause
 after a request completes, so it cannot safely run in the background). A
 Postgres advisory lock prevents overlapping runs; a soft 700s deadline stops
-before the 800s function limit and leaves unvisited merchants due, so the next
-run resumes them.
+before the configured 800s function limit and leaves unvisited merchants due,
+so the next run resumes them.
+
+> **Waitlist?** None. The `services` configuration model is documented as
+> available on **all plans** (it replaced the earlier gated
+> `experimentalServices` model). "Beta" labels mean the API may evolve — not
+> that access is restricted. The 5-minute definitive check is `vercel deploy`
+> from the repo root.
 
 | Resource | Purpose |
 |---|---|
 | Vercel project `maarood-web` | Next.js frontend (Root Directory `apps/web`) |
 | Vercel project `maarood-backend` | Container service (Root Directory **repo root** — the Dockerfile needs the whole monorepo) |
-| `vercel.json` (repo root) | Cron schedule — read by the backend project |
+| `vercel.json` (repo root) | Declares the container service (`Dockerfile.vercel`), routes all paths to it, `maxDuration: 800` (default is 300s), and the cron schedule — read by the backend project |
 | Neon project | Production Postgres |
 | Env vars (Vercel, backend project) | `DATABASE_URL`, `ADMIN_TOKEN`, `CRON_SECRET`, `CORS_ORIGIN` |
 
@@ -61,10 +67,10 @@ run resumes them.
 
 1. Vercel dashboard → **Add New → Project** → import this repo.
 2. Configure:
-   - **Root Directory:** repo root (leave `/`) — `Dockerfile.vercel` must see the whole monorepo.
-   - Framework preset: **Docker** (detected via `Dockerfile.vercel`).
+   - **Root Directory:** repo root (leave `/`) — `Dockerfile.vercel` and `vercel.json` (services + rewrites + cron) must be at the project root.
    - **Region: Frankfurt (fra1)** — same metro as Neon.
    - Production branch: `main`.
+   - No framework preset needed — `vercel.json` declares the container service.
 3. Environment variables (Production, and Preview as needed):
    | Key | Value |
    |---|---|
@@ -75,7 +81,7 @@ run resumes them.
    | `NODE_ENV` | `production` |
 4. Deploy. The web project is unaffected (its Root Directory is `apps/web`, so it ignores the root `vercel.json`).
 
-> Keep the **web project's** Root Directory at `apps/web`. The root `vercel.json` (cron) must belong to the backend project only.
+> Keep the **web project's** Root Directory at `apps/web`. The root `vercel.json` (services + cron) must belong to the backend project only.
 
 ## First deployment
 
