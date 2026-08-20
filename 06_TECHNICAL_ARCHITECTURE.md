@@ -2,7 +2,7 @@
 
 ## Architecture principle — Locked
 
-Use Vercel for the user-facing web experience and for APIs, scraping, and background work; Neon Postgres as the managed database.
+Use Vercel for the user-facing web experience, the API, and background work; Neon Postgres as the managed database. No containers — every workload runs on Fluid compute (Node.js server functions and workflow steps).
 
 ## Frontend
 
@@ -22,7 +22,7 @@ Use Vercel for the user-facing web experience and for APIs, scraping, and backgr
 ## Backend API — Locked
 
 - **NestJS (TypeScript)** as the main application backend.
-- Host the API as a containerized **Vercel Service** (`Dockerfile.vercel`), region `fra1` (Frankfurt, next to Neon).
+- The API is the NestJS app deployed as a **zero-config Node.js server function** (Vercel auto-detects `src/main.ts`), region `fra1`.
 
 ### Rationale
 
@@ -32,13 +32,13 @@ Use Vercel for the user-facing web experience and for APIs, scraping, and backgr
 
 ### Python carve-out
 
-If a specific, validated ML need emerges (for example, real semantic search with embeddings), add a small Python container service for that capability only. Do not retroactively rewrite the core backend in Python.
+If a specific, validated ML need emerges (for example, real semantic search with embeddings), add a small Python function/container service for that capability only. Do not retroactively rewrite the core backend in Python.
 
 ## Background and ingestion workloads
 
-- The scraper runs **in-process inside the backend service**: Vercel Cron (`vercel.json`) calls `GET /admin/crawl` every 6h with a bearer token; a Postgres advisory lock prevents overlapping runs; a soft deadline under the function-duration limit leaves unvisited merchants due so the next run resumes them.
+- Crawling runs as a **Vercel Workflow** (`apps/web/workflows/crawl.ts`, hosted in the Next.js app): Vercel Cron calls `GET /api/cron/crawl` every 6h; one durable, auto-retried step per due merchant; run duration unbounded so merchant count can grow without redesign. Overlapping runs are harmless (due-logic + idempotent upserts).
 - The scraper CLI (`npm run scrape` / `scrape:all`) remains the local and fallback path.
-- Queues/retries (QStash, Inngest, or `pg-boss` on Postgres) are deferred until a validated need — the cron + due-logic batch covers current requirements.
+- Queues (QStash, `pg-boss`) are deferred until a validated need — Workflows already provides durable, retried execution.
 
 ## Database
 

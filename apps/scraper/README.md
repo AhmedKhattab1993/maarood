@@ -1,9 +1,9 @@
 # Maarood Scraper
 
 Ingestion pipeline — a plain TypeScript library + CLI (not NestJS). In production
-it runs **inside the backend service**: Vercel Cron hits `GET /admin/crawl`, which
-calls `crawlDueMerchants` with a soft deadline. The backend imports it as
-`@maarood/scraper`.
+it runs as a **Vercel Workflow** (apps/web/workflows/crawl.ts): one durable,
+retried step per due merchant, triggered every 6h by Vercel Cron. The web app
+imports this package as `@maarood/scraper`.
 Implements the 10-stage pipeline from [`07_SCRAPING_AND_CATALOG_INGESTION.md`](../../07_SCRAPING_AND_CATALOG_INGESTION.md).
 
 ## Commands
@@ -17,9 +17,9 @@ npm run scrape -- <slug>      # crawl one merchant
 npm run scrape:all            # crawl every active merchant whose frequency has elapsed
 ```
 
-Same code runs locally and in cloud. On Vercel, the library is invoked through
-the backend's `/admin/crawl` endpoint behind Vercel Cron; the trigger differs,
-the code does not.
+Same code runs locally and in cloud. On Vercel, the workflow in
+`apps/web/workflows/crawl.ts` orchestrates `getDueMerchants` + `runPipeline`
+per merchant; the trigger differs, the code does not.
 
 ## Connectors
 

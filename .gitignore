@@ -35,3 +35,4 @@ gcp-service-account*.json
 
 # Vercel (local project link + env)
 .vercel
+.workflow-data

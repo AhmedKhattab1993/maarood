@@ -1,24 +1,53 @@
 /**
- * Crawl every active merchant whose crawl frequency has elapsed.
+ * Due-merchant selection + the batch crawl used by the run-all CLI.
  *
- * Extracted from the run-all CLI so the backend's /admin/crawl endpoint can
- * trigger the same batch in-process (Vercel Cron -> HTTP -> this function).
+ * In production the Vercel crawl workflow (apps/web/workflows/crawl.ts) calls
+ * `getDueMerchants` and runs one durable step per merchant. `crawlDueMerchants`
+ * remains the sequential CLI path (local runs and fallback).
  *
- * `deadlineMs` lets an HTTP caller bound the run: once passed, no new merchant
- * is started and `completed: false` is returned. Unvisited merchants stay due,
- * so the next scheduled run picks them up — partial runs are resumable.
- *
- * Skips merchants that are opted_out or whose last crawl is younger than
- * their crawl_frequency_minutes.
+ * `deadlineMs` lets a caller bound the batch: once passed, no new merchant is
+ * started and `completed: false` is returned. Unvisited merchants stay due, so
+ * the next run picks them up — partial runs are resumable.
  */
 
 import { desc, eq } from 'drizzle-orm';
-import { crawlRuns, merchants } from '@maarood/schema';
+import { crawlRuns, merchants, type MerchantRow } from '@maarood/schema';
 import type { ScraperDb } from './db';
 import { runPipeline } from './pipeline/run-pipeline';
 
 function ageMinutes(startedAt: Date): number {
   return (Date.now() - startedAt.getTime()) / 60000;
+}
+
+async function lastCrawlStartedAt(db: ScraperDb, merchantId: string): Promise<Date | undefined> {
+  const last = await db
+    .select({ startedAt: crawlRuns.startedAt })
+    .from(crawlRuns)
+    .where(eq(crawlRuns.merchantId, merchantId))
+    .orderBy(desc(crawlRuns.startedAt))
+    .limit(1);
+  return last[0]?.startedAt;
+}
+
+/**
+ * Active merchants whose crawl frequency has elapsed (or that were never
+ * crawled). Skips opted-out merchants.
+ */
+export async function getDueMerchants(db: ScraperDb): Promise<MerchantRow[]> {
+  const active = await db.select().from(merchants).where(eq(merchants.optedOut, false));
+
+  const due: MerchantRow[] = [];
+  for (const m of active) {
+    const lastStarted = await lastCrawlStartedAt(db, m.id);
+    if (!lastStarted || ageMinutes(lastStarted) >= m.crawlFrequencyMinutes) {
+      due.push(m);
+    } else {
+      console.log(
+        `Skipping '${m.slug}' — last crawl ${ageMinutes(lastStarted).toFixed(0)} min ago (freq ${m.crawlFrequencyMinutes} min).`,
+      );
+    }
+  }
+  return due;
 }
 
 export interface CrawlDueOptions {
@@ -40,31 +69,14 @@ export async function crawlDueMerchants(
 ): Promise<CrawlSummary> {
   const summary: CrawlSummary = { crawled: 0, skipped: 0, failed: 0, completed: true };
 
-  const active = await db.select().from(merchants).where(eq(merchants.optedOut, false));
+  const due = await getDueMerchants(db);
+  summary.skipped = (await countActive(db)) - due.length;
 
-  for (const m of active) {
+  for (const m of due) {
     if (opts.deadlineMs !== undefined && Date.now() >= opts.deadlineMs) {
       summary.completed = false;
       console.log('Crawl deadline reached — remaining merchants stay due for the next run.');
       break;
-    }
-
-    // Find this merchant's most recent crawl.
-    const last = await db
-      .select({ startedAt: crawlRuns.startedAt })
-      .from(crawlRuns)
-      .where(eq(crawlRuns.merchantId, m.id))
-      .orderBy(desc(crawlRuns.startedAt))
-      .limit(1);
-    const lastStarted = last[0]?.startedAt;
-    const due = !lastStarted || ageMinutes(lastStarted) >= m.crawlFrequencyMinutes;
-
-    if (!due) {
-      summary.skipped += 1;
-      console.log(
-        `Skipping '${m.slug}' — last crawl ${ageMinutes(lastStarted!).toFixed(0)} min ago (freq ${m.crawlFrequencyMinutes} min).`,
-      );
-      continue;
     }
 
     console.log(`Crawling '${m.slug}' …`);
@@ -83,4 +95,9 @@ export async function crawlDueMerchants(
   }
 
   return summary;
+}
+
+async function countActive(db: ScraperDb): Promise<number> {
+  const active = await db.select({ id: merchants.id }).from(merchants).where(eq(merchants.optedOut, false));
+  return active.length;
 }

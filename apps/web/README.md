@@ -45,6 +45,16 @@ The web app reads products, brands, categories, and search from the backend.
 Saved products and outbound-click redirects work without auth; the backend
 records outbound clicks on redirect (`/v1/products/:id/redirect`).
 
+## Crawl workflow host
+
+This project also hosts the **ingestion workflow** (`workflows/crawl.ts`):
+Vercel Cron hits `GET /api/cron/crawl` (Bearer `CRON_SECRET`) every 6h and the
+workflow runs one durable, auto-retried step per due merchant against
+`DATABASE_URL` (Neon). The pipeline logic lives in `@maarood/scraper`.
+Local: `npx next start` + `curl -H "Authorization: Bearer $CRON_SECRET"`
+`localhost:3000/api/cron/crawl` runs it via the Local World; `npx workflow inspect runs`
+shows runs. See [`deploy/README.md`](../../deploy/README.md).
+
 ## Routes (the 8 locked screens — `01`/`04`/`08`)
 
 | Route | Page |

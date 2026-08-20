@@ -1,87 +1,91 @@
 # Production Deployment
 
-Maarood production runs entirely on **Vercel + Neon Postgres**:
+Maarood production runs entirely on **Vercel + Neon Postgres** — no containers,
+no Dockerfiles, no queues to operate:
 
-- **Web** (Next.js) — Vercel project, already deployed.
-- **Backend** (NestJS API + in-process crawler) — Vercel project built from `Dockerfile.vercel` via the `services` config in `vercel.json` (container runtime → Vercel Function with Fluid compute). Available on all plans — no waitlist.
-- **Crawl schedule** — Vercel Cron (`vercel.json`, every 6h) calling `GET /admin/crawl` on the backend.
-- **Database** — Neon Postgres `eu-central-1` (Frankfurt), unchanged.
+| Tier | Vercel project | Runtime |
+|---|---|---|
+| Web + crawl workflow host | `maarood-web` (Root Directory `apps/web`) | Next.js 14 (`withWorkflow`) |
+| Public + admin API | `maarood-backend` (Root Directory `apps/backend`) | NestJS, zero-config detected as a Node.js server function |
+| Database | Neon `eu-central-1` (Frankfurt) | Postgres (unchanged) |
 
-No CI/CD, no Terraform — deploys are `git push` (or `vercel deploy`).
+**Crawling** runs as a **Vercel Workflow** (`apps/web/workflows/crawl.ts`):
+Vercel Cron (`apps/web/vercel.json`) calls `GET /api/cron/crawl` every 6h →
+`start(crawlAll)` → one durable, retried step per due merchant. Run duration is
+unbounded; steps survive deploys and crashes; per-run/per-step observability is
+in the Vercel dashboard (project → Observability → Workflows).
 
 ## Architecture
 
 ```
-                     ┌────────────────────────────┐
-                     │  Vercel Cron               │  every 6h (UTC)
-                     │  vercel.json: /admin/crawl │ ─────────────┐
-                     └────────────────────────────┘              │ GET + Bearer CRON_SECRET
-                                                                 ▼
-   users ───HTTPS──▶┌────────────────────────────────────────────────┐
-                     │  Vercel Service  (Dockerfile.vercel)           │
-                     │  maarood-backend                                │
-                     │  /v1  /admin  /health   + in-process crawler   │
-                     │  (advisory-lock guarded, resumable)            │
-                     └───────────────────────┬────────────────────────┘
-                                             │
-                                             ▼
+                    ┌──────────────────────────────┐
+                    │ Vercel Cron (apps/web)       │ every 6h (UTC)
+                    │ GET /api/cron/crawl          │──────┐
+                    └──────────────────────────────┘      │ Bearer CRON_SECRET
+                                                          ▼
+   users ──HTTPS──▶┌──────────────────────────────────────────────────┐
+                    │ maarood-web (Next.js, fra1)                      │
+                    │  UI  +  workflow: crawlAll ── step per merchant  │
+                    └───────────────────────┬──────────────────────────┘
+                                            │
+                    ┌───────────────────────▼──────────────────────────┐
+                    │ maarood-backend (NestJS function)                │
+                    │  /v1  /admin  /health                             │
+                    └───────────────────────┬──────────────────────────┘
+                                            │
+                                            ▼
                                    ┌───────────────────┐
-                                   │  Neon Postgres     │
-                                   │  eu-central-1      │
+                                   │ Neon Postgres      │
+                                   │ eu-central-1       │
                                    └───────────────────┘
 ```
 
-The crawl runs **inside the backend request** (Vercel's Fluid instances pause
-after a request completes, so it cannot safely run in the background). A
-Postgres advisory lock prevents overlapping runs; a soft 700s deadline stops
-before the configured 800s function limit and leaves unvisited merchants due,
-so the next run resumes them.
+Why this shape (see `06_TECHNICAL_ARCHITECTURE.md` for the full rationale):
 
-> **Waitlist?** None. The `services` configuration model is documented as
-> available on **all plans** (it replaced the earlier gated
-> `experimentalServices` model). "Beta" labels mean the API may evolve — not
-> that access is restricted. The 5-minute definitive check is `vercel deploy`
-> from the repo root.
-
-| Resource | Purpose |
-|---|---|
-| Vercel project `maarood-web` | Next.js frontend (Root Directory `apps/web`) |
-| Vercel project `maarood-backend` | Container service (Root Directory **repo root** — the Dockerfile needs the whole monorepo) |
-| `vercel.json` (repo root) | Declares the container service (`Dockerfile.vercel`), routes all paths to it, `maxDuration: 800` (default is 300s), and the cron schedule — read by the backend project |
-| Neon project | Production Postgres |
-| Env vars (Vercel, backend project) | `DATABASE_URL`, `ADMIN_TOKEN`, `CRON_SECRET`, `CORS_ORIGIN` |
+- **No Docker anywhere.** Vercel runs the NestJS app as a Node.js server
+  function (zero-config `src/main.ts` detection) and the crawler as workflow
+  steps — both Fluid compute, both scale to zero.
+- **Crawl scaling is unbounded.** One step per merchant (each ≤ the function
+  duration limit) with automatic retries; the workflow itself has no duration
+  limit, so merchant count can grow without rearchitecting.
+- **Overlap-safe.** The per-merchant due-logic skips merchants whose last crawl
+  is fresh; upserts are idempotent. A manual trigger while a scheduled run is
+  active is harmless.
 
 ---
 
 ## Prerequisites (one-time)
 
 1. **Neon project** — [neon.tech](https://neon.tech), region `AWS eu-central-1 (Frankfurt)`. Connection string ending with `?sslmode=require` = `DATABASE_URL`. (Existing project carries over unchanged.)
-2. **Vercel Pro** for the team (Services + sub-day cron schedules require Pro).
-3. Local `~/.maarood.env` still holds the same keys for local dev:
-   ```
-   DATABASE_URL=postgresql://user:pass@ep-xxx.eu-central-1.aws.neon.tech/maarood?sslmode=require
-   ADMIN_TOKEN=<strong secret, >= 16 chars>
-   ```
+2. **Vercel Pro** team (cron on sub-6h schedules, fluid compute, 800s step durations).
+3. Local `~/.maarood.env` still holds the same keys for local dev.
 
-## Create the backend Vercel project (once)
+## Backend project (`maarood-backend`)
 
 1. Vercel dashboard → **Add New → Project** → import this repo.
-2. Configure:
-   - **Root Directory:** repo root (leave `/`) — `Dockerfile.vercel` and `vercel.json` (services + rewrites + cron) must be at the project root.
-   - **Region: Frankfurt (fra1)** — same metro as Neon.
-   - Production branch: `main`.
-   - No framework preset needed — `vercel.json` declares the container service.
-3. Environment variables (Production, and Preview as needed):
+2. **Root Directory:** `apps/backend` (Vercel auto-detects NestJS via `src/main.ts`; no build overrides needed).
+3. **Function region: Frankfurt (fra1).**
+4. Environment variables (Production + Preview):
+
    | Key | Value |
    |---|---|
    | `DATABASE_URL` | Neon connection string (`?sslmode=require`) |
-   | `ADMIN_TOKEN` | same value as `~/.maarood.env` |
-   | `CRON_SECRET` | **must equal `ADMIN_TOKEN`** — Vercel Cron sends `Authorization: Bearer ${CRON_SECRET}`, and the guard compares it to `ADMIN_TOKEN` |
-   | `CORS_ORIGIN` | `https://<your-web-domain>` (the web project's URL) |
+   | `ADMIN_TOKEN` | strong secret (≥ 16 chars), same as `~/.maarood.env` |
+   | `CORS_ORIGIN` | `https://<web-domain>` |
    | `NODE_ENV` | `production` |
-4. Deploy. The web project is unaffected (its Root Directory is `apps/web`, so it ignores the root `vercel.json`).
 
-> Keep the **web project's** Root Directory at `apps/web`. The root `vercel.json` (services + cron) must belong to the backend project only.
+## Web project (`maarood-web`)
+
+1. If the web project already exists (it does), just update **Root Directory:** stays `apps/web`.
+2. **Function region: Frankfurt (fra1)** (also brings crawl steps next to Neon).
+3. Environment variables — add to the existing set:
+
+   | Key | Value |
+   |---|---|
+   | `DATABASE_URL` | same Neon connection string (crawl workflow reads it) |
+   | `CRON_SECRET` | strong secret (≥ 16 chars) — Vercel sends it as `Authorization: Bearer` when invoking the cron path |
+
+   The cron schedule lives in `apps/web/vercel.json` (`0 */6 * * *` → `/api/cron/crawl`) and is created automatically on deploy.
 
 ## First deployment
 
@@ -92,34 +96,37 @@ DATABASE_URL="$DATABASE_URL" npm run db:migrate
 # 2. Seed the initial merchants into production.
 DATABASE_URL="$DATABASE_URL" npm run seed
 
-# 3. Deploy the backend: git push to main (or `vercel deploy --prod`).
+# 3. Deploy both projects: git push to main (Vercel builds each project from its Root Directory).
 ```
 
-The cron job is created automatically from `vercel.json` on the next deploy.
-
-## Smoke test (against the live URL)
+## Smoke test
 
 ```bash
-BASE_URL=https://maarood-backend-xxxx.vercel.app   # from the dashboard
-ADMIN_TOKEN=...                                     # from ~/.maarood.env
+WEB_URL=https://maarood-web.vercel.app        # web project URL
+API_URL=https://maarood-backend.vercel.app    # backend project URL
+ADMIN_TOKEN=...                                # from ~/.maarood.env
+CRON_SECRET=...                                # web project env
 
-# 1. Health (deep = confirms DB connectivity service → Neon)
-curl -fsS "$BASE_URL/health?deep=true"          # → {"status":"ok"}
+# 1. Backend health (deep = confirms service → Neon connectivity)
+curl -fsS "$API_URL/health?deep=true"                     # → {"status":"ok"}
 
 # 2. Public API returns real data
-curl -fsS "$BASE_URL/v1/brands" | head
+curl -fsS "$API_URL/v1/brands" | head
 
 # 3. Admin is gated
-curl -s -o /dev/null -w "%{http_code}\n" "$BASE_URL/admin/merchants"           # → 401
+curl -s -o /dev/null -w "%{http_code}\n" "$API_URL/admin/merchants"            # → 401
 curl -s -o /dev/null -w "%{http_code}\n" -H "Authorization: Bearer $ADMIN_TOKEN" \
-  "$BASE_URL/admin/merchants"                                                  # → 200
+  "$API_URL/admin/merchants"                                                   # → 200
 
-# 4. Trigger a crawl manually (responds when the batch/deadline finishes).
-curl -fsS -H "Authorization: Bearer $ADMIN_TOKEN" "$BASE_URL/admin/crawl"
-# → {"started":true,"summary":{"crawled":2,"skipped":0,"failed":0,"completed":true}}
+# 4. Trigger the crawl workflow manually (responds immediately with a run id)
+curl -fsS -H "Authorization: Bearer $CRON_SECRET" "$WEB_URL/api/cron/crawl"
+# → {"started":true,"runId":"wrun_..."}
 
-# 5. Verify freshness.
-curl -fsS -H "Authorization: Bearer $ADMIN_TOKEN" "$BASE_URL/admin/health/ingestion"
+# 5. Watch the run: dashboard → maarood-web → Observability → Workflows
+#    (or locally after `vercel link`: npx workflow inspect runs --backend vercel)
+
+# 6. Verify freshness on the API
+curl -fsS -H "Authorization: Bearer $ADMIN_TOKEN" "$API_URL/admin/health/ingestion"
 # → freshness[].state == "fresh", recentFailures == []
 ```
 
@@ -127,47 +134,48 @@ curl -fsS -H "Authorization: Bearer $ADMIN_TOKEN" "$BASE_URL/admin/health/ingest
 
 ## Updating
 
-- **Any code change** → `git push` to `main`; Vercel builds and deploys.
+- **Any code change** → `git push` to `main`; both projects build and deploy independently from their Root Directories.
 - **Schema change** → migrate first, then deploy:
   ```bash
   DATABASE_URL="$DATABASE_URL" npm run db:migrate
   ```
-  Migrations run manually against Neon (no auto-migration in the container — KISS).
 
 ## Operating notes
 
-- **Cron history:** Vercel dashboard → backend project → **Cron Jobs** (last runs, duration, status).
-- **Crawl logs:** project Logs — `CrawlService` logs start, per-merchant progress, and the final summary.
-- **Overlap protection:** a second `/admin/crawl` while one is running returns
-  `{"started":false,"reason":"crawl_already_running"}` — safe to retrigger anytime.
-- **Killed mid-crawl** (deploy/instance restart): the advisory lock dies with
-  the session; unvisited merchants remain due and the next run resumes them.
-- **Manual single-merchant crawl** (bypassing due-logic): `npm run scrape -- <slug>` locally against production `DATABASE_URL`.
+- **Workflow runs:** dashboard → `maarood-web` → Observability → Workflows (per-step status, retries, logs).
+- **Cron history:** dashboard → `maarood-web` → Cron Jobs.
+- **Failed merchants** never block the batch: the workflow records the failure and continues; `crawl_runs` + `/admin/review-queue` carry the detail.
+- **Manual single-merchant crawl** (bypasses due-logic): `DATABASE_URL=... npm run scrape -- <slug>` locally.
+- **Cloudflare note:** connectors fetch via `curl` when the binary exists (local/Docker) and fall back to Node `fetch` in the workflow sandbox (verified working for all current merchants). If a future store sanitizes Node-fetch responses from Vercel IPs, fall back to `npm run scrape` locally for that store and revisit.
+
+## Local development
+
+Everything still runs locally with no Vercel account:
+
+```bash
+npm run db:up && npm run db:migrate
+npm run dev --workspace @maarood/backend   # API on :8080
+npm run dev --workspace @maarood/web       # web + workflow routes on :3000
+DATABASE_URL=... CRON_SECRET=... npm run build --workspace @maarood/web && \
+  (cd apps/web && npx next start)          # then curl /api/cron/crawl to run the real workflow
+npx workflow inspect runs                  # local workflow runs (Local World)
+npm run scrape:all                          # plain CLI crawl, no workflow
+```
 
 ---
 
 ## GCP teardown (post-migration)
 
-The previous deployment (Cloud Run + Scheduler + Secret Manager) can be deleted
-once the Vercel service is verified:
+Delete the previous Cloud Run deployment once the Vercel setup is verified:
 
 ```bash
 gcloud config set project YOUR_PROJECT_ID
-
-# 1. Stop the recurring crawl trigger.
 gcloud scheduler jobs delete maarood-crawl-scheduler --region europe-west1
-
-# 2. Delete the containers.
 gcloud run services delete maarood-backend --region europe-west1
 gcloud run jobs delete maarood-scraper --region europe-west1
-
-# 3. Delete the secrets (values now live in Vercel env vars).
 gcloud secrets delete maarood-database-url
 gcloud secrets delete maarood-admin-token
-
-# 4. Optional: remove container images and fully delete the project.
-gcloud artifacts repositories list   # delete the Cloud Run deploy repo if billed
-gcloud projects delete YOUR_PROJECT_ID
+gcloud projects delete YOUR_PROJECT_ID   # optional, final
 ```
 
 ---
@@ -175,9 +183,10 @@ gcloud projects delete YOUR_PROJECT_ID
 ## What's intentionally NOT here (YAGNI)
 
 - **CI/CD pipelines** — git-push deploys are enough for an MVP.
-- **Custom domain for the API** — the `*.vercel.app` URL is sufficient for now.
-- **Terraform / IaC** — one `Dockerfile.vercel` + one `vercel.json` + dashboard env vars.
-- **Auto-migrations** — manual migrate-once avoids running migrations on every deploy.
-- **Queues (QStash/pg-boss)** — the cron + advisory-lock + due-logic batch covers current needs.
+- **Custom API domain** — the `*.vercel.app` URL is sufficient for now.
+- **Terraform / IaC** — two Vercel projects + env vars + one `vercel.json`.
+- **Auto-migrations** — manual migrate-once.
+- **Dedicated crawler project** — the workflow lives in the web project; split it into its own service only if team size or deploy cadence demands it.
+- **Queues (QStash / pg-boss)** — Vercel Workflows already provides durable, retried execution.
 
 When real traffic or team size justifies these, add them then — not before.

@@ -8,8 +8,8 @@
 - Product imagery: use original merchant images in the MVP.
 - Web: Next.js on Vercel.
 - Mobile: React Native with Expo after web validation.
-- Backend API: NestJS (TypeScript) on Vercel (containerized Service).
-- Backend and crawler: one Vercel Service (crawl in-process via Vercel Cron).
+- Backend API: NestJS (TypeScript) as a zero-config Vercel function.
+- Backend and crawler: independent Vercel functions (API) and workflow steps (crawler).
 - Database: PostgreSQL.
 - Scraping: Crawlee + Cheerio + Playwright.
 - Paid scraper fallbacks: Browserless, then Zyte where required.

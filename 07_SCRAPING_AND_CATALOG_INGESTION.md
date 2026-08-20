@@ -16,9 +16,9 @@ Optional Python components:
 
 ## Hosting — Locked
 
-- The scraper runs **in-process inside the backend's Vercel Service** (containerized).
-- Scheduling through **Vercel Cron** (`vercel.json` → `GET /admin/crawl`).
-- Queues and retries are deferred (QStash / `pg-boss` on Postgres) until a validated need.
+- The crawler runs as a **Vercel Workflow** with one durable step per merchant (hosted in the Next.js app; see `deploy/README.md`).
+- Scheduling through **Vercel Cron** (`apps/web/vercel.json` → `GET /api/cron/crawl`).
+- Queues and retries are provided by **Vercel Workflows** (durable steps, automatic retries); direct queue use is deferred until a validated need.
 
 ## Retrieval priority — Locked
 

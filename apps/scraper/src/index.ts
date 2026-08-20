@@ -7,5 +7,5 @@
  */
 
 export { runPipeline, type PipelineCounts } from './pipeline/run-pipeline';
-export { crawlDueMerchants, type CrawlDueOptions, type CrawlSummary } from './crawl-due';
+export { getDueMerchants, crawlDueMerchants, type CrawlDueOptions, type CrawlSummary } from './crawl-due';
 export { createDb, type DbHandle, type ScraperDb } from './db';

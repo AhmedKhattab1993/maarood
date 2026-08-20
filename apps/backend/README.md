@@ -1,6 +1,6 @@
 # Maarood Backend
 
-NestJS + TypeScript + Drizzle + PostgreSQL, deployed as a containerized Vercel Service. The scraper pipeline runs in-process behind `GET /admin/crawl` (Vercel Cron).
+NestJS + TypeScript + Drizzle + PostgreSQL, deployed as a zero-config **Vercel function** (Vercel auto-detects the NestJS server entrypoint). Crawling lives in the web project's Vercel Workflow — this service is a pure API.
 
 Shared canonical schema lives in [`packages/schema`](../../packages/schema) and is consumed by both this backend and the future scraper package — the contract for ingestion and the API cannot drift.
 
@@ -24,7 +24,7 @@ Naming: `UPPER_SNAKE_CASE`; project keys are prefixed where domain-specific. Sec
 
 ## Local development
 
-The MVP runs entirely locally — no cloud services are needed for development. Vercel (Service + Cron) + Neon is only the deploy target.
+The MVP runs entirely locally — no cloud services are needed for development. Vercel (functions + workflow) + Neon is only the deploy target.
 
 ```bash
 # from repo root
@@ -74,7 +74,6 @@ JSON only (no UI). All routes require `Authorization: Bearer <ADMIN_TOKEN>`.
 | Method | Path | Purpose |
 |---|---|---|
 | GET | `/admin/merchants` | List merchants |
-| GET | `/admin/crawl` | Trigger the due-merchant crawl (used by Vercel Cron; responds with the summary; overlaps return `started:false`) |
 | POST | `/admin/merchants` | Register a merchant |
 | PATCH | `/admin/merchants/:slug` | Update opt-out / notes / crawl frequency |
 | GET | `/admin/crawl-runs` | Recent crawl runs (`?merchantSlug=` filter) |
@@ -96,6 +95,4 @@ npm run db:migrate --workspace @maarood/schema
 
 ## Deploy to Vercel
 
-The backend ships as a container built from the repo-root `Dockerfile.vercel` and runs as a **Vercel Service**. Vercel Cron (repo-root `vercel.json`) triggers `GET /admin/crawl` every 6h; the crawl runs in-process, guarded by a Postgres advisory lock and a resumable soft deadline. Production uses Neon Postgres.
-
-See [`deploy/README.md`](../../deploy/README.md) for the full runbook (project setup, env vars — including `CRON_SECRET` = `ADMIN_TOKEN` — first deploy, smoke test) and the GCP teardown checklist.
+The backend deploys as a **Node.js server function** — Vercel auto-detects NestJS via `src/main.ts`; no Dockerfile, no build overrides. Project settings: Root Directory `apps/backend`, region `fra1`, env vars per [`deploy/README.md`](../../deploy/README.md). Manual crawls are triggered through the web project's cron route (or the scraper CLI), not this API.
