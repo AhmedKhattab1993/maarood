@@ -29,7 +29,7 @@ export function ProductCard({ product, brands, priority }: ProductCardProps) {
   return (
     <Link
       href={{ pathname: "/p/[id]", params: { id: product.id } }}
-      className="group flex flex-col"
+      className="group flex w-full flex-col"
     >
       <div className="relative aspect-square w-full overflow-hidden bg-stone-grey">
         {cover ? (

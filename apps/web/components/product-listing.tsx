@@ -18,7 +18,7 @@ import { EmptyState } from "./state-views";
 /**
  * Shared listing body used by Search, Category, and Brand pages — Nike-style.
  * A single wall-header row: `Title (count)` on the left, `Show/Hide Filters` +
- * `Sort` on the right. Below: the toggleable filter rail + product grid.
+ * `Sort` on the right. Below: the toggleable filter rail + product feed.
  * Handles loading skeleton and empty states. Error handling is by the caller.
  *
  * The filter toggle lives in the header; FilterBar (the rail + its mutation
@@ -89,7 +89,7 @@ export function ProductListing({
         </div>
       </div>
 
-      {/* Body: rail (when open) + grid */}
+      {/* Body: rail (when open) + feed */}
       <div className="flex flex-col gap-4 pt-6 md:flex-row md:items-start md:gap-8">
         <FilterBar
           brands={brands ?? []}
@@ -99,7 +99,7 @@ export function ProductListing({
           onToggle={() => setFiltersOpen((o) => !o)}
         />
         <div className="flex min-w-0 flex-1 flex-col gap-5">
-          <ProductGrid products={result.items} brands={brands} dense={!filtersOpen} />
+          <ProductGrid products={result.items} brands={brands} />
           <Pagination
             page={result.page}
             limit={result.limit}

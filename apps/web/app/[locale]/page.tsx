@@ -84,7 +84,7 @@ export default async function HomePage({
           </section>
         )}
 
-        {/* New arrivals grid */}
+        {/* New arrivals feed */}
         <section className="pb-10 md:pb-14">
           <SectionHeader
             title={t("newArrivals")}

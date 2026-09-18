@@ -1,32 +1,28 @@
 import { ProductCard } from "./product-card";
 import type { BrandSummary, PublicProduct } from "@/lib/api/types";
+import {
+  productFeedItemClass,
+  productFeedListClass,
+} from "./product-feed-layout";
+
+export { productFeedItemClass, productFeedListClass } from "./product-feed-layout";
 
 /**
- * Responsive product grid — Nike-style discovery: dense, square-cornered tiles.
- * Column count depends on viewport AND whether the filter rail is open (Nike
- * shows more columns when filters are hidden, fewer when the rail takes width).
+ * Vertical product feed (X / Instagram-style stack). Card chrome stays on
+ * ProductCard; this wrapper only changes how items are laid out.
  * `priority` is set on the first few cards to prioritize LCP image loading.
- *
- * dense = rail closed → more columns; rail open → fewer columns.
  */
 export function ProductGrid({
   products,
   brands,
-  dense = false,
 }: {
   products: PublicProduct[];
   brands?: BrandSummary[];
-  /** When true (filter rail closed), show extra columns. */
-  dense?: boolean;
 }) {
-  // Rail open (not dense): 2 / 3 / 3 cols. Rail closed (dense): 2 / 3 / 4 cols.
-  const cols = dense
-    ? "grid-cols-2 gap-x-2 gap-y-6 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-    : "grid-cols-2 gap-x-2 gap-y-6 md:grid-cols-3";
   return (
-    <ul className={`grid ${cols}`}>
+    <ul className={productFeedListClass()}>
       {products.map((product, i) => (
-        <li key={product.id}>
+        <li key={product.id} className={productFeedItemClass()}>
           <ProductCard
             product={product}
             brands={brands}
@@ -38,12 +34,12 @@ export function ProductGrid({
   );
 }
 
-/** Skeleton grid for loading states. */
+/** Skeleton feed for loading states — same single-column structure. */
 export function ProductGridSkeleton({ count = 8 }: { count?: number }) {
   return (
-    <ul className="grid grid-cols-2 gap-x-2 gap-y-6 md:grid-cols-3 lg:grid-cols-4">
+    <ul className={productFeedListClass()}>
       {Array.from({ length: count }).map((_, i) => (
-        <li key={i} className="flex flex-col gap-2">
+        <li key={i} className={`${productFeedItemClass()} flex flex-col gap-2`}>
           <div className="maarood-skeleton aspect-square w-full" />
           <div className="maarood-skeleton h-3 w-1/3" />
           <div className="maarood-skeleton h-3 w-2/3" />
