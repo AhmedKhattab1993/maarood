@@ -68,5 +68,13 @@ export function loadEnvConfig(): EnvConfig {
         `Checked ~/.maarood.env and process env.\nIssues:\n${issues}`,
     );
   }
+
+  // ConfigModule reads process.env (see AppModule). Publish the validated
+  // values so DATABASE_URL and friends are visible to ConfigService.
+  for (const [key, value] of Object.entries(parsed.data)) {
+    if (value === undefined || value === null) continue;
+    process.env[key] = String(value);
+  }
+
   return parsed.data;
 }

@@ -10,12 +10,15 @@ import type {
   SavedProduct,
 } from "./types";
 import { ApiError, NotFoundError, type ApiErrorBody } from "./types";
+import { serverBackendUrl } from "./backend-url";
 
 /**
  * Base URL of the backend as seen from the server (Next.js Server Components).
- * Client-side calls use NEXT_PUBLIC_BACKEND_URL (see client-saved.ts).
+ * Client-side calls use NEXT_PUBLIC_BACKEND_URL via publicBackendUrl().
  */
-const SERVER_BASE = process.env.BACKEND_URL ?? "http://localhost:8080";
+function serverBase(): string {
+  return serverBackendUrl();
+}
 
 function buildSearchParams(query: Record<string, unknown>): string {
   const sp = new URLSearchParams();
@@ -28,7 +31,7 @@ function buildSearchParams(query: Record<string, unknown>): string {
 }
 
 async function fetchJson<T>(pathAndQuery: string, init?: RequestInit): Promise<T> {
-  const url = `${SERVER_BASE}${pathAndQuery}`;
+  const url = `${serverBase()}${pathAndQuery}`;
   const res = await fetch(url, {
     ...init,
     headers: { Accept: "application/json", ...(init?.headers ?? {}) },
@@ -109,7 +112,7 @@ export async function searchProducts(
  * the browser follows the 302. Exposed for building hrefs (see components).
  */
 export function redirectHref(productId: string): string {
-  return `${SERVER_BASE}/v1/products/${encodeURIComponent(productId)}/redirect`;
+  return `${serverBase()}/v1/products/${encodeURIComponent(productId)}/redirect`;
 }
 
 /**

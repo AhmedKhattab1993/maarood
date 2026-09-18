@@ -31,8 +31,9 @@ async function bootstrap(): Promise<void> {
     next();
   });
 
-  await app.listen(env.PORT);
-  new Logger('Bootstrap').log(`Maarood backend listening on :${env.PORT} (${env.NODE_ENV})`);
+  // Bind all interfaces so the API is reachable on the host public IPv4, not only loopback.
+  await app.listen(env.PORT, '0.0.0.0');
+  new Logger('Bootstrap').log(`Maarood backend listening on 0.0.0.0:${env.PORT} (${env.NODE_ENV})`);
 }
 
 void bootstrap();

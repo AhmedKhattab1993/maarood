@@ -3,9 +3,7 @@
 import { getDeviceId } from "./device-id";
 import type { SavedProduct } from "./api/types";
 import { ApiError, type ApiErrorBody } from "./api/types";
-
-const CLIENT_BASE =
-  process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8080";
+import { publicBackendUrl } from "./api/backend-url";
 
 async function savedFetch(
   path: string,
@@ -17,7 +15,7 @@ async function savedFetch(
       error: { code: "bad_request", message: "Device id unavailable" },
     });
   }
-  const res = await fetch(`${CLIENT_BASE}${path}`, {
+  const res = await fetch(`${publicBackendUrl()}${path}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",

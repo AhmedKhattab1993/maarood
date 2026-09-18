@@ -4,9 +4,9 @@
   "private": true,
   "description": "Maaroud web frontend (Next.js App Router) — Arabic-first shopping discovery.",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -H 0.0.0.0",
     "build": "npm run build --workspace @maarood/schema --if-present && npm run build --workspace @maarood/tokens --if-present && npm run build --workspace @maarood/scraper --if-present && next build",
-    "start": "next start",
+    "start": "next start -H 0.0.0.0",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
   },
