@@ -21,6 +21,7 @@
     "seed": "npm run build --workspace @maarood/scraper --if-present && node apps/scraper/dist/seed.js",
     "scrape": "npm run build --workspace @maarood/scraper --if-present && node apps/scraper/dist/main.js",
     "scrape:all": "npm run build --workspace @maarood/scraper --if-present && node apps/scraper/dist/run-all.js",
+    "crawl:schedule": "npm run build --workspace @maarood/scraper --if-present && node apps/scraper/dist/schedule.js",
     "recategorize": "npm run build --workspace @maarood/scraper --if-present && node apps/scraper/dist/recategorize.js"
   },
   "devDependencies": {

@@ -15,11 +15,14 @@ npm run db:migrate     # apply schema
 npm run seed           # register initial merchants (idempotent)
 npm run scrape -- <slug>      # crawl one merchant
 npm run scrape:all            # crawl every active merchant whose frequency has elapsed
+npm run crawl:schedule        # local 6h loop (same due-logic as Vercel Cron)
 ```
 
 Same code runs locally and in cloud. On Vercel, the workflow in
 `apps/web/workflows/crawl.ts` orchestrates `getDueMerchants` + `runPipeline`
-per merchant; the trigger differs, the code does not.
+per merchant; the trigger differs, the code does not. Locally, `crawl:schedule`
+calls `crawlDueMerchants` on start and every 6 hours against `DATABASE_URL`
+(Docker Postgres when `~/.maarood.env` points at localhost).
 
 ## Connectors
 
