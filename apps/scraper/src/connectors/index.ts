@@ -5,6 +5,8 @@ import { ShopifyConnector } from './shopify/shopify.connector';
 import { normalizeShopifyProduct } from './shopify/shopify.normalizer';
 import { WooCommerceConnector } from './woocommerce/woocommerce.connector';
 import { normalizeWooCommerceProduct } from './woocommerce/woocommerce.normalizer';
+import { MagentoConnector } from './magento/magento.connector';
+import { normalizeMagentoProduct } from './magento/magento.normalizer';
 
 export const connectors: Record<string, ConnectorDefinition> = {
   shopify: {
@@ -16,5 +18,10 @@ export const connectors: Record<string, ConnectorDefinition> = {
     factory: (ctx) => new WooCommerceConnector(ctx),
     normalize: normalizeWooCommerceProduct,
     sourceType: 'woocommerce_store_api',
+  },
+  magento: {
+    factory: (ctx) => new MagentoConnector(ctx),
+    normalize: normalizeMagentoProduct,
+    sourceType: 'magento_graphql',
   },
 };

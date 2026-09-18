@@ -28,6 +28,8 @@ calls `crawlDueMerchants` on start and every 6 hours against `DATABASE_URL`
 
 - **`shopify`** — fetches a store's public `/products.json`. Works for any Shopify
   store with no per-store code. (Reaches nastrends.com, antikkaeg.com.)
+- **`magento`** — GET `{domain}/graphql` `products` query (Mobaco). POST GraphQL
+  is not used; the live store rejects it.
 
 Other connector types (HTML/Cheerio, Playwright) slot in by adding a factory to
 `src/connectors/index.ts` — store-specific extraction stays isolated from the
