@@ -2,8 +2,16 @@
 
 import { z } from 'zod';
 
+function merchantIdList(value: unknown): string[] | undefined {
+  if (value === undefined || value === null || value === '') return undefined;
+  const parts = Array.isArray(value) ? value : String(value).split(',');
+  const ids = parts.map((s) => String(s).trim()).filter(Boolean);
+  return ids.length > 0 ? ids : undefined;
+}
+
 export const productQuery = z.object({
   brand: z.string().trim().optional(),
+  merchantId: z.preprocess(merchantIdList, z.array(z.string().uuid()).optional()),
   category: z.string().trim().optional(),
   minPrice: z.coerce.number().nonnegative().optional(),
   maxPrice: z.coerce.number().nonnegative().optional(),

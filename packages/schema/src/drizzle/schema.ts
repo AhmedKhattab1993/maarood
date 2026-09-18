@@ -213,12 +213,43 @@ export const productErrors = pgTable(
   }),
 );
 
-/** Anonymous saved-product list, keyed by a client-generated device UUID. */
+/** App users (email + password; no verification). */
+export const users = pgTable('users', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  email: text('email').notNull().unique(),
+  passwordHash: text('password_hash').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** Brands a user follows. Following feed = products of these merchants. */
+export const followedMerchants = pgTable(
+  'followed_merchants',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    merchantId: uuid('merchant_id')
+      .notNull()
+      .references(() => merchants.id, { onDelete: 'cascade' }),
+    followedAt: timestamp('followed_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    userMerchantUnique: uniqueIndex('followed_merchants_user_merchant_idx').on(
+      t.userId,
+      t.merchantId,
+    ),
+    userIdx: index('followed_merchants_user_idx').on(t.userId),
+  }),
+);
+
+/** Favourited products. `user_id` is the account; `device_id` is legacy anonymous. */
 export const savedProducts = pgTable(
   'saved_products',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    deviceId: uuid('device_id').notNull(),
+    deviceId: uuid('device_id'),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
     productId: uuid('product_id')
       .notNull()
       .references(() => products.id, { onDelete: 'cascade' }),
@@ -226,7 +257,9 @@ export const savedProducts = pgTable(
   },
   (t) => ({
     deviceProductUnique: uniqueIndex('saved_products_device_product_idx').on(t.deviceId, t.productId),
+    userProductUnique: uniqueIndex('saved_products_user_product_idx').on(t.userId, t.productId),
     deviceIdx: index('saved_products_device_idx').on(t.deviceId),
+    userIdx: index('saved_products_user_idx').on(t.userId),
   }),
 );
 
@@ -268,5 +301,9 @@ export type ProductErrorRow = typeof productErrors.$inferSelect;
 export type NewProductErrorRow = typeof productErrors.$inferInsert;
 export type SavedProductRow = typeof savedProducts.$inferSelect;
 export type NewSavedProductRow = typeof savedProducts.$inferInsert;
+export type UserRow = typeof users.$inferSelect;
+export type NewUserRow = typeof users.$inferInsert;
+export type FollowedMerchantRow = typeof followedMerchants.$inferSelect;
+export type NewFollowedMerchantRow = typeof followedMerchants.$inferInsert;
 export type OutboundClickRow = typeof outboundClicks.$inferSelect;
 export type NewOutboundClickRow = typeof outboundClicks.$inferInsert;

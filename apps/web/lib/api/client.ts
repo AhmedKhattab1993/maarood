@@ -24,6 +24,13 @@ function buildSearchParams(query: Record<string, unknown>): string {
   const sp = new URLSearchParams();
   for (const [key, value] of Object.entries(query)) {
     if (value === undefined || value === null || value === "") continue;
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        if (item === undefined || item === null || item === "") continue;
+        sp.append(key, String(item));
+      }
+      continue;
+    }
     sp.set(key, String(value));
   }
   const str = sp.toString();

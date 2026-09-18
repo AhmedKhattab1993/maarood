@@ -1,25 +1,25 @@
 "use client";
 
-import { getDeviceId } from "./device-id";
 import type { SavedProduct } from "./api/types";
 import { ApiError, type ApiErrorBody } from "./api/types";
 import { publicBackendUrl } from "./api/backend-url";
+import { getAuthToken } from "./auth";
 
 async function savedFetch(
   path: string,
   init: RequestInit,
 ): Promise<Response> {
-  const deviceId = getDeviceId();
-  if (!deviceId) {
-    throw new ApiError(400, {
-      error: { code: "bad_request", message: "Device id unavailable" },
+  const token = getAuthToken();
+  if (!token) {
+    throw new ApiError(401, {
+      error: { code: "unauthorized", message: "Sign in required" },
     });
   }
   const res = await fetch(`${publicBackendUrl()}${path}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",
-      "X-Device-Id": deviceId,
+      Authorization: `Bearer ${token}`,
       ...(init.headers ?? {}),
     },
   });

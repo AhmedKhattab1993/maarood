@@ -23,6 +23,9 @@ export const envSchema = z.object({
     .trim()
     .min(16, 'ADMIN_TOKEN must be at least 16 characters — set it in ~/.maarood.env'),
 
+  /** HMAC key for user session tokens. Falls back to ADMIN_TOKEN when unset. */
+  AUTH_SECRET: z.string().trim().min(16).optional(),
+
   /** Allowed CORS origin(s). '*' by default for the MVP; set to the frontend origin in production. */
   CORS_ORIGIN: z.string().trim().default('*'),
 

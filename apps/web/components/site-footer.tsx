@@ -1,7 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import { getCategories } from "@/lib/api/client";
 import { Link } from "@/i18n/navigation";
-import { categoryName } from "@/lib/categories";
 
 /**
  * Global footer — Nike-style: white, 48px padding, multi-column link grid +
@@ -11,36 +9,32 @@ import { categoryName } from "@/lib/categories";
  */
 export async function SiteFooter() {
   const t = await getTranslations("Footer");
-  const tCat = await getTranslations("Category");
   const tNav = await getTranslations("Nav");
   const year = new Date().getFullYear();
 
-  let categoryList: Awaited<ReturnType<typeof getCategories>> = [];
-  try {
-    categoryList = await getCategories();
-  } catch {
-    // non-critical
-  }
-
   return (
     <footer className="border-t border-stone-grey bg-white">
-      <div className="mx-auto grid max-w-[var(--container-max)] grid-cols-2 gap-8 px-4 py-12 md:grid-cols-4 md:px-12">
-        {/* Discover */}
+      <div className="mx-auto grid max-w-[var(--container-max)] grid-cols-2 gap-8 px-4 py-12 md:grid-cols-3 md:px-12">
         <div className="flex flex-col gap-3">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-black">
             {t("discover")}
           </h2>
           <ul className="flex flex-col gap-2 text-sm text-cool-grey">
-            {categoryList.slice(0, 5).map((c) => (
-              <li key={c.name}>
-                <Link
-                  href={{ pathname: "/c/[category]", params: { category: c.name } }}
-                  className="transition-colors hover:text-ink-black"
-                >
-                  {categoryName(c.name, tCat)}
-                </Link>
-              </li>
-            ))}
+            <li>
+              <Link href={{ pathname: "/" }} className="transition-colors hover:text-ink-black">
+                {tNav("explore")}
+              </Link>
+            </li>
+            <li>
+              <Link href={{ pathname: "/following" }} className="transition-colors hover:text-ink-black">
+                {tNav("following")}
+              </Link>
+            </li>
+            <li>
+              <Link href={{ pathname: "/favourites" }} className="transition-colors hover:text-ink-black">
+                {tNav("favourites")}
+              </Link>
+            </li>
           </ul>
         </div>
 
@@ -51,18 +45,8 @@ export async function SiteFooter() {
           </h2>
           <ul className="flex flex-col gap-2 text-sm text-cool-grey">
             <li>
-              <Link href={{ pathname: "/brands" }} className="transition-colors hover:text-ink-black">
-                {tNav("brands")}
-              </Link>
-            </li>
-            <li>
               <Link href={{ pathname: "/search" }} className="transition-colors hover:text-ink-black">
                 {tNav("search")}
-              </Link>
-            </li>
-            <li>
-              <Link href={{ pathname: "/saved" }} className="transition-colors hover:text-ink-black">
-                {tNav("saved")}
               </Link>
             </li>
           </ul>

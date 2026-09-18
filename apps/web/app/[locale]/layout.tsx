@@ -7,7 +7,7 @@ import { notFound } from "next/navigation";
 import { dirFor, htmlLang, isLocale } from "@/i18n/config";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { MobileTabBar } from "@/components/mobile-tab-bar";
+import { MainTabBar } from "@/components/main-tab-bar";
 
 // Arabic-first pairing. Both are exposed as CSS variables that override the
 // @theme fallbacks so `var(--font-sans)` / `var(--font-latin)` resolve to the
@@ -57,7 +57,7 @@ export default async function LocaleLayout({
           <SiteHeader />
           <main className="flex-1 pb-20 md:pb-0">{children}</main>
           <SiteFooter />
-          <MobileTabBar />
+          <MainTabBar variant="mobile" />
         </NextIntlClientProvider>
       </body>
     </html>

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { listSaved } from "@/lib/saved";
-import { getDeviceId } from "@/lib/device-id";
+import { getAuthToken } from "@/lib/auth";
 import { ApiError, type SavedProduct } from "@/lib/api/types";
 import { ProductGrid, ProductGridSkeleton } from "@/components/product-grid";
 import { EmptyState } from "@/components/state-views";
@@ -23,6 +23,7 @@ export function SavedList({
 }) {
   const [state, setState] = useState<
     | { status: "loading" }
+    | { status: "anon" }
     | { status: "empty" }
     | { status: "ready"; items: SavedProduct[] }
     | { status: "error"; message: string }
@@ -31,8 +32,10 @@ export function SavedList({
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      // Ensure a device id exists before listing.
-      getDeviceId();
+      if (!getAuthToken()) {
+        if (!cancelled) setState({ status: "anon" });
+        return;
+      }
       try {
         const items = await listSaved();
         if (cancelled) return;
@@ -54,6 +57,22 @@ export function SavedList({
   }, []);
 
   if (state.status === "loading") return <ProductGridSkeleton />;
+  if (state.status === "anon") {
+    return (
+      <EmptyState
+        title={emptyTitle}
+        hint={emptyHint}
+        action={
+          <Link
+            href={{ pathname: "/login" }}
+            className="text-sm font-medium text-maaroud-blue hover:underline"
+          >
+            {browseLabel}
+          </Link>
+        }
+      />
+    );
+  }
   if (state.status === "empty") {
     return (
       <EmptyState

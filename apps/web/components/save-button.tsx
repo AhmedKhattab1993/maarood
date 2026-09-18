@@ -4,6 +4,8 @@ import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { saveProduct, unsaveProduct } from "@/lib/saved";
 import { ApiError } from "@/lib/api/types";
+import { getAuthToken } from "@/lib/auth";
+import { useRouter } from "@/i18n/navigation";
 
 /** Heart/bookmark toggle that calls the anonymous saved-products API. */
 export function SaveButton({
@@ -16,10 +18,17 @@ export function SaveButton({
   variant?: "icon" | "label";
 }) {
   const t = useTranslations("Product");
+  const router = useRouter();
   const [saved, setSaved] = useState(initialSaved);
   const [pending, startTransition] = useTransition();
 
-  function toggle() {
+  function toggle(e?: React.MouseEvent) {
+    e?.preventDefault();
+    e?.stopPropagation();
+    if (!getAuthToken()) {
+      router.push("/login");
+      return;
+    }
     startTransition(async () => {
       try {
         if (saved) {

@@ -102,6 +102,7 @@ export type ProductSort = "newest" | "price_asc" | "price_desc" | "relevance";
 
 export interface ProductQuery {
   brand?: string; // merchant slug
+  merchantId?: string | string[];
   category?: string;
   minPrice?: number;
   maxPrice?: number;

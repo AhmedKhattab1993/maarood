@@ -4,7 +4,7 @@
  * filter identically.
  */
 
-import { type SQL, and, eq, gte, lte, sql } from 'drizzle-orm';
+import { type SQL, and, eq, gte, inArray, lte, sql } from 'drizzle-orm';
 import { merchants, products } from '@maarood/schema';
 import type { ProductQuery } from './products.dto';
 
@@ -36,6 +36,9 @@ export function buildFilters(
   brand: ResolvedBrand | null,
 ): SQL | undefined {
   const conditions: SQL[] = [];
+  if (q.merchantId && q.merchantId.length > 0) {
+    conditions.push(inArray(products.merchantId, q.merchantId));
+  }
   if (brand) conditions.push(eq(products.merchantId, brand.id));
   if (q.category) conditions.push(eq(products.category, q.category));
   if (q.availability) conditions.push(eq(products.availability, q.availability));

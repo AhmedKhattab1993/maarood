@@ -19,11 +19,39 @@
   },
   "Nav": {
     "home": "الرئيسية",
+    "explore": "استكشاف",
+    "following": "المتابَعون",
+    "favourites": "المفضلة",
     "search": "بحث",
     "brands": "البراندات",
     "saved": "المحفوظات",
     "categories": "التصنيفات",
     "language": "English"
+  },
+  "Auth": {
+    "login": "دخول",
+    "signup": "حساب جديد",
+    "logout": "خروج",
+    "email": "البريد",
+    "password": "كلمة السر",
+    "error": "تعذّر الدخول. حاول تاني.",
+    "haveAccount": "عندك حساب؟ ادخل",
+    "needAccount": "محتاج حساب؟ سجّل"
+  },
+  "Follow": {
+    "follow": "متابعة",
+    "unfollow": "متابَع"
+  },
+  "Following": {
+    "empty": "لسه ما بتتابعش أي براند",
+    "emptyHint": "تابع براند من المنتج عشان يظهر هنا.",
+    "loginHint": "ادخل عشان تشوف البراندات اللي بتتابعها.",
+    "browse": "استكشاف"
+  },
+  "Favourites": {
+    "empty": "لسه مفيش مفضلة",
+    "emptyHint": "احفظ منتج عشان يظهر هنا.",
+    "browse": "استكشاف"
   },
   "Search": {
     "placeholder": "دوّر على براند أو منتج…",
@@ -124,6 +152,8 @@
     "categoryTitle": "{category} — معروض",
     "brandsTitle": "البراندات — معروض",
     "brandTitle": "{brand} — معروض",
-    "savedTitle": "المحفوظات — معروض"
+    "savedTitle": "المحفوظات — معروض",
+    "favouritesTitle": "المفضلة — معروض",
+    "followingTitle": "المتابَعون — معروض"
   }
 }

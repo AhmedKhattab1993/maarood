@@ -1,8 +1,12 @@
+"use client";
+
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { formatPrice } from "@/lib/format";
 import { coverSrc } from "@/lib/product-image";
 import type { BrandSummary, PublicProduct } from "@/lib/api/types";
+import { SaveButton } from "./save-button";
+import { FollowButton } from "./follow-button";
 
 interface ProductCardProps {
   product: PublicProduct;
@@ -27,6 +31,7 @@ export function ProductCard({ product, brands, priority }: ProductCardProps) {
     product.previousPrice !== null && product.previousPrice > product.currentPrice;
 
   return (
+    <article className="flex w-full flex-col">
     <Link
       href={{ pathname: "/p/[id]", params: { id: product.id } }}
       className="group flex w-full flex-col"
@@ -82,6 +87,11 @@ export function ProductCard({ product, brands, priority }: ProductCardProps) {
         </div>
       </div>
     </Link>
+      <div className="mt-2 flex items-center gap-2">
+        <FollowButton merchantId={product.merchantId} />
+        <SaveButton productId={product.id} />
+      </div>
+    </article>
   );
 }
 

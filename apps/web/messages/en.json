@@ -19,11 +19,39 @@
   },
   "Nav": {
     "home": "Home",
+    "explore": "Explore",
+    "following": "Following",
+    "favourites": "Favourites",
     "search": "Search",
     "brands": "Brands",
     "saved": "Saved",
     "categories": "Categories",
     "language": "العربية"
+  },
+  "Auth": {
+    "login": "Log in",
+    "signup": "Sign up",
+    "logout": "Log out",
+    "email": "Email",
+    "password": "Password",
+    "error": "Could not sign in. Try again.",
+    "haveAccount": "Already have an account? Log in",
+    "needAccount": "Need an account? Sign up"
+  },
+  "Follow": {
+    "follow": "Follow",
+    "unfollow": "Following"
+  },
+  "Following": {
+    "empty": "You are not following any brands yet",
+    "emptyHint": "Follow a brand from a product to see it here.",
+    "loginHint": "Log in to see brands you follow.",
+    "browse": "Explore"
+  },
+  "Favourites": {
+    "empty": "No favourites yet",
+    "emptyHint": "Heart a product to save it here.",
+    "browse": "Explore"
   },
   "Search": {
     "placeholder": "Search brands or products…",
@@ -124,6 +152,8 @@
     "categoryTitle": "{category} — Maaroud",
     "brandsTitle": "Brands — Maaroud",
     "brandTitle": "{brand} — Maaroud",
-    "savedTitle": "Saved — Maaroud"
+    "savedTitle": "Saved — Maaroud",
+    "favouritesTitle": "Favourites — Maaroud",
+    "followingTitle": "Following — Maaroud"
   }
 }

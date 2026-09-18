@@ -18,6 +18,10 @@ const pathnames = {
   "/p/[id]": "/p/[id]",
   "/c/[category]": "/c/[category]",
   "/saved": "/saved",
+  "/following": "/following",
+  "/favourites": "/favourites",
+  "/login": "/login",
+  "/signup": "/signup",
 } as const;
 
 export const { Link, redirect, usePathname, useRouter, getPathname } =
