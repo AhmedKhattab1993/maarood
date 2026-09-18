@@ -55,7 +55,15 @@ export const magentoProduct = z.object({
   image,
   small_image: image,
   thumbnail: image,
-  media_gallery: z.array(z.object({ url: z.string().nullable().optional() })).nullable().optional(),
+  media_gallery: z
+    .array(
+      z.object({
+        url: z.string().nullable().optional(),
+        label: z.string().nullable().optional(),
+      }),
+    )
+    .nullable()
+    .optional(),
   price_range: z
     .object({
       minimum_price: priced.optional(),

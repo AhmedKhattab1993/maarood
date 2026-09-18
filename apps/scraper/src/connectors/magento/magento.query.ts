@@ -10,7 +10,7 @@ export function magentoProductsQuery(currentPage: number, pageSize: number): str
     `{products(search:"",pageSize:${pageSize},currentPage:${currentPage})` +
     `{total_count page_info{current_page page_size total_pages}` +
     `items{sku name url_key stock_status image{url}small_image{url}thumbnail{url}` +
-    `media_gallery{url}` +
+    `media_gallery{url label}` +
     `price_range{minimum_price{regular_price{value currency}final_price{value currency}}}` +
     `categories{name}description{html}short_description{html}` +
     `...on ConfigurableProduct{variants{product{sku stock_status ` +

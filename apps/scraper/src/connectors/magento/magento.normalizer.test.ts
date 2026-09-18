@@ -71,6 +71,38 @@ describe('normalizeMagentoProduct', () => {
     expect(p.merchantProductId).toBe('MS110129-0');
   });
 
+  it('does not use a size-chart plate as the primary image when a product photo exists', () => {
+    const p = normalizeMagentoProduct(
+      {
+        ...magentoItem,
+        image: {
+          url: 'https://mobaco.hypernode.io/static/version1/frontend/Magento/luma/en_US/Magento_Catalog/images/product/placeholder/image.jpg',
+        },
+        media_gallery: [
+          {
+            url: 'https://mobaco.hypernode.io/media/catalog/product/p/r/product_measurements_246.jpg',
+            label: 'Linen Shorts',
+          },
+          {
+            url: 'https://mobaco.hypernode.io/media/catalog/product/b/o/body_image_209.jpg',
+            label: 'Linen Shorts',
+          },
+          {
+            url: 'https://mobaco.hypernode.io/media/catalog/product/l/l/ll350_0020_f01.jpg',
+            label: 'Linen Shorts',
+          },
+        ],
+      },
+      MERCHANT_ID,
+      'mobaco.com',
+    );
+    expect(p.imageUrls[0]).toBe(
+      'https://mobaco.hypernode.io/media/catalog/product/b/o/body_image_209.jpg',
+    );
+    expect(p.imageUrls[0]).not.toMatch(/product_measurements/);
+    expect(p.imageUrls.at(-1)).toMatch(/product_measurements/);
+  });
+
   it('drops Magento placeholder images', () => {
     const p = normalizeMagentoProduct(
       {

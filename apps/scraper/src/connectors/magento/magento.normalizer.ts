@@ -33,23 +33,37 @@ function isPlaceholder(url: string): boolean {
   );
 }
 
-function catalogImageUrls(r: MagentoProduct): string[] {
-  const candidates: Array<string | null | undefined> = [
-    ...(r.media_gallery ?? []).map((g) => g.url),
-    r.image?.url,
-    r.small_image?.url,
-    r.thumbnail?.url,
-  ];
-  const out: string[] = [];
-  const seen = new Set<string>();
-  for (const raw of candidates) {
-    if (!raw) continue;
-    const url = raw.trim();
-    if (!/^https?:\/\//i.test(url) || isPlaceholder(url) || seen.has(url)) continue;
-    seen.add(url);
-    out.push(url);
+/** Size-scale plates must never be imageUrls[0] when a real photo exists. */
+const SIZE_CHART =
+  /product_measurements|size[_-]?chart|size[_-]?guide|size[_-]?scale|measurements?/i;
+
+export function isSizeChartImage(url: string, label?: string | null): boolean {
+  if (SIZE_CHART.test(label ?? '')) return true;
+  try {
+    return SIZE_CHART.test(new URL(url).pathname);
+  } catch {
+    return SIZE_CHART.test(url);
   }
-  return out;
+}
+
+function catalogImageUrls(r: MagentoProduct): string[] {
+  const candidates: Array<{ url?: string | null; label?: string | null } | null | undefined> = [
+    r.image,
+    r.small_image,
+    r.thumbnail,
+    ...(r.media_gallery ?? []),
+  ];
+  const photos: string[] = [];
+  const charts: string[] = [];
+  const seen = new Set<string>();
+  for (const item of candidates) {
+    const url = item?.url?.trim();
+    if (!url || !/^https?:\/\//i.test(url) || isPlaceholder(url) || seen.has(url)) continue;
+    seen.add(url);
+    if (isSizeChartImage(url, item?.label)) charts.push(url);
+    else photos.push(url);
+  }
+  return [...photos, ...charts];
 }
 
 function stockToAvailability(status: string | null | undefined): Availability {

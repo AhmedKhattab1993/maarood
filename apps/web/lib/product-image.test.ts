@@ -18,15 +18,27 @@ describe("coverSrc", () => {
     expect(coverSrc(undefined)).toBeNull();
     expect(coverSrc(["/local.jpg", ""])).toBeNull();
   });
+
+  it("never uses a size-chart / measurement plate as the cover", () => {
+    const chart =
+      "https://mobaco.hypernode.io/media/catalog/product/p/r/product_measurements_246.jpg";
+    const body =
+      "https://mobaco.hypernode.io/media/catalog/product/b/o/body_image_209.jpg";
+    const still =
+      "https://mobaco.hypernode.io/media/catalog/product/l/l/ll350_0020_f01.jpg";
+    expect(coverSrc([chart, body, still])).toBe(body);
+    expect(coverSrc([chart])).toBeNull();
+  });
 });
 
 describe("gallerySrcs", () => {
-  it("keeps every http(s) URL in order for the product-detail gallery", () => {
-    const urls = [
-      "https://mobaco.com/wp-content/uploads/2025/10/JH098_918C_1.jpg",
-      "https://cdn.shopify.com/s/files/1/x.jpg",
-    ];
-    expect(gallerySrcs(urls)).toEqual(urls);
-    expect(gallerySrcs(["skip", ...urls])).toEqual(urls);
+  it("keeps every http(s) URL, with size charts after product photos", () => {
+    const still =
+      "https://mobaco.hypernode.io/media/catalog/product/l/l/ll350_0020_f01.jpg";
+    const chart =
+      "https://mobaco.hypernode.io/media/catalog/product/p/r/product_measurements_246.jpg";
+    const body =
+      "https://mobaco.hypernode.io/media/catalog/product/b/o/body_image_209.jpg";
+    expect(gallerySrcs([chart, body, still])).toEqual([body, still, chart]);
   });
 });
