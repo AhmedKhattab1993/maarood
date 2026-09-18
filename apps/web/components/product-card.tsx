@@ -1,7 +1,7 @@
 import { useLocale, useTranslations } from "next-intl";
-import NextImage from "next/image";
 import { Link } from "@/i18n/navigation";
 import { formatPrice } from "@/lib/format";
+import { coverSrc } from "@/lib/product-image";
 import type { BrandSummary, PublicProduct } from "@/lib/api/types";
 
 interface ProductCardProps {
@@ -21,7 +21,7 @@ export function ProductCard({ product, brands, priority }: ProductCardProps) {
   const t = useTranslations("Product");
   const locale = useLocale();
   const brand = brands?.find((b) => b.id === product.merchantId);
-  const cover = product.imageUrls[0];
+  const cover = coverSrc(product.imageUrls);
 
   const discounted =
     product.previousPrice !== null && product.previousPrice > product.currentPrice;
@@ -31,16 +31,17 @@ export function ProductCard({ product, brands, priority }: ProductCardProps) {
       href={{ pathname: "/p/[id]", params: { id: product.id } }}
       className="group flex flex-col"
     >
-      <div className="relative aspect-square w-full overflow-hidden">
+      <div className="relative aspect-square w-full overflow-hidden bg-stone-grey">
         {cover ? (
-          <NextImage
+          // Plain <img> to the merchant CDN — Next's optimizer 400s on
+          // arbitrary Shopify/Woo hosts (`/_next/image?url=...`).
+          <img
             src={cover}
             alt={product.title}
-            fill
-            sizes="(max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
-            priority={priority}
-            className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-            unoptimized
+            fetchPriority={priority ? "high" : undefined}
+            decoding="async"
+            referrerPolicy="no-referrer"
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-cool-grey">

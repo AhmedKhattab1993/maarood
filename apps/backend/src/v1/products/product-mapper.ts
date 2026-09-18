@@ -32,13 +32,29 @@ export interface PublicProduct {
 }
 
 function safeParseArray<T>(value: unknown): T[] {
+  if (Array.isArray(value)) return value as T[];
   if (typeof value !== 'string') return [];
+  const trimmed = value.trim();
+  if (!trimmed) return [];
   try {
-    const parsed = JSON.parse(value);
+    const parsed = JSON.parse(trimmed);
     return Array.isArray(parsed) ? (parsed as T[]) : [];
   } catch {
     return [];
   }
+}
+
+const HTTP_URL = /^https?:\/\//i;
+
+/** Image column: JSON text or an already-parsed array; keep only http(s) URLs. */
+export function parseImageUrls(value: unknown): string[] {
+  const out: string[] = [];
+  for (const item of safeParseArray<unknown>(value)) {
+    if (typeof item !== 'string') continue;
+    const url = item.trim();
+    if (HTTP_URL.test(url)) out.push(url);
+  }
+  return out;
 }
 
 export function mapProduct(row: Record<string, unknown>): PublicProduct {
@@ -60,7 +76,7 @@ export function mapProduct(row: Record<string, unknown>): PublicProduct {
     options: safeParseArray<ProductOption>(row.options),
     sizes: safeParseArray<string>(row.sizes),
     colors: safeParseArray<string>(row.colors),
-    imageUrls: safeParseArray<string>(row.imageUrls),
+    imageUrls: parseImageUrls(row.imageUrls),
     redirectUrl: (row.redirectUrl as string | null) ?? null,
     revisionNumber: row.revisionNumber as number,
     stale: row.staleAt !== null && row.staleAt !== undefined,

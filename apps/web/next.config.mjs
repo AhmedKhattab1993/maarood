@@ -15,8 +15,16 @@ const nextConfig = {
   // Transpile workspace packages so Next's compiler sees their source/dist.
   transpilePackages: ["@maarood/tokens", "@maarood/schema", "@maarood/scraper"],
   images: {
-    // Product imagery is hosted on merchant CDNs (Shopify CDN etc.).
-    remotePatterns: [{ protocol: "https", hostname: "**" }],
+    // Merchant CDNs are arbitrary hosts; the optimizer 400s on `hostname: "**"`.
+    // Product cards use plain <img>. Keep unoptimized so any leftover next/image
+    // still emits the real CDN URL instead of /_next/image?url=...
+    unoptimized: true,
+    remotePatterns: [
+      { protocol: "https", hostname: "cdn.shopify.com" },
+      { protocol: "https", hostname: "**.shopify.com" },
+      { protocol: "https", hostname: "**.myshopify.com" },
+      { protocol: "https", hostname: "mobaco.com" },
+    ],
   },
   // Workspace alias fallback so imports resolve during local development.
   webpack: (config) => {

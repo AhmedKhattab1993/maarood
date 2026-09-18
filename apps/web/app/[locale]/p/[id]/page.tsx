@@ -8,6 +8,7 @@ import { ErrorState } from "@/components/state-views";
 import { ProductPrice } from "@/components/product-price";
 import { ProductJsonLd } from "./product-jsonld";
 import { formatPrice } from "@/lib/format";
+import { gallerySrcs } from "@/lib/product-image";
 import type { Variant } from "@/lib/api/types";
 import { notFound } from "next/navigation";
 
@@ -85,7 +86,7 @@ export default async function ProductPage({
       <ProductJsonLd product={product} brandName={vendorName} />
 
       <div className="mt-6 grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-12">
-        <Gallery imageUrls={product.imageUrls} title={product.title} />
+        <Gallery imageUrls={gallerySrcs(product.imageUrls)} title={product.title} />
 
         <div className="flex flex-col gap-4">
           {vendorName && (
@@ -305,6 +306,7 @@ function Gallery({
       <img
         src={imageUrls[0]}
         alt={title}
+        referrerPolicy="no-referrer"
         className="aspect-[4/5] w-full object-cover"
       />
       {imageUrls.length > 1 && (
@@ -314,6 +316,7 @@ function Gallery({
               <img
                 src={src}
                 alt={`${title} ${i + 2}`}
+                referrerPolicy="no-referrer"
                 className="aspect-square w-full rounded bg-stone-grey object-cover"
               />
             </li>

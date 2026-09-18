@@ -67,4 +67,36 @@ describe('mapProduct', () => {
     const p = mapProduct(row({ variants: null }));
     expect(p.variants).toEqual([]);
   });
+
+  it('returns imageUrls from JSON-text columns', () => {
+    const p = mapProduct(
+      row({ imageUrls: '["https://cdn.shopify.com/s/files/1/x.jpg"]' }),
+    );
+    expect(p.imageUrls).toEqual(['https://cdn.shopify.com/s/files/1/x.jpg']);
+    expect(p.imageUrls[0]).toMatch(/^https?:\/\//);
+  });
+
+  it('returns imageUrls when the driver already parsed the JSON array', () => {
+    const p = mapProduct(
+      row({
+        imageUrls: [
+          'https://mobaco.com/wp-content/uploads/a.jpg',
+          'https://cdn.shopify.com/s/files/1/y.jpg',
+        ],
+      }),
+    );
+    expect(p.imageUrls).toEqual([
+      'https://mobaco.com/wp-content/uploads/a.jpg',
+      'https://cdn.shopify.com/s/files/1/y.jpg',
+    ]);
+  });
+
+  it('drops non-http image entries instead of emitting an empty cover', () => {
+    const p = mapProduct(
+      row({
+        imageUrls: ['/relative.jpg', '', 'https://cdn.shopify.com/s/files/1/z.jpg'],
+      }),
+    );
+    expect(p.imageUrls).toEqual(['https://cdn.shopify.com/s/files/1/z.jpg']);
+  });
 });
