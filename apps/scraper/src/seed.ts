@@ -7,13 +7,9 @@ import { eq } from 'drizzle-orm';
 import { merchants } from '@maarood/schema';
 import { loadEnv } from './config/env';
 import { createDb } from './db';
+import { INITIAL_MERCHANTS } from './initial-merchants';
 
-const INITIAL_MERCHANTS = [
-  { name: 'NAS Trends', slug: 'nastrends', domain: 'nastrends.com', connectorType: 'shopify', crawlFrequencyMinutes: 360 },
-  { name: 'Antikka', slug: 'antikka', domain: 'antikkaeg.com', connectorType: 'shopify', crawlFrequencyMinutes: 360 },
-  { name: 'Mobaco', slug: 'mobaco', domain: 'mobaco.com', connectorType: 'magento', crawlFrequencyMinutes: 360 },
-  { name: 'Y Studios', slug: 'ystudios', domain: 'ystudios.net', connectorType: 'shopify', crawlFrequencyMinutes: 360 },
-];
+export { INITIAL_MERCHANTS } from './initial-merchants';
 
 async function main(): Promise<void> {
   const env = loadEnv();
@@ -21,7 +17,7 @@ async function main(): Promise<void> {
 
   const inserted = await handle.db
     .insert(merchants)
-    .values(INITIAL_MERCHANTS)
+    .values([...INITIAL_MERCHANTS])
     .onConflictDoNothing({ target: merchants.slug })
     .returning({ slug: merchants.slug });
 
