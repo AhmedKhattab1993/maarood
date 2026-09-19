@@ -31,6 +31,7 @@ export class FollowingController {
         merchantId: followedMerchants.merchantId,
         slug: merchants.slug,
         name: merchants.name,
+        logoUrl: merchants.logoUrl,
         followedAt: followedMerchants.followedAt,
       })
       .from(followedMerchants)

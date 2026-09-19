@@ -21,6 +21,7 @@ import {
 } from '@maarood/schema';
 import type { ScraperDb } from '../db';
 import { connectors } from '../connectors';
+import { persistMerchantLogo } from '../branding/refresh-logo';
 import { storeProduct } from './store';
 import { withRetry } from './retry';
 
@@ -68,6 +69,13 @@ export async function runPipeline(db: ScraperDb, merchantSlug: string): Promise<
   const seenProductIds = new Set<string>();
 
   try {
+    try {
+      const logoUrl = await persistMerchantLogo(db, m);
+      if (logoUrl) console.log(`  logo: ${logoUrl}`);
+    } catch (err) {
+      console.log(`  logo skipped: ${err instanceof Error ? err.message : String(err)}`);
+    }
+
     // Stages 1-3: discover + retrieve (with retry) + extract raw records.
     const connector = def.factory({ merchantId: m.id, domain: m.domain });
     const rawProducts = await withRetry(() => connector.fetchRawProducts(), { retries: 3 });

@@ -19,12 +19,24 @@ export function magentoProductsQuery(currentPage: number, pageSize: number): str
   );
 }
 
+function magentoHost(domain: string): string {
+  return domain.replace(/^https?:\/\//, '').replace(/\/$/, '');
+}
+
 export function magentoProductsUrl(
   domain: string,
   currentPage: number,
   pageSize: number = MAGENTO_PAGE_SIZE,
 ): string {
-  const host = domain.replace(/^https?:\/\//, '').replace(/\/$/, '');
   const query = magentoProductsQuery(currentPage, pageSize);
-  return `https://${host}/graphql?query=${encodeURIComponent(query)}`;
+  return `https://${magentoHost(domain)}/graphql?query=${encodeURIComponent(query)}`;
+}
+
+export function magentoStoreConfigQuery(): string {
+  return '{storeConfig{header_logo_src secure_base_media_url}}';
+}
+
+export function magentoStoreConfigUrl(domain: string): string {
+  const query = magentoStoreConfigQuery();
+  return `https://${magentoHost(domain)}/graphql?query=${encodeURIComponent(query)}`;
 }

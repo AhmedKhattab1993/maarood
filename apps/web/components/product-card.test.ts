@@ -13,22 +13,33 @@ describe("product post author row", () => {
     const name = card.indexOf("{brand.name}");
     const follow = card.indexOf("<FollowButton");
     const headerEnd = card.indexOf("</header>");
-    const img = card.indexOf("<img");
+    const coverImg = card.slice(headerEnd).indexOf("<img");
     expect(header).toBeGreaterThan(-1);
     expect(name).toBeGreaterThan(header);
     expect(follow).toBeGreaterThan(header);
     expect(follow).toBeLessThan(headerEnd);
     expect(name).toBeLessThan(headerEnd);
-    expect(headerEnd).toBeLessThan(img);
-    expect(follow).toBeLessThan(img);
-    expect(name).toBeLessThan(img);
+    expect(coverImg).toBeGreaterThan(-1);
     expect(card.match(/<FollowButton/g)?.length).toBe(1);
   });
 
+  it("renders the brand logo <img> in the author row when a URL is present", () => {
+    const header = card.slice(card.indexOf("<header"), card.indexOf("</header>"));
+    expect(header).toMatch(/brand\.logoUrl/);
+    expect(header).toMatch(/src=\{brand\.logoUrl\}/);
+    expect(header).toMatch(/<img/);
+    expect(card).not.toMatch(/from ["']next\/image["']/);
+  });
+
+  it("keeps the initial-letter avatar when the logo is absent", () => {
+    const header = card.slice(card.indexOf("<header"), card.indexOf("</header>"));
+    expect(header).toMatch(/charAt\(0\)/);
+    expect(header).toMatch(/logoFailed/);
+  });
+
   it("does not use a Nike-style brand subtitle under the image", () => {
-    const img = card.indexOf("<img");
-    const afterImage = card.slice(img);
-    expect(afterImage).not.toMatch(/brand\.name/);
+    const afterHeader = card.slice(card.indexOf("</header>"));
+    expect(afterHeader).not.toMatch(/brand\.name/);
     expect(card).not.toMatch(/text-nike-grey/);
   });
 

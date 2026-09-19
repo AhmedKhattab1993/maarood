@@ -86,6 +86,7 @@ export type FollowedBrand = {
   merchantId: string;
   slug: string;
   name: string;
+  logoUrl: string | null;
   followedAt: string;
 };
 

@@ -70,6 +70,8 @@ export interface BrandSummary {
   slug: string;
   domain: string;
   productCount: number;
+  /** Merchant-site logo URL; posting avatar uses this when set. */
+  logoUrl: string | null;
 }
 
 /** GET /v1/brands/:slug brand object. */
@@ -78,6 +80,7 @@ export interface BrandDetail {
   name: string;
   slug: string;
   domain: string;
+  logoUrl: string | null;
 }
 
 export interface BrandDetailResponse {

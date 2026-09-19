@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { formatPrice } from "@/lib/format";
@@ -24,6 +25,7 @@ export function ProductCard({ product, brands, priority }: ProductCardProps) {
   const t = useTranslations("Product");
   const locale = useLocale();
   const brand = brands?.find((b) => b.id === product.merchantId);
+  const [logoFailed, setLogoFailed] = useState(false);
   const cover = coverSrc(product.imageUrls);
 
   const discounted =
@@ -37,12 +39,27 @@ export function ProductCard({ product, brands, priority }: ProductCardProps) {
             href={{ pathname: "/brands/[slug]", params: { slug: brand.slug } }}
             className="flex min-w-0 items-center gap-3"
           >
-            <span
-              aria-hidden
-              className="flex h-10 w-10 shrink-0 items-center justify-center bg-stone-grey text-sm font-semibold text-ink-black"
-            >
-              {brand.name.trim().charAt(0)}
-            </span>
+            {brand.logoUrl && !logoFailed ? (
+              // Plain <img> to the merchant CDN — Next's optimizer 400s on
+              // arbitrary Shopify/Woo/Magento hosts (`/_next/image?url=...`).
+              <img
+                src={brand.logoUrl}
+                alt=""
+                width={40}
+                height={40}
+                decoding="async"
+                referrerPolicy="no-referrer"
+                onError={() => setLogoFailed(true)}
+                className="h-10 w-10 shrink-0 bg-white object-contain"
+              />
+            ) : (
+              <span
+                aria-hidden
+                className="flex h-10 w-10 shrink-0 items-center justify-center bg-stone-grey text-sm font-semibold text-ink-black"
+              >
+                {brand.name.trim().charAt(0)}
+              </span>
+            )}
             <span className="flex min-w-0 flex-col">
               <span className="truncate text-sm font-semibold text-ink-black">
                 {brand.name}

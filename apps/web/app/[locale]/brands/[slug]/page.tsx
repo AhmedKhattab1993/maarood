@@ -98,6 +98,7 @@ export default async function BrandPage({
               slug: brand.slug,
               domain: brand.domain,
               productCount: products.total,
+              logoUrl: brand.logoUrl,
             },
           ]}
           current={current}

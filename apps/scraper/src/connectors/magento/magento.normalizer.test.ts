@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { magentoProductsUrl } from './magento.query';
+import { magentoProductsUrl, magentoStoreConfigUrl } from './magento.query';
 import { parseMagentoProductsPage } from './magento.connector';
 import { normalizeMagentoProduct } from './magento.normalizer';
 
@@ -55,6 +55,17 @@ describe('magentoProductsUrl', () => {
     const query = decodeURIComponent(url.split('query=')[1] ?? '');
     expect(query).toContain('products(search:""');
     expect(query).toContain('currentPage:1');
+  });
+});
+
+describe('magentoStoreConfigUrl', () => {
+  it('targets GET GraphQL storeConfig for the header logo', () => {
+    const url = magentoStoreConfigUrl('mobaco.com');
+    expect(url.startsWith('https://mobaco.com/graphql?query=')).toBe(true);
+    const query = decodeURIComponent(url.split('query=')[1] ?? '');
+    expect(query).toContain('storeConfig');
+    expect(query).toContain('header_logo_src');
+    expect(query).toContain('secure_base_media_url');
   });
 });
 

@@ -70,3 +70,50 @@ export async function fetchMerchantJson(
     throw err;
   }
 }
+
+async function curlText(url: string, timeoutS: number): Promise<string> {
+  const { stdout } = await execFileAsync(
+    'curl',
+    [
+      '-sS',
+      '--fail',
+      '-L',
+      '--max-time',
+      String(timeoutS),
+      '-H',
+      'accept: text/html,application/xhtml+xml;q=0.9,*/*;q=0.8',
+      '-A',
+      USER_AGENT,
+      url,
+    ],
+    { maxBuffer: 64 * 1024 * 1024, encoding: 'utf8' },
+  );
+  return stdout;
+}
+
+async function nodeFetchText(url: string, timeoutS: number): Promise<string> {
+  const res = await fetch(url, {
+    headers: {
+      accept: 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.8',
+      'user-agent': USER_AGENT,
+    },
+    redirect: 'follow',
+    signal: AbortSignal.timeout(timeoutS * 1000),
+  });
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status} for ${url}`);
+  }
+  return res.text();
+}
+
+/** Fetch HTML/text from a merchant URL: curl-first, same Cloudflare constraint as JSON. */
+export async function fetchMerchantText(url: string, timeoutS: number): Promise<string> {
+  try {
+    return await curlText(url, timeoutS);
+  } catch (err) {
+    if (isMissingBinary(err)) {
+      return nodeFetchText(url, timeoutS);
+    }
+    throw err;
+  }
+}

@@ -53,6 +53,7 @@ export function FollowingFeed({
           slug: f.slug,
           domain: "",
           productCount: 0,
+          logoUrl: f.logoUrl,
         }));
         if (!cancelled) setState({ status: "ready", products: page.items, brands });
       } catch (err) {

@@ -38,6 +38,8 @@ export const merchants = pgTable(
     crawlFrequencyMinutes: integer('crawl_frequency_minutes').notNull().default(1440),
     /** Connector implementation to use, e.g. 'shopify'. Selects the ingestion strategy. */
     connectorType: text('connector_type').notNull(),
+    /** Absolute http(s) logo URL from the merchant site; posting avatar uses this when set. */
+    logoUrl: text('logo_url'),
     /** When true, the merchant is excluded from all crawls (opt-out / removal hook). */
     optedOut: boolean('opted_out').notNull().default(false),
     /** Free-form admin notes (corrections, contacts, context). */

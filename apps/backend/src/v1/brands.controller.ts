@@ -35,6 +35,7 @@ export class BrandsController {
         name: merchants.name,
         slug: merchants.slug,
         domain: merchants.domain,
+        logoUrl: merchants.logoUrl,
         productCount: count(products.id),
       })
       .from(merchants)
@@ -72,7 +73,13 @@ export class BrandsController {
       .offset(offset);
 
     return {
-      brand: { id: brand[0]!.id, name: brand[0]!.name, slug: brand[0]!.slug, domain: brand[0]!.domain },
+      brand: {
+        id: brand[0]!.id,
+        name: brand[0]!.name,
+        slug: brand[0]!.slug,
+        domain: brand[0]!.domain,
+        logoUrl: brand[0]!.logoUrl ?? null,
+      },
       products: {
         items: rows.map((r) => mapProduct(r as unknown as Record<string, unknown>)),
         page: q.page,
