@@ -49,6 +49,11 @@ export async function SiteFooter() {
                 {tNav("search")}
               </Link>
             </li>
+            <li>
+              <Link href={{ pathname: "/brands" }} className="transition-colors hover:text-ink-black">
+                {tNav("brands")}
+              </Link>
+            </li>
           </ul>
         </div>
 

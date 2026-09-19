@@ -50,18 +50,26 @@ export function buildFilters(
   return conditions.length > 0 ? and(...conditions) : undefined;
 }
 
-/** Sort SQL for the given sort option. `relevance` is only meaningful in search. */
-export function sortSql(sort: ProductQuery['sort']): SQL {
+/**
+ * Sort keys for the given option. `relevance` is only meaningful in search.
+ *
+ * `newest` is merchant-round-robin then recency: a recrawl of one large store
+ * must not own the first page of Explore.
+ */
+export function sortSql(sort: ProductQuery['sort']): SQL[] {
   switch (sort) {
     case 'price_asc':
-      return sql`${products.currentPrice} asc nulls last`;
+      return [sql`${products.currentPrice} asc nulls last`];
     case 'price_desc':
-      return sql`${products.currentPrice} desc nulls last`;
+      return [sql`${products.currentPrice} desc nulls last`];
     case 'relevance':
       // Placeholder; the search service overrides with its own relevance ordering.
-      return sql`${products.lastSeenAt} desc nulls last`;
+      return [sql`${products.lastSeenAt} desc nulls last`];
     case 'newest':
     default:
-      return sql`${products.lastSeenAt} desc nulls last`;
+      return [
+        sql`row_number() over (partition by ${products.merchantId} order by ${products.lastSeenAt} desc nulls last)`,
+        sql`${products.lastSeenAt} desc nulls last`,
+      ];
   }
 }

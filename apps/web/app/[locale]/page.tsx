@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { getProducts, getBrands } from "@/lib/api/client";
 import { ProductGrid } from "@/components/product-grid";
 import { Pagination } from "@/components/pagination";
+import { BrandStrip } from "@/components/brand-strip";
 import { EmptyState, ErrorState } from "@/components/state-views";
 
 export async function generateMetadata({
@@ -45,6 +46,7 @@ export default async function ExplorePage({
 
   return (
     <div className="mx-auto max-w-[var(--container-max)] px-4 py-6 md:px-8 md:py-8">
+      <BrandStrip brands={brands} />
       {result.items.length === 0 ? (
         <EmptyState title={t("heroSubtitle")} />
       ) : (

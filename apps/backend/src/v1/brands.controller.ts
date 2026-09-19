@@ -67,7 +67,7 @@ export class BrandsController {
       .select()
       .from(products)
       .where(where)
-      .orderBy(sortSql(q.sort))
+      .orderBy(...sortSql(q.sort))
       .limit(q.limit)
       .offset(offset);
 
