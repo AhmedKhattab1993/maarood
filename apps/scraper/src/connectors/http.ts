@@ -26,7 +26,19 @@ function isMissingBinary(err: unknown): boolean {
   );
 }
 
-async function curlJson(url: string, timeoutS: number): Promise<unknown> {
+function extraHeaderArgs(extraHeaders?: Record<string, string>): string[] {
+  const args: string[] = [];
+  for (const [name, value] of Object.entries(extraHeaders ?? {})) {
+    args.push('-H', `${name}: ${value}`);
+  }
+  return args;
+}
+
+async function curlJson(
+  url: string,
+  timeoutS: number,
+  extraHeaders?: Record<string, string>,
+): Promise<unknown> {
   const { stdout } = await execFileAsync(
     'curl',
     [
@@ -36,6 +48,7 @@ async function curlJson(url: string, timeoutS: number): Promise<unknown> {
       String(timeoutS),
       '-H',
       'accept: application/json',
+      ...extraHeaderArgs(extraHeaders),
       '-A',
       USER_AGENT,
       url,
@@ -45,9 +58,17 @@ async function curlJson(url: string, timeoutS: number): Promise<unknown> {
   return JSON.parse(stdout);
 }
 
-async function nodeFetchJson(url: string, timeoutS: number): Promise<unknown> {
+async function nodeFetchJson(
+  url: string,
+  timeoutS: number,
+  extraHeaders?: Record<string, string>,
+): Promise<unknown> {
   const res = await fetch(url, {
-    headers: { accept: 'application/json', 'user-agent': USER_AGENT },
+    headers: {
+      accept: 'application/json',
+      'user-agent': USER_AGENT,
+      ...extraHeaders,
+    },
     signal: AbortSignal.timeout(timeoutS * 1000),
   });
   if (!res.ok) {
@@ -60,12 +81,13 @@ async function nodeFetchJson(url: string, timeoutS: number): Promise<unknown> {
 export async function fetchMerchantJson(
   url: string,
   timeoutS: number,
+  extraHeaders?: Record<string, string>,
 ): Promise<unknown> {
   try {
-    return await curlJson(url, timeoutS);
+    return await curlJson(url, timeoutS, extraHeaders);
   } catch (err) {
     if (isMissingBinary(err)) {
-      return nodeFetchJson(url, timeoutS);
+      return nodeFetchJson(url, timeoutS, extraHeaders);
     }
     throw err;
   }

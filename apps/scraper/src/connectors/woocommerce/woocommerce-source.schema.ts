@@ -25,8 +25,8 @@ export const wooAttribute = z.object({
   id: z.number().optional(),
   /** e.g. "Size", "Colour". */
   name: z.string(),
-  /** e.g. "pa_size". */
-  taxonomy: z.string().optional(),
+  /** e.g. "pa_size". Local (non-taxonomy) attributes arrive as null. */
+  taxonomy: z.string().nullable().optional(),
   /** True when this attribute drives product variations. */
   has_variations: z.boolean().optional(),
   terms: z.array(wooAttributeTerm).default([]),
@@ -36,8 +36,8 @@ export type WooAttribute = z.infer<typeof wooAttribute>;
 
 export const wooVariationAttribute = z.object({
   name: z.string(),
-  /** The slug of the term (lowercase), resolvable via the attribute's terms. */
-  value: z.string(),
+  /** Term slug; Store API sends null when a variation leaves an axis unset. */
+  value: z.string().nullable(),
 });
 
 export type WooVariationAttribute = z.infer<typeof wooVariationAttribute>;

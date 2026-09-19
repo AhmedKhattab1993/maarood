@@ -60,7 +60,7 @@ function isSizeAttr(name: string): boolean {
 }
 function isColorAttr(name: string): boolean {
   const n = name.toLowerCase();
-  return n === 'colour' || n === 'color';
+  return n === 'colour' || n === 'color' || n === 'colors' || n === 'colours';
 }
 
 export function normalizeWooCommerceProduct(
@@ -108,6 +108,7 @@ export function normalizeWooCommerceProduct(
     let size: string | undefined;
     let color: string | undefined;
     for (const a of v.attributes) {
+      if (a.value == null || a.value === '') continue;
       if (isSizeAttr(a.name)) size = resolveAttr(a.name, a.value).trim();
       else if (isColorAttr(a.name)) color = resolveAttr(a.name, a.value).trim();
     }

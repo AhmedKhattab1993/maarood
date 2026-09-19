@@ -86,4 +86,20 @@ describe('fetchMerchantJson', () => {
     expect(result).toEqual({ via: 'curl' });
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
+  it('passes extra headers through to curl', async () => {
+    execFileImpl.mockImplementation(
+      (_c: string, args: string[], _o: unknown, cb: (err: Error | null, stdout?: string) => void) => {
+        expect(args).toContain('domain: suystore.com');
+        expect(args).toContain('Authorization: Bearer test-key');
+        cb(null, '{"ok":true}');
+      },
+    );
+
+    const result = await fetchMerchantJson('https://api.zammit.shop/api/v2/products/fast', 5, {
+      domain: 'suystore.com',
+      Authorization: 'Bearer test-key',
+    });
+    expect(result).toEqual({ ok: true });
+  });
 });

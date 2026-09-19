@@ -10,10 +10,9 @@
  * true product payload.
  */
 
-import { z } from 'zod';
 import type { MerchantConnector, ConnectorContext } from '../types';
 import { fetchMerchantJson } from '../http';
-import { wooProduct } from './woocommerce-source.schema';
+import { wooProductsResponse } from './woocommerce-source.schema';
 
 const PAGE_SIZE = 100; // WooCommerce Store API caps per_page at 100.
 const INTER_PAGE_DELAY_MS = 500; // Be polite; avoid hammering the store.
@@ -24,7 +23,13 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-const pageResponse = z.array(wooProduct);
+export function parseWooCommercePage(json: unknown): ReturnType<typeof wooProductsResponse.parse> {
+  const parsed = wooProductsResponse.safeParse(json);
+  if (!parsed.success) {
+    throw new Error(`WooCommerce response did not match expected shape: ${parsed.error.message}`);
+  }
+  return parsed.data;
+}
 
 export class WooCommerceConnector implements MerchantConnector {
   constructor(private readonly ctx: ConnectorContext) {}
@@ -45,18 +50,22 @@ export class WooCommerceConnector implements MerchantConnector {
         );
       }
 
-      const parsed = pageResponse.safeParse(json);
-      if (!parsed.success) {
+      let parsed;
+      try {
+        parsed = parseWooCommercePage(json);
+      } catch (err) {
         throw new Error(
-          `WooCommerce response did not match expected shape on page ${page}: ${parsed.error.message}`,
+          `WooCommerce response did not match expected shape on page ${page}: ${
+            err instanceof Error ? err.message : String(err)
+          }`,
         );
       }
 
-      if (parsed.data.length === 0) break; // no more pages
+      if (parsed.length === 0) break; // no more pages
 
-      all.push(...parsed.data);
+      all.push(...parsed);
 
-      if (parsed.data.length < PAGE_SIZE) break; // last page
+      if (parsed.length < PAGE_SIZE) break; // last page
 
       page += 1;
       await sleep(INTER_PAGE_DELAY_MS);
