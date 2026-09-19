@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { followBrand, getAuthToken, listFollowing, unfollowBrand } from "@/lib/auth";
+import { followIntent } from "@/lib/follow-intent";
 import { ApiError } from "@/lib/api/types";
 
 export function FollowButton({ merchantId }: { merchantId: string }) {
@@ -26,13 +27,14 @@ export function FollowButton({ merchantId }: { merchantId: string }) {
   function toggle(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
-    if (!getAuthToken()) {
+    const intent = followIntent(Boolean(getAuthToken()), following);
+    if (intent === "login") {
       router.push("/login");
       return;
     }
     startTransition(async () => {
       try {
-        if (following) {
+        if (intent === "unfollow") {
           await unfollowBrand(merchantId);
           setFollowing(false);
         } else {

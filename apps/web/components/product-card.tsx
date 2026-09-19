@@ -10,16 +10,15 @@ import { FollowButton } from "./follow-button";
 
 interface ProductCardProps {
   product: PublicProduct;
-  /** Brand lookup so the card can show attribution (04:80). */
+  /** Brand lookup so the post can show the merchant as the author. */
   brands?: BrandSummary[];
   /** Priority loading for above-the-fold cards. */
   priority?: boolean;
 }
 
 /**
- * Uniform product card — Nike-style discovery look: square 1:1 image on a
- * transparent (page-color) tile, square corners, tight meta. Title is regular
- * weight at 16px; brand subtitle in Nike's neutral grey (#707072).
+ * Stacked product post: X-style author row (brand as the poster) then the
+ * product image, title, and price as the body.
  */
 export function ProductCard({ product, brands, priority }: ProductCardProps) {
   const t = useTranslations("Product");
@@ -32,63 +31,84 @@ export function ProductCard({ product, brands, priority }: ProductCardProps) {
 
   return (
     <article className="flex w-full flex-col">
-    <Link
-      href={{ pathname: "/p/[id]", params: { id: product.id } }}
-      className="group flex w-full flex-col"
-    >
-      <div className="relative aspect-square w-full overflow-hidden bg-stone-grey">
-        {cover ? (
-          // Plain <img> to the merchant CDN — Next's optimizer 400s on
-          // arbitrary Shopify/Woo hosts (`/_next/image?url=...`).
-          <img
-            src={cover}
-            alt={product.title}
-            fetchPriority={priority ? "high" : undefined}
-            decoding="async"
-            referrerPolicy="no-referrer"
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-          />
+      <header className="mb-3 flex items-center justify-between gap-3">
+        {brand ? (
+          <Link
+            href={{ pathname: "/brands/[slug]", params: { slug: brand.slug } }}
+            className="flex min-w-0 items-center gap-3"
+          >
+            <span
+              aria-hidden
+              className="flex h-10 w-10 shrink-0 items-center justify-center bg-stone-grey text-sm font-semibold text-ink-black"
+            >
+              {brand.name.trim().charAt(0)}
+            </span>
+            <span className="flex min-w-0 flex-col">
+              <span className="truncate text-sm font-semibold text-ink-black">
+                {brand.name}
+              </span>
+              <span className="truncate text-xs text-cool-grey" dir="ltr">
+                {`@${brand.slug}`}
+              </span>
+            </span>
+          </Link>
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-cool-grey">
-            <PlaceholderIcon />
-          </div>
+          <span />
         )}
-        {product.availability === "out_of_stock" && (
-          <Badge tone="muted">{t("outOfStock")}</Badge>
-        )}
-        {product.stale && (
-          <Badge tone="alert">{t("stale")}</Badge>
-        )}
-      </div>
+        <FollowButton merchantId={product.merchantId} />
+      </header>
 
-      <div className="mt-2 flex flex-col gap-0.5">
-        {brand && (
-          <span className="text-[0.6875rem] uppercase tracking-wide text-nike-grey">
-            {brand.name}
-          </span>
-        )}
-        <h3 className="line-clamp-1 text-base font-normal text-ink-black">
-          {product.title}
-        </h3>
-        <div className="flex items-baseline gap-2">
-          <span className="text-base font-normal text-ink-black">
-            {formatPrice(product.currentPrice, product.currency, locale)}
-          </span>
-          {discounted && (
-            <>
-              <span className="text-sm text-cool-grey line-through">
-                {formatPrice(product.previousPrice as number, product.currency, locale)}
-              </span>
-              <span className="text-xs font-medium text-alert-red">
-                -{Math.round((1 - product.currentPrice / (product.previousPrice as number)) * 100)}%
-              </span>
-            </>
+      <Link
+        href={{ pathname: "/p/[id]", params: { id: product.id } }}
+        className="group flex w-full flex-col"
+      >
+        <div className="relative aspect-square w-full overflow-hidden bg-stone-grey">
+          {cover ? (
+            // Plain <img> to the merchant CDN — Next's optimizer 400s on
+            // arbitrary Shopify/Woo hosts (`/_next/image?url=...`).
+            <img
+              src={cover}
+              alt={product.title}
+              fetchPriority={priority ? "high" : undefined}
+              decoding="async"
+              referrerPolicy="no-referrer"
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-cool-grey">
+              <PlaceholderIcon />
+            </div>
+          )}
+          {product.availability === "out_of_stock" && (
+            <Badge tone="muted">{t("outOfStock")}</Badge>
+          )}
+          {product.stale && (
+            <Badge tone="alert">{t("stale")}</Badge>
           )}
         </div>
-      </div>
-    </Link>
+
+        <div className="mt-2 flex flex-col gap-0.5">
+          <h3 className="line-clamp-1 text-base font-normal text-ink-black">
+            {product.title}
+          </h3>
+          <div className="flex items-baseline gap-2">
+            <span className="text-base font-normal text-ink-black">
+              {formatPrice(product.currentPrice, product.currency, locale)}
+            </span>
+            {discounted && (
+              <>
+                <span className="text-sm text-cool-grey line-through">
+                  {formatPrice(product.previousPrice as number, product.currency, locale)}
+                </span>
+                <span className="text-xs font-medium text-alert-red">
+                  -{Math.round((1 - product.currentPrice / (product.previousPrice as number)) * 100)}%
+                </span>
+              </>
+            )}
+          </div>
+        </div>
+      </Link>
       <div className="mt-2 flex items-center gap-2">
-        <FollowButton merchantId={product.merchantId} />
         <SaveButton productId={product.id} />
       </div>
     </article>

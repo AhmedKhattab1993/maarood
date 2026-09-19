@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { listSaved } from "@/lib/saved";
 import { getAuthToken } from "@/lib/auth";
-import { ApiError, type SavedProduct } from "@/lib/api/types";
+import { publicBackendUrl } from "@/lib/api/backend-url";
+import { ApiError, type BrandSummary, type SavedProduct } from "@/lib/api/types";
 import { ProductGrid, ProductGridSkeleton } from "@/components/product-grid";
 import { EmptyState } from "@/components/state-views";
 import { Link } from "@/i18n/navigation";
@@ -25,7 +26,7 @@ export function SavedList({
     | { status: "loading" }
     | { status: "anon" }
     | { status: "empty" }
-    | { status: "ready"; items: SavedProduct[] }
+    | { status: "ready"; items: SavedProduct[]; brands: BrandSummary[] }
     | { status: "error"; message: string }
   >({ status: "loading" });
 
@@ -37,12 +38,15 @@ export function SavedList({
         return;
       }
       try {
-        const items = await listSaved();
+        const [items, brands] = await Promise.all([
+          listSaved(),
+          loadBrands(),
+        ]);
         if (cancelled) return;
         setState(
           items.length === 0
             ? { status: "empty" }
-            : { status: "ready", items },
+            : { status: "ready", items, brands },
         );
       } catch (err) {
         if (cancelled) return;
@@ -97,5 +101,22 @@ export function SavedList({
     );
   }
 
-  return <ProductGrid products={state.items.map((s) => s.product)} />;
+  return (
+    <ProductGrid
+      products={state.items.map((s) => s.product)}
+      brands={state.brands}
+    />
+  );
+}
+
+async function loadBrands(): Promise<BrandSummary[]> {
+  try {
+    const res = await fetch(`${publicBackendUrl()}/v1/brands`, {
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) return [];
+    return (await res.json()) as BrandSummary[];
+  } catch {
+    return [];
+  }
 }

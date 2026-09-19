@@ -91,6 +91,15 @@ export default async function BrandPage({
         />
         <ProductListing
           result={products}
+          brands={[
+            {
+              id: brand.id,
+              name: brand.name,
+              slug: brand.slug,
+              domain: brand.domain,
+              productCount: products.total,
+            },
+          ]}
           current={current}
           sort={toSort(sp.sort) ?? "newest"}
           title={brand.name}
