@@ -105,6 +105,7 @@ export function SavedList({
     <ProductGrid
       products={state.items.map((s) => s.product)}
       brands={state.brands}
+      allSaved
     />
   );
 }

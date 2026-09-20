@@ -7,5 +7,6 @@ describe("SavedList brand identity", () => {
     expect(src).toMatch(/\/v1\/brands/);
     expect(src).toMatch(/brands=\{state\.brands\}/);
     expect(src).toMatch(/loadBrands/);
+    expect(src).toMatch(/allSaved/);
   });
 });

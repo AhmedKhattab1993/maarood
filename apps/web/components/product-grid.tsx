@@ -15,9 +15,14 @@ export { productFeedItemClass, productFeedListClass } from "./product-feed-layou
 export function ProductGrid({
   products,
   brands,
+  allSaved = false,
+  savedIds,
 }: {
   products: PublicProduct[];
   brands?: BrandSummary[];
+  /** Favourites: every row is already saved. */
+  allSaved?: boolean;
+  savedIds?: ReadonlySet<string>;
 }) {
   return (
     <ul className={productFeedListClass()}>
@@ -27,6 +32,7 @@ export function ProductGrid({
             product={product}
             brands={brands}
             priority={i < 4}
+            initialSaved={allSaved || savedIds?.has(product.id) === true}
           />
         </li>
       ))}

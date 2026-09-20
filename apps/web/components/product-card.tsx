@@ -17,13 +17,20 @@ interface ProductCardProps {
   brands?: BrandSummary[];
   /** Priority loading for above-the-fold cards. */
   priority?: boolean;
+  /** Favourites already know this row is saved; skip a flash of the inactive state. */
+  initialSaved?: boolean;
 }
 
 /**
  * Stacked product post: X-style author row (brand as the poster) then the
  * product image, title, and price as the body.
  */
-export function ProductCard({ product, brands, priority }: ProductCardProps) {
+export function ProductCard({
+  product,
+  brands,
+  priority,
+  initialSaved = false,
+}: ProductCardProps) {
   const t = useTranslations("Product");
   const locale = useLocale();
   const brand = brands?.find((b) => b.id === product.merchantId);
@@ -135,7 +142,7 @@ export function ProductCard({ product, brands, priority }: ProductCardProps) {
           redirectUrl={product.redirectUrl}
           brandName={brandName}
         />
-        <SaveButton productId={product.id} />
+        <SaveButton productId={product.id} initialSaved={initialSaved} />
       </div>
     </article>
   );

@@ -1,15 +1,21 @@
 "use client";
 
+import { useEffect, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
-import { useState, useTransition } from "react";
-import { saveProduct, unsaveProduct } from "@/lib/saved";
+import {
+  isProductSaved,
+  listSaved,
+  saveProduct,
+  savedProductIds,
+  unsaveProduct,
+} from "@/lib/saved";
 import { ApiError } from "@/lib/api/types";
 import { getAuthToken } from "@/lib/auth";
 import { saveIntent, toggleVisual } from "@/lib/follow-intent";
 import { currentReturnTo, stash } from "@/lib/pending-action";
 import { useRouter } from "@/i18n/navigation";
 
-/** Heart/bookmark toggle that calls the anonymous saved-products API. */
+/** Heart/bookmark toggle that calls the signed-in saved-products API. */
 export function SaveButton({
   productId,
   initialSaved = false,
@@ -22,9 +28,30 @@ export function SaveButton({
   const t = useTranslations("Product");
   const router = useRouter();
   const [saved, setSaved] = useState(initialSaved);
+  const [ready, setReady] = useState(initialSaved);
   const [failed, setFailed] = useState(false);
   const [pending, startTransition] = useTransition();
   const visual = toggleVisual(saved, pending, failed);
+
+  useEffect(() => {
+    if (initialSaved) {
+      setSaved(true);
+      setReady(true);
+      return;
+    }
+    if (!getAuthToken()) {
+      setSaved(false);
+      setReady(true);
+      return;
+    }
+    void listSaved()
+      .then((items) => {
+        setSaved(
+          isProductSaved(productId, { savedIds: savedProductIds(items) }),
+        );
+      })
+      .finally(() => setReady(true));
+  }, [productId, initialSaved]);
 
   function toggle(e?: React.MouseEvent) {
     e?.preventDefault();
@@ -74,7 +101,7 @@ export function SaveButton({
         <button
           type="button"
           onClick={toggle}
-          disabled={pending}
+          disabled={pending || !ready}
           aria-pressed={saved}
           aria-busy={pending || undefined}
           aria-label={ariaLabel}
@@ -107,7 +134,7 @@ export function SaveButton({
       <button
         type="button"
         onClick={toggle}
-        disabled={pending}
+        disabled={pending || !ready}
         aria-pressed={saved}
         aria-busy={pending || undefined}
         aria-label={ariaLabel}

@@ -35,9 +35,42 @@ async function savedFetch(
   return res;
 }
 
+let savedInflight: Promise<SavedProduct[]> | null = null;
+
+export function invalidateSaved(): void {
+  savedInflight = null;
+}
+
 export async function listSaved(): Promise<SavedProduct[]> {
-  const res = await savedFetch("/v1/saved", { method: "GET" });
-  return (await res.json()) as SavedProduct[];
+  if (!savedInflight) {
+    savedInflight = savedFetch("/v1/saved", { method: "GET" }).then(
+      (res) => res.json() as Promise<SavedProduct[]>,
+    );
+  }
+  return savedInflight;
+}
+
+export function savedProductIds(items: readonly SavedProduct[]): string[] {
+  return items.map((item) => item.product.id);
+}
+
+/**
+ * Whether this product should render as saved. Favourites pass initialSaved;
+ * feed/details hydrate from listSaved ids. Used by SaveButton so the first
+ * click unsaves when the item is already saved.
+ */
+export function isProductSaved(
+  productId: string,
+  options: {
+    initialSaved?: boolean;
+    savedIds?: readonly string[] | ReadonlySet<string> | null;
+  } = {},
+): boolean {
+  if (options.initialSaved) return true;
+  const ids = options.savedIds;
+  if (!ids) return false;
+  if (ids instanceof Set) return ids.has(productId);
+  return ids.includes(productId);
 }
 
 /** Save a product. Idempotent — returns true on 201. */
@@ -45,6 +78,7 @@ export async function saveProduct(productId: string): Promise<boolean> {
   await savedFetch(`/v1/saved/${encodeURIComponent(productId)}`, {
     method: "POST",
   });
+  invalidateSaved();
   return true;
 }
 
@@ -53,5 +87,6 @@ export async function unsaveProduct(productId: string): Promise<boolean> {
   await savedFetch(`/v1/saved/${encodeURIComponent(productId)}`, {
     method: "DELETE",
   });
+  invalidateSaved();
   return true;
 }
