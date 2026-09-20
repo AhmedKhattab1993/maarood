@@ -1,6 +1,7 @@
 /** Shared query params for product list & search endpoints. */
 
 import { z } from 'zod';
+import { validatePriceRange } from './price-range';
 
 function merchantIdList(value: unknown): string[] | undefined {
   if (value === undefined || value === null || value === '') return undefined;
@@ -21,6 +22,11 @@ export const productQuery = z.object({
   sort: z.enum(['newest', 'price_asc', 'price_desc', 'relevance']).default('newest'),
   page: z.coerce.number().int().positive().max(10000).default(1),
   limit: z.coerce.number().int().positive().max(60).default(24),
+}).superRefine((q, ctx) => {
+  const range = validatePriceRange(q.minPrice, q.maxPrice);
+  if (!range.ok) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: range.message, path: ['minPrice'] });
+  }
 });
 
 export type ProductQuery = z.infer<typeof productQuery>;

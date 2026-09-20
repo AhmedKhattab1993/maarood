@@ -1,20 +1,37 @@
 import { describe, it, expect } from 'vitest';
 import { productQuery } from './products.dto';
-import { sortSql } from './product-filter';
+import { buildFilters, shouldExcludeConfirmedOutOfStock, sortSql } from './product-filter';
 
-function sqlText(fragments: ReturnType<typeof sortSql>): string {
+function collectSql(value: unknown, parts: string[]): void {
+  if (value == null) return;
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    parts.push(String(value));
+    return;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) collectSql(item, parts);
+    return;
+  }
+  if (typeof value !== 'object') return;
+  if ('queryChunks' in value && Array.isArray((value as { queryChunks: unknown[] }).queryChunks)) {
+    for (const chunk of (value as { queryChunks: unknown[] }).queryChunks) collectSql(chunk, parts);
+    return;
+  }
+  if ('name' in value) {
+    parts.push(String((value as { name: string }).name));
+    return;
+  }
+  if ('value' in value) {
+    collectSql((value as { value: unknown }).value, parts);
+  }
+}
+
+function sqlText(fragments: ReturnType<typeof sortSql> | ReturnType<typeof buildFilters>): string {
   const parts: string[] = [];
-  for (const fragment of fragments) {
-    for (const chunk of fragment.queryChunks) {
-      if (typeof chunk === 'string') parts.push(chunk);
-      else if (chunk && typeof chunk === 'object' && 'name' in chunk) {
-        parts.push(String((chunk as { name: string }).name));
-      } else if (chunk && typeof chunk === 'object' && 'value' in chunk) {
-        const value = (chunk as { value: unknown }).value;
-        if (Array.isArray(value)) parts.push(value.map(String).join(''));
-        else if (typeof value === 'string') parts.push(value);
-      }
-    }
+  if (Array.isArray(fragments)) {
+    for (const fragment of fragments) collectSql(fragment, parts);
+  } else {
+    collectSql(fragments, parts);
   }
   return parts.join(' ');
 }
@@ -34,6 +51,43 @@ describe('productQuery merchantId', () => {
   });
 });
 
+describe('shouldExcludeConfirmedOutOfStock', () => {
+  const merchantId = '11111111-1111-4111-8111-111111111111';
+
+  it('is true for default Explore', () => {
+    expect(shouldExcludeConfirmedOutOfStock(productQuery.parse({}), null)).toBe(true);
+  });
+
+  it('is false when availability, brand, or merchantId is set', () => {
+    expect(shouldExcludeConfirmedOutOfStock(productQuery.parse({ availability: 'in_stock' }), null)).toBe(false);
+    expect(shouldExcludeConfirmedOutOfStock(productQuery.parse({ brand: 'zara' }), null)).toBe(false);
+    expect(
+      shouldExcludeConfirmedOutOfStock(productQuery.parse({}), { id: merchantId, slug: 'zara' }),
+    ).toBe(false);
+    expect(shouldExcludeConfirmedOutOfStock(productQuery.parse({ merchantId: [merchantId] }), null)).toBe(
+      false,
+    );
+  });
+});
+
+describe('buildFilters', () => {
+  it('ANDs category with minPrice and maxPrice', () => {
+    const q = productQuery.parse({ category: 'apparel', minPrice: 10, maxPrice: 100 });
+    const text = sqlText(buildFilters(q, null));
+    expect(text).toMatch(/category/);
+    expect(text).toMatch(/current_price/);
+    expect(text).toMatch(/10\.00/);
+    expect(text).toMatch(/100\.00/);
+  });
+
+  it('mentions out_of_stock when excluding confirmed OOS', () => {
+    const q = productQuery.parse({});
+    const withExclude = sqlText(buildFilters(q, null, { excludeConfirmedOutOfStock: true }));
+    expect(withExclude).toMatch(/out_of_stock/);
+    expect(buildFilters(q, null)).toBeUndefined();
+  });
+});
+
 describe('sortSql newest', () => {
   it('interleaves merchants so one recrawl cannot own the first page', () => {
     const text = sqlText(sortSql('newest'));
@@ -41,5 +95,7 @@ describe('sortSql newest', () => {
     expect(text).toMatch(/row_number/i);
     expect(text).toMatch(/partition/i);
     expect(text).toMatch(/merchant_id/);
+    expect(text).toMatch(/in_stock/);
+    expect(text).toMatch(/out_of_stock/);
   });
 });

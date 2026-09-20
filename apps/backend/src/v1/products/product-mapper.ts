@@ -3,7 +3,14 @@
  * API shape. Parses variants/sizes/colors/imageUrls back into real arrays/objects.
  */
 
-import type { Availability, CurrencyCode, ProductOption, Variant } from '@maarood/schema';
+import {
+  decodeImportedText,
+  type Availability,
+  type CurrencyCode,
+  type ProductOption,
+  type Variant,
+} from '@maarood/schema';
+import { resolveAvailability } from './availability';
 
 export interface PublicProduct {
   id: string;
@@ -19,6 +26,7 @@ export interface PublicProduct {
   previousPrice: number | null;
   currency: CurrencyCode;
   availability: Availability;
+  availabilityCheckedAt: string | null;
   variants: Variant[];
   options: ProductOption[];
   sizes: string[];
@@ -57,21 +65,39 @@ export function parseImageUrls(value: unknown): string[] {
   return out;
 }
 
+function parseTimestamp(value: unknown): Date | null {
+  if (value == null || value === '') return null;
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+  if (typeof value === 'string' || typeof value === 'number') {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+  return null;
+}
+
+function toIsoString(value: unknown): string | null {
+  const parsed = parseTimestamp(value);
+  return parsed ? parsed.toISOString() : null;
+}
+
 export function mapProduct(row: Record<string, unknown>): PublicProduct {
+  const storedAvailability = (row.availability as Availability) ?? 'unknown';
+  const checkedAt = parseTimestamp(row.availabilityCheckedAt);
   return {
     id: row.id as string,
     merchantId: row.merchantId as string,
     sourceUrl: row.sourceUrl as string,
     merchantProductId: row.merchantProductId as string,
-    title: row.title as string,
-    description: row.description as string,
-    vendor: (row.vendor as string) ?? '',
+    title: decodeImportedText((row.title as string) ?? ''),
+    description: decodeImportedText((row.description as string) ?? ''),
+    vendor: decodeImportedText((row.vendor as string) ?? ''),
     category: row.category as string,
     subcategory: row.subcategory as string,
     currentPrice: Number(row.currentPrice),
     previousPrice: row.previousPrice !== null ? Number(row.previousPrice) : null,
     currency: row.currency as CurrencyCode,
-    availability: row.availability as Availability,
+    availability: resolveAvailability(storedAvailability, checkedAt),
+    availabilityCheckedAt: toIsoString(row.availabilityCheckedAt),
     variants: safeParseArray<Variant>(row.variants),
     options: safeParseArray<ProductOption>(row.options),
     sizes: safeParseArray<string>(row.sizes),

@@ -91,6 +91,9 @@ export const products = pgTable(
      * (i.e. it disappeared from the source). Cleared if it reappears.
      */
     staleAt: timestamp('stale_at', { withTimezone: true }),
+    /** When a crawl last confirmed this row's availability (including unchanged checksum). */
+    availabilityCheckedAt: timestamp('availability_checked_at', { withTimezone: true }),
+
   },
   (t) => ({
     merchantProductIdx: index('products_merchant_product_idx').on(t.merchantId, t.merchantProductId),

@@ -4,9 +4,10 @@
  * filter identically.
  */
 
-import { type SQL, and, eq, gte, inArray, lte, sql } from 'drizzle-orm';
+import { type SQL, and, eq, gte, inArray, isNotNull, lte, not, sql } from 'drizzle-orm';
 import { merchants, products } from '@maarood/schema';
 import type { ProductQuery } from './products.dto';
+import { AVAILABILITY_FRESHNESS_HOURS } from './availability';
 
 export interface ResolvedBrand {
   id: string;
@@ -30,10 +31,23 @@ export async function resolveBrandFilter(
   return rows[0] ?? null;
 }
 
+/** Default Explore only: no explicit availability, no brand slug, no merchantId list (Following uses merchantId). */
+export function shouldExcludeConfirmedOutOfStock(
+  q: ProductQuery,
+  brand: ResolvedBrand | null,
+): boolean {
+  return !q.availability && !q.brand && !brand && !(q.merchantId && q.merchantId.length > 0);
+}
+
+function availabilityCheckedAtIsFresh(): SQL {
+  return sql`${products.availabilityCheckedAt} > now() - (${AVAILABILITY_FRESHNESS_HOURS} * interval '1 hour')`;
+}
+
 /** Build the common filter conditions (excluding brand, which is passed in resolved). */
 export function buildFilters(
   q: ProductQuery,
   brand: ResolvedBrand | null,
+  options?: { excludeConfirmedOutOfStock?: boolean },
 ): SQL | undefined {
   const conditions: SQL[] = [];
   if (q.merchantId && q.merchantId.length > 0) {
@@ -47,6 +61,14 @@ export function buildFilters(
   // color/size are stored as JSON text arrays; a containment check is sufficient for the MVP.
   if (q.color) conditions.push(sql`${products.colors}::jsonb @> ${JSON.stringify([q.color])}::jsonb`);
   if (q.size) conditions.push(sql`${products.sizes}::jsonb @> ${JSON.stringify([q.size])}::jsonb`);
+  if (options?.excludeConfirmedOutOfStock) {
+    const confirmedOutOfStock = and(
+      eq(products.availability, 'out_of_stock'),
+      isNotNull(products.availabilityCheckedAt),
+      availabilityCheckedAtIsFresh(),
+    );
+    if (confirmedOutOfStock) conditions.push(not(confirmedOutOfStock));
+  }
   return conditions.length > 0 ? and(...conditions) : undefined;
 }
 
@@ -68,7 +90,7 @@ export function sortSql(sort: ProductQuery['sort']): SQL[] {
     case 'newest':
     default:
       return [
-        sql`row_number() over (partition by ${products.merchantId} order by ${products.lastSeenAt} desc nulls last)`,
+        sql`row_number() over (partition by ${products.merchantId} order by case when ${products.availability} = 'in_stock' and ${products.availabilityCheckedAt} is not null and ${availabilityCheckedAtIsFresh()} then 0 when ${products.availability} = 'out_of_stock' and ${products.availabilityCheckedAt} is not null and ${availabilityCheckedAtIsFresh()} then 2 else 1 end, ${products.lastSeenAt} desc nulls last)`,
         sql`${products.lastSeenAt} desc nulls last`,
       ];
   }

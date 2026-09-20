@@ -5,9 +5,11 @@ import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { formatPrice } from "@/lib/format";
 import { coverSrc } from "@/lib/product-image";
+import { priceDiscount } from "@/lib/price-display";
 import type { BrandSummary, PublicProduct } from "@/lib/api/types";
 import { SaveButton } from "./save-button";
 import { FollowButton } from "./follow-button";
+import { ViewAtBrand } from "./view-at-brand";
 
 interface ProductCardProps {
   product: PublicProduct;
@@ -27,9 +29,8 @@ export function ProductCard({ product, brands, priority }: ProductCardProps) {
   const brand = brands?.find((b) => b.id === product.merchantId);
   const [logoFailed, setLogoFailed] = useState(false);
   const cover = coverSrc(product.imageUrls);
-
-  const discounted =
-    product.previousPrice !== null && product.previousPrice > product.currentPrice;
+  const discount = priceDiscount(product.currentPrice, product.previousPrice);
+  const brandName = brand?.name || product.vendor || "";
 
   return (
     <article className="flex w-full flex-col">
@@ -77,7 +78,7 @@ export function ProductCard({ product, brands, priority }: ProductCardProps) {
 
       <Link
         href={{ pathname: "/p/[id]", params: { id: product.id } }}
-        className="group flex w-full flex-col"
+        className="flex w-full flex-col"
       >
         <div className="relative aspect-square w-full overflow-hidden bg-stone-grey">
           {cover ? (
@@ -89,36 +90,39 @@ export function ProductCard({ product, brands, priority }: ProductCardProps) {
               fetchPriority={priority ? "high" : undefined}
               decoding="async"
               referrerPolicy="no-referrer"
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+              className="h-full w-full object-contain"
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-cool-grey">
               <PlaceholderIcon />
             </div>
           )}
-          {product.availability === "out_of_stock" && (
-            <Badge tone="muted">{t("outOfStock")}</Badge>
-          )}
-          {product.stale && (
-            <Badge tone="alert">{t("stale")}</Badge>
-          )}
+          <div className="absolute start-2 top-2 flex flex-col gap-1">
+            {product.availability === "out_of_stock" && (
+              <Badge tone="muted">{t("outOfStock")}</Badge>
+            )}
+            {product.availability === "unknown" && (
+              <Badge tone="muted">{t("availabilityUnconfirmed")}</Badge>
+            )}
+            {product.stale && <Badge tone="alert">{t("stale")}</Badge>}
+          </div>
         </div>
 
         <div className="mt-2 flex flex-col gap-0.5">
-          <h3 className="line-clamp-1 text-base font-normal text-ink-black">
+          <h3 className="line-clamp-2 text-base font-normal text-ink-black">
             {product.title}
           </h3>
           <div className="flex items-baseline gap-2">
             <span className="text-base font-normal text-ink-black">
               {formatPrice(product.currentPrice, product.currency, locale)}
             </span>
-            {discounted && (
+            {discount.show && product.previousPrice !== null && (
               <>
                 <span className="text-sm text-cool-grey line-through">
-                  {formatPrice(product.previousPrice as number, product.currency, locale)}
+                  {formatPrice(product.previousPrice, product.currency, locale)}
                 </span>
                 <span className="text-xs font-medium text-alert-red">
-                  -{Math.round((1 - product.currentPrice / (product.previousPrice as number)) * 100)}%
+                  -{discount.percent}%
                 </span>
               </>
             )}
@@ -126,6 +130,11 @@ export function ProductCard({ product, brands, priority }: ProductCardProps) {
         </div>
       </Link>
       <div className="mt-2 flex items-center gap-2">
+        <ViewAtBrand
+          productId={product.id}
+          redirectUrl={product.redirectUrl}
+          brandName={brandName}
+        />
         <SaveButton productId={product.id} />
       </div>
     </article>
@@ -145,7 +154,7 @@ function Badge({
       : "bg-ink-black text-white";
   return (
     <span
-      className={`absolute start-2 top-2 px-1.5 py-0.5 text-[0.625rem] font-medium uppercase tracking-wide ${cls}`}
+      className={`px-1.5 py-0.5 text-[0.625rem] font-medium uppercase tracking-wide ${cls}`}
     >
       {children}
     </span>

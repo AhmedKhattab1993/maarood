@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { getProducts, getBrands } from "@/lib/api/client";
-import { ProductGrid } from "@/components/product-grid";
-import { Pagination } from "@/components/pagination";
+import { getProducts, getBrands, getCategories } from "@/lib/api/client";
+import { ExploreControls } from "@/components/explore-controls";
+import { DiscoveryFeed } from "@/components/discovery-feed";
 import { EmptyState, ErrorState } from "@/components/state-views";
+import { invalidPriceRange, toNumber } from "@/lib/query";
 
 export async function generateMetadata({
   params,
@@ -23,36 +24,68 @@ export default async function ExplorePage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{
+    page?: string;
+    category?: string;
+    minPrice?: string;
+    maxPrice?: string;
+  }>;
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations({ locale, namespace: "Home" });
+  const tFilters = await getTranslations({ locale, namespace: "Filters" });
   const sp = await searchParams;
-  const page = Math.max(1, Number(sp.page) || 1);
+  const current = {
+    category: sp.category || "",
+    minPrice: sp.minPrice || "",
+    maxPrice: sp.maxPrice || "",
+  };
+  const category = current.category || undefined;
+  const minPrice = toNumber(current.minPrice);
+  const maxPrice = toNumber(current.maxPrice);
+  const invalid = invalidPriceRange(minPrice, maxPrice);
   const limit = 24;
+  const query = {
+    sort: "newest" as const,
+    limit,
+    category,
+    minPrice,
+    maxPrice,
+  };
 
-  let result: Awaited<ReturnType<typeof getProducts>>;
-  let brands: Awaited<ReturnType<typeof getBrands>> = [];
-  try {
-    [result, brands] = await Promise.all([
-      getProducts({ sort: "newest", limit, page }),
-      getBrands().catch(() => []),
-    ]);
-  } catch (err) {
-    return <ErrorState error={err} />;
+  const [brands, categories] = await Promise.all([
+    getBrands().catch(() => []),
+    getCategories().catch(() => []),
+  ]);
+
+  let body: React.ReactNode;
+  if (invalid) {
+    body = null;
+  } else {
+    try {
+      const result = await getProducts({ ...query, page: 1 });
+      body =
+        result.items.length === 0 ? (
+          <EmptyState
+            title={tFilters("noMatches")}
+            hint={tFilters("adjust")}
+          />
+        ) : (
+          <DiscoveryFeed
+            initial={result}
+            brands={brands}
+            source={{ kind: "products", query }}
+          />
+        );
+    } catch (err) {
+      body = <ErrorState error={err} />;
+    }
   }
 
   return (
     <div className="mx-auto max-w-[var(--container-max)] px-4 py-6 md:px-8 md:py-8">
-      {result.items.length === 0 ? (
-        <EmptyState title={t("heroSubtitle")} />
-      ) : (
-        <>
-          <ProductGrid products={result.items} brands={brands} />
-          <Pagination page={result.page} limit={result.limit} total={result.total} />
-        </>
-      )}
+      <ExploreControls categories={categories} current={current} />
+      {body}
     </div>
   );
 }

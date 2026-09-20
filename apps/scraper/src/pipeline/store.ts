@@ -4,7 +4,7 @@
  *
  * Behavior keyed on (merchantId, merchantProductId):
  *   - not present: insert products (revision_number=1) + append revision #1
- *   - present, checksum unchanged: bump only last_seen_at
+ *   - present, checksum unchanged: bump last_seen_at and availability_checked_at
  *   - present, checksum changed: update products, bump revision_number,
  *     append a new revision row with the new values
  *
@@ -95,6 +95,7 @@ export async function storeProduct(
         revisionNumber: 1,
         lastSeenAt: now,
         lastUpdatedAt: now,
+        availabilityCheckedAt: now,
       })
       .returning({ id: products.id });
 
@@ -128,11 +129,11 @@ export async function storeProduct(
 
   const row = existing[0]!;
   if (row.checksum === normalized.sourceChecksum) {
-    // Unchanged — bump only last_seen_at. No revision.
+    // Unchanged — bump last_seen_at and availability_checked_at. No revision.
     // If the product was stale (reappeared after going missing), restore it.
     const restore = row.staleAt !== null
-      ? { lastSeenAt: now, staleAt: null, availability: normalized.availability }
-      : { lastSeenAt: now };
+      ? { lastSeenAt: now, availabilityCheckedAt: now, staleAt: null, availability: normalized.availability }
+      : { lastSeenAt: now, availabilityCheckedAt: now };
     await db.update(products).set(restore).where(eq(products.id, row.id));
     return { outcome: 'unchanged', productId: row.id };
   }
@@ -163,6 +164,7 @@ export async function storeProduct(
       revisionNumber: nextRevision,
       lastSeenAt: now,
       lastUpdatedAt: now,
+      availabilityCheckedAt: now,
       staleAt: null, // a material change means the product is back / current
     })
     .where(eq(products.id, row.id));

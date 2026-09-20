@@ -25,7 +25,10 @@ function SearchBarInner({ autoFocus }: { autoFocus: boolean }) {
   function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const q = value.trim();
-    if (!q) return;
+    if (!q) {
+      router.push("/");
+      return;
+    }
     router.push({ pathname: "/search", query: { q } });
   }
 

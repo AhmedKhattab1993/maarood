@@ -43,6 +43,7 @@ export interface PublicProduct {
   previousPrice: number | null;
   currency: CurrencyCode;
   availability: Availability;
+  availabilityCheckedAt: string | null;
   variants: Variant[];
   options: ProductOption[];
   sizes: string[];
@@ -73,6 +74,11 @@ export interface BrandSummary {
   /** Merchant-site logo URL; posting avatar uses this when set. */
   logoUrl: string | null;
 }
+
+/** GET /v1/search — product page plus optional brand matches for the query. */
+export type SearchResult = PaginatedResult<PublicProduct> & {
+  brands?: BrandSummary[];
+};
 
 /** GET /v1/brands/:slug brand object. */
 export interface BrandDetail {

@@ -3,10 +3,11 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { getBrand, getCategories } from "@/lib/api/client";
 import { ProductListing } from "@/components/product-listing";
 import { FacetNav } from "@/components/facet-nav";
+import { FollowButton } from "@/components/follow-button";
 import { ErrorState } from "@/components/state-views";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { NotFoundError } from "@/lib/api/types";
-import { toNumber, toSort } from "@/lib/query";
+import { invalidPriceRange, toNumber, toSort } from "@/lib/query";
 import { notFound } from "next/navigation";
 
 export async function generateMetadata({
@@ -47,35 +48,63 @@ export default async function BrandPage({
     color: str(sp.color),
     size: str(sp.size),
   };
+  const productQuery = {
+    category: current.category || undefined,
+    minPrice: toNumber(current.minPrice),
+    maxPrice: toNumber(current.maxPrice),
+    availability: current.availability as never,
+    color: current.color || undefined,
+    size: current.size || undefined,
+    sort: toSort(sp.sort),
+    limit: 24,
+  };
+  const invalid = invalidPriceRange(productQuery.minPrice, productQuery.maxPrice);
 
   let body: React.ReactNode;
   try {
     const [{ brand, products }, brandCategories] = await Promise.all([
-      getBrand(slug, {
-        category: current.category,
-        minPrice: toNumber(current.minPrice),
-        maxPrice: toNumber(current.maxPrice),
-        availability: current.availability as never,
-        color: current.color,
-        size: current.size,
-        sort: toSort(sp.sort),
-        page: toNumber(sp.page) ?? 1,
-        limit: 24,
-      }),
+      invalid
+        ? getBrand(slug, { page: 1, limit: 24 }).then((data) => ({
+            brand: data.brand,
+            products: { items: [], page: 1, limit: 24, total: 0 },
+          }))
+        : getBrand(slug, { ...productQuery, page: 1 }),
       getCategories(slug).catch(() => []),
     ]);
 
     body = (
       <>
-        <div className="mb-4 flex items-center gap-2 text-sm text-cool-grey">
-          <a
-            href={`https://${brand.domain}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-maaroud-blue hover:underline"
-          >
-            {brand.domain} ↗
-          </a>
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-4">
+            {brand.logoUrl ? (
+              <img
+                src={brand.logoUrl}
+                alt=""
+                width={64}
+                height={64}
+                referrerPolicy="no-referrer"
+                className="h-16 w-16 shrink-0 bg-white object-contain"
+              />
+            ) : (
+              <span
+                aria-hidden
+                className="flex h-16 w-16 shrink-0 items-center justify-center bg-stone-grey text-lg font-semibold text-ink-black"
+              >
+                {brand.name.trim().charAt(0)}
+              </span>
+            )}
+            <div className="min-w-0">
+              <h1 className="text-2xl font-semibold text-ink-black">{brand.name}</h1>
+              <a
+                href={`https://${brand.domain}`}
+                rel="noopener noreferrer"
+                className="text-sm text-maaroud-blue hover:underline"
+              >
+                {t("Brand.website")} · {brand.domain} ↗
+              </a>
+            </div>
+          </div>
+          <FollowButton merchantId={brand.id} />
         </div>
         <FacetNav
           title={t("Brand.shopByCategory")}
@@ -106,6 +135,11 @@ export default async function BrandPage({
           title={brand.name}
           emptyTitle={t("Search.noResults")}
           emptyHint={t("Search.noResultsHint")}
+          feed={{
+            kind: "brand",
+            slug,
+            query: { ...productQuery, sort: toSort(sp.sort) ?? "newest" },
+          }}
         />
       </>
     );

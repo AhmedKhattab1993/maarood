@@ -4,7 +4,8 @@ import { useEffect, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { followBrand, getAuthToken, listFollowing, unfollowBrand } from "@/lib/auth";
-import { followIntent } from "@/lib/follow-intent";
+import { followIntent, toggleVisual } from "@/lib/follow-intent";
+import { currentReturnTo, stash } from "@/lib/pending-action";
 import { ApiError } from "@/lib/api/types";
 
 export function FollowButton({ merchantId }: { merchantId: string }) {
@@ -12,7 +13,9 @@ export function FollowButton({ merchantId }: { merchantId: string }) {
   const router = useRouter();
   const [following, setFollowing] = useState(false);
   const [ready, setReady] = useState(false);
+  const [failed, setFailed] = useState(false);
   const [pending, startTransition] = useTransition();
+  const visual = toggleVisual(following, pending, failed);
 
   useEffect(() => {
     if (!getAuthToken()) {
@@ -29,9 +32,11 @@ export function FollowButton({ merchantId }: { merchantId: string }) {
     e.stopPropagation();
     const intent = followIntent(Boolean(getAuthToken()), following);
     if (intent === "login") {
+      stash({ type: "follow", merchantId, returnTo: currentReturnTo() });
       router.push("/login");
       return;
     }
+    setFailed(false);
     startTransition(async () => {
       try {
         if (intent === "unfollow") {
@@ -42,19 +47,49 @@ export function FollowButton({ merchantId }: { merchantId: string }) {
           setFollowing(true);
         }
       } catch (err) {
+        setFailed(true);
         console.warn("follow toggle failed", err instanceof ApiError ? err.message : err);
       }
     });
   }
 
+  const visualClass =
+    visual === "active"
+      ? "border-ink-black bg-ink-black text-white"
+      : visual === "failed"
+        ? "border-alert-red bg-white text-alert-red"
+        : "border-stone-grey bg-white text-ink-black hover:bg-stone-grey";
+
   return (
-    <button
-      type="button"
-      onClick={toggle}
-      disabled={pending || !ready}
-      className="rounded-default border border-stone-grey bg-white px-3 py-1.5 text-xs font-medium text-ink-black hover:bg-stone-grey disabled:opacity-50"
-    >
-      {following ? t("unfollow") : t("follow")}
-    </button>
+    <span className="inline-flex flex-col items-end gap-0.5">
+      <button
+        type="button"
+        onClick={toggle}
+        disabled={pending || !ready}
+        aria-pressed={following}
+        aria-busy={pending || undefined}
+        aria-label={
+          visual === "pending"
+            ? t("pending")
+            : visual === "failed"
+              ? t("failed")
+              : following
+                ? t("unfollow")
+                : t("follow")
+        }
+        className={`rounded-default border px-3 py-1.5 text-xs font-medium disabled:opacity-50 ${visualClass}`}
+      >
+        {visual === "pending"
+          ? t("pending")
+          : following
+            ? t("unfollow")
+            : t("follow")}
+      </button>
+      {visual === "failed" && (
+        <span role="alert" aria-live="polite" className="text-[0.625rem] text-alert-red">
+          {t("failed")}
+        </span>
+      )}
+    </span>
   );
 }

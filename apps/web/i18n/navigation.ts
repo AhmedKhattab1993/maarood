@@ -22,6 +22,7 @@ const pathnames = {
   "/favourites": "/favourites",
   "/login": "/login",
   "/signup": "/signup",
+  "/help": "/help",
 } as const;
 
 export const { Link, redirect, usePathname, useRouter, getPathname } =

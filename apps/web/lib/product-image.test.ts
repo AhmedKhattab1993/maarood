@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, it, expect } from "vitest";
 import { coverSrc, gallerySrcs } from "./product-image";
 
@@ -40,5 +41,17 @@ describe("gallerySrcs", () => {
     const body =
       "https://mobaco.hypernode.io/media/catalog/product/b/o/body_image_209.jpg";
     expect(gallerySrcs([chart, body, still])).toEqual([body, still, chart]);
+  });
+});
+
+describe("card imagery", () => {
+  it("fits the cover with object-contain and still skips size charts via coverSrc", () => {
+    const card = readFileSync(
+      new URL("../components/product-card.tsx", import.meta.url),
+      "utf8",
+    );
+    expect(card).toMatch(/coverSrc\(product\.imageUrls\)/);
+    expect(card).toMatch(/object-contain/);
+    expect(card).not.toMatch(/object-cover/);
   });
 });

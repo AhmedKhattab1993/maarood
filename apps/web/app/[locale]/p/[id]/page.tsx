@@ -1,14 +1,17 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { getProduct, getBrands, redirectHref } from "@/lib/api/client";
+import { getProduct, getBrands, getProducts } from "@/lib/api/client";
 import { NotFoundError, type PublicProduct } from "@/lib/api/types";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { SaveButton } from "@/components/save-button";
+import { ViewAtBrand } from "@/components/view-at-brand";
+import { ProductGrid } from "@/components/product-grid";
 import { ErrorState } from "@/components/state-views";
 import { ProductPrice } from "@/components/product-price";
 import { ProductJsonLd } from "./product-jsonld";
 import { formatPrice } from "@/lib/format";
 import { gallerySrcs } from "@/lib/product-image";
+import { priceDiscount } from "@/lib/price-display";
 import type { Variant } from "@/lib/api/types";
 import { notFound } from "next/navigation";
 
@@ -60,8 +63,18 @@ export default async function ProductPage({
   // vendor = the manufacturer/brand reported by the source (distinct from the
   // store). Prefer it for SEO structured-data brand when present.
   const vendorName = product.vendor || brandName;
-  const discounted =
-    product.previousPrice !== null && product.previousPrice > product.currentPrice;
+  const discount = priceDiscount(product.currentPrice, product.previousPrice);
+
+  let alternatives: PublicProduct[] = [];
+  if (product.availability === "out_of_stock") {
+    const alt = await getProducts({
+      category: product.category || undefined,
+      merchantId: product.merchantId,
+      availability: "in_stock",
+      limit: 8,
+    }).catch(() => null);
+    alternatives = (alt?.items ?? []).filter((p) => p.id !== product.id);
+  }
 
   return (
     <div className="mx-auto max-w-[var(--container-max)] px-4 py-6 md:py-10">
@@ -102,28 +115,32 @@ export default async function ProductPage({
             <span className="text-xl font-semibold text-ink-black">
               <ProductPrice amount={product.currentPrice} currency={product.currency} />
             </span>
-            {discounted && (
+            {discount.show && product.previousPrice !== null && (
               <>
                 <span className="text-base text-cool-grey line-through">
                   <ProductPrice
-                    amount={product.previousPrice as number}
+                    amount={product.previousPrice}
                     currency={product.currency}
                   />
                 </span>
                 <span className="text-sm font-medium text-alert-red">
-                  {t("Product.onSale", {
-                    percent: Math.round(
-                      (1 - product.currentPrice / (product.previousPrice as number)) * 100,
-                    ),
-                  })}
+                  {t("Product.onSale", { percent: discount.percent })}
                 </span>
               </>
             )}
           </div>
 
+          {product.availability === "in_stock" && (
+            <p className="text-sm text-success-green">{t("Product.inStock")}</p>
+          )}
           {product.availability === "out_of_stock" && (
             <p className="text-sm font-medium text-alert-red">
               {t("Product.outOfStock")}
+            </p>
+          )}
+          {product.availability === "unknown" && (
+            <p className="text-sm font-medium text-cool-grey">
+              {t("Product.availabilityUnconfirmed")}
             </p>
           )}
           {product.stale && (
@@ -162,17 +179,12 @@ export default async function ProductPage({
           )}
 
           <div className="mt-2 flex flex-wrap items-center gap-3">
-            {/* Outbound click = primary success metric (08:85). The backend
-                redirect endpoint logs the click then 302s to the merchant. */}
-            {product.redirectUrl ? (
-              <a
-                href={redirectHref(product.id)}
-                rel="noopener noreferrer nofollow"
-                className="rounded-default bg-maaroud-blue px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo"
-              >
-                {t("Product.buyFromBrand")}
-              </a>
-            ) : null}
+            <ViewAtBrand
+              productId={product.id}
+              redirectUrl={product.redirectUrl}
+              brandName={brandName || vendorName}
+              variant="detail"
+            />
             <SaveButton productId={product.id} variant="label" />
           </div>
 
@@ -183,6 +195,18 @@ export default async function ProductPage({
           )}
         </div>
       </div>
+
+      {alternatives.length > 0 && (
+        <section className="mt-12">
+          <h2 className="mb-4 text-lg font-medium text-ink-black">
+            {t("Product.alternatives")}
+          </h2>
+          <ProductGrid
+            products={alternatives}
+            brands={brand ? [ { id: brand.id, name: brand.name, slug: brand.slug, domain: brand.domain, productCount: 0, logoUrl: brand.logoUrl } ] : []}
+          />
+        </section>
+      )}
     </div>
   );
 }
@@ -238,11 +262,10 @@ function VariantTable({
         </thead>
         <tbody>
           {rows.map((v, i) => {
-            const discounted =
-              v.compareAtPrice !== null &&
-              v.compareAtPrice !== undefined &&
-              v.price !== undefined &&
-              v.compareAtPrice > v.price;
+            const rowDiscount =
+              v.price !== undefined
+                ? priceDiscount(v.price, v.compareAtPrice ?? null)
+                : { show: false as const };
             return (
               <tr key={`${v.label}-${i}`} className="border-b border-stone-grey">
                 <td className="py-2 text-ink-black">{v.size}</td>
@@ -252,9 +275,9 @@ function VariantTable({
                       <span className="text-ink-black">
                         {formatPrice(v.price, currency, locale)}
                       </span>
-                      {discounted && (
+                      {rowDiscount.show && v.compareAtPrice != null && (
                         <span className="text-xs text-cool-grey line-through">
-                          {formatPrice(v.compareAtPrice as number, currency, locale)}
+                          {formatPrice(v.compareAtPrice, currency, locale)}
                         </span>
                       )}
                     </span>
@@ -303,22 +326,26 @@ function Gallery({
       {/* Merchant CDN imagery (06:49 — preserve original URLs). Plain <img>
           with unoptimized loading to avoid Next image optimizer round-trips for
           arbitrary merchant hosts. */}
-      <img
-        src={imageUrls[0]}
-        alt={title}
-        referrerPolicy="no-referrer"
-        className="aspect-[4/5] w-full object-cover"
-      />
+      <div className="aspect-[4/5] w-full overflow-hidden bg-stone-grey">
+        <img
+          src={imageUrls[0]}
+          alt={title}
+          referrerPolicy="no-referrer"
+          className="h-full w-full object-contain"
+        />
+      </div>
       {imageUrls.length > 1 && (
         <ul className="grid grid-cols-4 gap-2">
           {imageUrls.slice(1, 9).map((src, i) => (
             <li key={i}>
-              <img
-                src={src}
-                alt={`${title} ${i + 2}`}
-                referrerPolicy="no-referrer"
-                className="aspect-square w-full rounded bg-stone-grey object-cover"
-              />
+              <div className="aspect-square w-full overflow-hidden rounded bg-stone-grey">
+                <img
+                  src={src}
+                  alt={`${title} ${i + 2}`}
+                  referrerPolicy="no-referrer"
+                  className="h-full w-full object-contain"
+                />
+              </div>
             </li>
           ))}
         </ul>

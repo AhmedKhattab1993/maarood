@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
-import { login, signup } from "@/lib/auth";
+import { followBrand, login, signup } from "@/lib/auth";
+import { saveProduct } from "@/lib/saved";
 import { ApiError } from "@/lib/api/types";
+import { peek, safeReturnTo, take } from "@/lib/pending-action";
 
 export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const t = useTranslations("Auth");
@@ -13,6 +15,21 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [pendingReturn, setPendingReturn] = useState<string | null>(null);
+
+  useEffect(() => {
+    const action = peek();
+    setPendingReturn(action?.returnTo ?? null);
+  }, []);
+
+  function go(path: string | null) {
+    const dest = path ? safeReturnTo(path) : null;
+    if (dest) {
+      window.location.assign(dest);
+      return;
+    }
+    router.push("/");
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -21,12 +38,28 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
     try {
       if (mode === "signup") await signup(email, password);
       else await login(email, password);
+      const action = take();
+      if (action) {
+        try {
+          if (action.type === "follow") await followBrand(action.merchantId);
+          else await saveProduct(action.productId);
+        } catch {
+          // Logged in; the toggle can be retried on return.
+        }
+        go(action.returnTo);
+        return;
+      }
       router.push("/");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t("error"));
     } finally {
       setPending(false);
     }
+  }
+
+  function onCancel() {
+    const action = take();
+    go(action?.returnTo ?? pendingReturn);
   }
 
   return (
@@ -66,6 +99,16 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
         >
           {mode === "signup" ? t("signup") : t("login")}
         </button>
+        {pendingReturn && (
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={pending}
+            className="border border-stone-grey bg-white px-4 py-2 text-sm text-ink-black hover:bg-stone-grey disabled:opacity-50"
+          >
+            {t("cancel")}
+          </button>
+        )}
       </form>
       <p className="mt-4 text-sm text-cool-grey">
         {mode === "signup" ? (

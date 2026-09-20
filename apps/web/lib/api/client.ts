@@ -8,6 +8,7 @@ import type {
   ProductQuery,
   PublicProduct,
   SavedProduct,
+  SearchResult,
 } from "./types";
 import { ApiError, NotFoundError, type ApiErrorBody } from "./types";
 import { serverBackendUrl } from "./backend-url";
@@ -107,11 +108,9 @@ export async function getCategories(brand?: string): Promise<CategorySummary[]> 
 export async function searchProducts(
   q: string,
   query: ProductQuery = {},
-): Promise<PaginatedResult<PublicProduct>> {
+): Promise<SearchResult> {
   const params = { ...productQueryParams(query), q };
-  return fetchJson<PaginatedResult<PublicProduct>>(
-    `/v1/search${buildSearchParams(params)}`,
-  );
+  return fetchJson<SearchResult>(`/v1/search${buildSearchParams(params)}`);
 }
 
 /**

@@ -9,7 +9,7 @@
  */
 
 import type { ShopifyProduct, ShopifyVariant } from './shopify-source.schema';
-import { categorize, productSchema, type Availability } from '@maarood/schema';
+import { categorize, decodeImportedText, productSchema, type Availability } from '@maarood/schema';
 import { materialChecksum } from '../../pipeline/checksum';
 import type { NormalizedProduct } from '../types';
 
@@ -81,9 +81,11 @@ export function normalizeShopifyProduct(
   // Derive category from the shared taxonomy. Shopify product_type is sparse,
   // so we match across title/type/tags/handle. Source product_type is preserved
   // as subcategory when it carries useful detail.
+  const title = decodeImportedText(r.title ?? '');
+  const description = decodeImportedText(r.body_html ?? '');
   const sourceProductType = (r.product_type ?? '').trim();
   const { category, subcategory: taxoSub } = categorize({
-    title: r.title,
+    title,
     productType: sourceProductType,
     tags,
     handle: r.handle,
@@ -93,8 +95,8 @@ export function normalizeShopifyProduct(
     merchantId,
     sourceUrl: `https://${domain}/products/${r.handle}`,
     merchantProductId: String(r.id),
-    title: r.title,
-    description: r.body_html?.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() ?? '',
+    title,
+    description,
     vendor: (r.vendor ?? '').trim(),
     category,
     subcategory: taxoSub || sourceProductType,

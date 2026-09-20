@@ -2,10 +2,17 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const card = readFileSync(new URL("./product-card.tsx", import.meta.url), "utf8");
+const viewAt = readFileSync(new URL("./view-at-brand.tsx", import.meta.url), "utf8");
 const explore = readFileSync(
   new URL("../app/[locale]/page.tsx", import.meta.url),
   "utf8",
 );
+const feed = readFileSync(new URL("./discovery-feed.tsx", import.meta.url), "utf8");
+const controls = readFileSync(
+  new URL("./explore-controls.tsx", import.meta.url),
+  "utf8",
+);
+const tabs = readFileSync(new URL("./main-tabs.ts", import.meta.url), "utf8");
 
 describe("product post author row", () => {
   it("places brand identity and Follow in a header before the cover image", () => {
@@ -54,6 +61,52 @@ describe("product post author row", () => {
 describe("Explore product posts", () => {
   it("passes brands into the stacked feed so author names can SSR", () => {
     expect(explore).toMatch(/getBrands/);
-    expect(explore).toMatch(/<ProductGrid products=\{result\.items\} brands=\{brands\} \/>/);
+    expect(explore).toMatch(/DiscoveryFeed/);
+    expect(feed).toMatch(/ProductGrid/);
+  });
+
+  it("exposes Category and Budget controls and load-more instead of numbered pages", () => {
+    expect(explore).toMatch(/ExploreControls/);
+    expect(controls).toMatch(/t\("category"\)/);
+    expect(controls).toMatch(/t\("budget"\)/);
+    expect(explore).toMatch(/getCategories/);
+    expect(explore).not.toMatch(/Pagination/);
+    expect(feed).toMatch(/loadMore/);
+    expect(feed).not.toMatch(/pageCount/);
+  });
+});
+
+describe("MAIN_TABS", () => {
+  it("stays Following | Explore | Favourites", () => {
+    expect(tabs).toMatch(/following/);
+    expect(tabs).toMatch(/explore/);
+    expect(tabs).toMatch(/favourites/);
+    expect(tabs).toMatch(/pathname: "\/following"/);
+    expect(tabs).toMatch(/pathname: "\/"/);
+    expect(tabs).toMatch(/pathname: "\/favourites"/);
+  });
+});
+
+describe("shopping CTA and media", () => {
+  it("keeps image+title as an internal product link and View at brand outside it", () => {
+    expect(card + viewAt).toMatch(/viewAtBrand/);
+    expect(card).toMatch(/ViewAtBrand/);
+    expect(card).toMatch(/pathname: "\/p\/\[id\]"/);
+    expect(card).toMatch(/object-contain/);
+    expect(card).toMatch(/line-clamp-2/);
+    expect(card).not.toMatch(/line-clamp-1/);
+    expect(card).not.toMatch(/object-cover/);
+
+    const headerEnd = card.indexOf("</header>");
+    const afterHeader = card.slice(headerEnd);
+    const productLinkClose = afterHeader.indexOf("</Link>");
+    const insideProductLink = afterHeader.slice(0, productLinkClose);
+    const afterProductLink = afterHeader.slice(productLinkClose);
+    expect(insideProductLink).toMatch(/pathname: "\/p\/\[id\]"/);
+    expect(insideProductLink).not.toMatch(/FollowButton/);
+    expect(insideProductLink).not.toMatch(/SaveButton/);
+    expect(insideProductLink).not.toMatch(/ViewAtBrand/);
+    expect(afterProductLink).toMatch(/SaveButton/);
+    expect(afterProductLink).toMatch(/ViewAtBrand/);
   });
 });

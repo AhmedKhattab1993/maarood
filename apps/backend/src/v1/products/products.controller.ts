@@ -21,8 +21,9 @@ import { outboundClicks, products } from '@maarood/schema';
 import type { Response } from 'express';
 import { DRIZZLE, type DrizzleDB } from '../../db/db.module';
 import { productQuery } from './products.dto';
-import { buildFilters, resolveBrandFilter, sortSql } from './product-filter';
+import { buildFilters, resolveBrandFilter, shouldExcludeConfirmedOutOfStock, sortSql } from './product-filter';
 import { mapProduct, type PaginatedResult, type PublicProduct } from './product-mapper';
+import { shoppingDestination } from './shopping-destination';
 
 @Controller('v1/products')
 export class ProductsController {
@@ -35,7 +36,9 @@ export class ProductsController {
     const q = parsed.data;
 
     const brand = await resolveBrandFilter(this.db, q);
-    const where = buildFilters(q, brand);
+    const where = buildFilters(q, brand, {
+      excludeConfirmedOutOfStock: shouldExcludeConfirmedOutOfStock(q, brand),
+    });
 
     const totalRows = await this.db
       .select({ n: count() })
@@ -80,17 +83,24 @@ export class ProductsController {
       .limit(1);
     if (rows.length === 0) throw new NotFoundException('Product not found');
     const p = rows[0]!;
-    if (!p.redirectUrl) throw new NotFoundException('Product has no redirect URL');
+    const destination = shoppingDestination(p.redirectUrl);
+    if (!destination.ok) {
+      throw new NotFoundException(
+        destination.reason === 'missing'
+          ? 'Product has no shopping destination'
+          : 'Product shopping destination is not a valid http(s) URL',
+      );
+    }
 
-    // Record the outbound click — Maaroud's primary success metric.
+    // Record the outbound click — Maarood's primary success metric.
     await this.db.insert(outboundClicks).values({
       productId: p.id,
       merchantId: p.merchantId,
       deviceId: deviceId ?? null,
-      destinationUrl: p.redirectUrl,
+      destinationUrl: destination.url,
       referer: referer ?? null,
     });
 
-    res.redirect(302, p.redirectUrl);
+    res.redirect(302, destination.url);
   }
 }

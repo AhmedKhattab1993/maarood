@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { AVAILABILITY_FRESHNESS_MS } from './availability';
 import { mapProduct } from './product-mapper';
 
 function row(overrides: Record<string, unknown> = {}): Record<string, unknown> {
@@ -24,6 +25,8 @@ function row(overrides: Record<string, unknown> = {}): Record<string, unknown> {
     staleAt: null,
     lastSeenAt: '2026-01-01',
     lastUpdatedAt: '2026-01-02',
+    availabilityCheckedAt: null,
+    vendor: '',
     ...overrides,
   };
 }
@@ -98,5 +101,43 @@ describe('mapProduct', () => {
       }),
     );
     expect(p.imageUrls).toEqual(['https://cdn.shopify.com/s/files/1/z.jpg']);
+  });
+
+  it('decodes HTML entities in title, description, and vendor', () => {
+    const p = mapProduct(
+      row({
+        title: "Women&#39;s Cotton Tee",
+        description: 'Pants &amp; Denim',
+        vendor: 'Foo &amp; Bar',
+      }),
+    );
+    expect(p.title).toBe("Women's Cotton Tee");
+    expect(p.description).toBe('Pants & Denim');
+    expect(p.vendor).toBe('Foo & Bar');
+  });
+
+  it('resolves availability from freshness and exposes availabilityCheckedAt', () => {
+    const checkedAt = new Date();
+    const p = mapProduct(
+      row({
+        availability: 'out_of_stock',
+        availabilityCheckedAt: checkedAt,
+      }),
+    );
+    expect(p.availability).toBe('out_of_stock');
+    expect(p.availabilityCheckedAt).toBe(checkedAt.toISOString());
+  });
+
+  it('does not treat missing or stale availability as in_stock', () => {
+    expect(mapProduct(row({ availability: 'in_stock', availabilityCheckedAt: null })).availability).toBe(
+      'unknown',
+    );
+    const stale = new Date(Date.now() - AVAILABILITY_FRESHNESS_MS - 1000);
+    expect(
+      mapProduct(row({ availability: 'in_stock', availabilityCheckedAt: stale })).availability,
+    ).toBe('unknown');
+    expect(
+      mapProduct(row({ availability: 'unknown', availabilityCheckedAt: new Date() })).availability,
+    ).toBe('unknown');
   });
 });

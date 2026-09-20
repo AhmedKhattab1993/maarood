@@ -4,7 +4,9 @@ import { searchProducts, getBrands, getCategories } from "@/lib/api/client";
 import { ProductListing } from "@/components/product-listing";
 import { ErrorState } from "@/components/state-views";
 import { SearchBar } from "@/components/search-bar";
-import { toNumber, toSort } from "@/lib/query";
+import { Link } from "@/i18n/navigation";
+import { invalidPriceRange, toNumber, toSort } from "@/lib/query";
+import type { SearchResult } from "@/lib/api/types";
 
 export async function generateMetadata({
   params,
@@ -32,6 +34,7 @@ export default async function SearchPage({
   setRequestLocale(locale);
   const sp = await searchParams;
   const t = await getTranslations({ locale, namespace: "Search" });
+  const tFilters = await getTranslations({ locale, namespace: "Filters" });
 
   const q = typeof sp.q === "string" ? sp.q : "";
   const current = {
@@ -46,44 +49,94 @@ export default async function SearchPage({
     sort: str(sp.sort),
   };
 
-  // Brands + categories power the filter bar; non-critical.
   const [brands, categories] = await Promise.allSettled([getBrands(), getCategories()]);
   const brandList = brands.status === "fulfilled" ? brands.value : [];
   const categoryList = categories.status === "fulfilled" ? categories.value : [];
 
+  const minPrice = toNumber(current.minPrice);
+  const maxPrice = toNumber(current.maxPrice);
+  const invalid = invalidPriceRange(minPrice, maxPrice);
+  const query = {
+    brand: current.brand || undefined,
+    category: current.category || undefined,
+    minPrice,
+    maxPrice,
+    availability: current.availability as never,
+    color: current.color || undefined,
+    size: current.size || undefined,
+    sort: toSort(current.sort),
+    limit: 24,
+  };
+
   let body: React.ReactNode;
   if (!q) {
-    // No query yet — show the search prompt, no listing.
     body = (
       <div className="mx-auto max-w-xl py-10">
         <SearchBar autoFocus />
       </div>
     );
+  } else if (invalid) {
+    body = (
+      <ProductListing
+        result={{ items: [], page: 1, limit: 24, total: 0 }}
+        brands={brandList}
+        categories={categoryList}
+        current={current}
+        sort={toSort(current.sort)}
+        title={t("products")}
+        emptyTitle={tFilters("invalidRange")}
+        feed={{ kind: "search", q, query }}
+      />
+    );
   } else {
     try {
-      const result = await searchProducts(q, {
-        brand: current.brand,
-        category: current.category,
-        minPrice: toNumber(current.minPrice),
-        maxPrice: toNumber(current.maxPrice),
-        availability: current.availability as never,
-        color: current.color,
-        size: current.size,
-        sort: toSort(current.sort),
-        page: toNumber(sp.page) ?? 1,
-        limit: 24,
-      });
+      const result: SearchResult = await searchProducts(q, { ...query, page: 1 });
+      const matchedBrands = result.brands ?? [];
       body = (
-        <ProductListing
-          result={result}
-          brands={brandList}
-          categories={categoryList}
-          current={current}
-          sort={toSort(current.sort)}
-          title={t("resultsFor", { query: q })}
-          emptyTitle={t("noResults")}
-          emptyHint={t("noResultsHint")}
-        />
+        <div className="flex flex-col gap-8">
+          <div className="flex flex-wrap items-baseline justify-between gap-3">
+            <p className="text-sm text-cool-grey">{t("resultsFor", { query: q })}</p>
+            <Link
+              href={{ pathname: "/" }}
+              className="text-sm text-maaroud-blue hover:underline"
+            >
+              {t("clear")}
+            </Link>
+          </div>
+          {matchedBrands.length > 0 && (
+            <section>
+              <h2 className="mb-3 text-lg font-medium text-ink-black">
+                {t("brands")}
+              </h2>
+              <ul className="flex flex-col gap-2">
+                {matchedBrands.map((b) => (
+                  <li key={b.id}>
+                    <Link
+                      href={{
+                        pathname: "/brands/[slug]",
+                        params: { slug: b.slug },
+                      }}
+                      className="text-sm font-medium text-ink-black hover:underline"
+                    >
+                      {b.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+          <ProductListing
+            result={result}
+            brands={brandList}
+            categories={categoryList}
+            current={current}
+            sort={toSort(current.sort)}
+            title={t("products")}
+            emptyTitle={t("noResults")}
+            emptyHint={t("noResultsHint")}
+            feed={{ kind: "search", q, query }}
+          />
+        </div>
       );
     } catch (err) {
       body = <ErrorState error={err} />;

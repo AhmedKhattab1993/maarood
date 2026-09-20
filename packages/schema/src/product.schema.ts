@@ -78,7 +78,10 @@ export const productSchema = z.object({
   lastSeenAt: z.coerce.date(),
   lastUpdatedAt: z.coerce.date().nullable().default(null),
   staleAt: z.coerce.date().nullable().default(null),
+  /** When availability was last confirmed by a crawl. Missing/stale is unconfirmed. */
+  availabilityCheckedAt: z.coerce.date().nullable().optional(),
 });
+
 
 export type Product = z.infer<typeof productSchema>;
 

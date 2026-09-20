@@ -21,3 +21,11 @@ export function toAvailability(
   const s = typeof v === "string" ? (v as Availability) : undefined;
   return s && AVAIL.includes(s) ? s : undefined;
 }
+
+/** True when both bounds are set and min is greater than max. Do not swap. */
+export function invalidPriceRange(
+  min: number | undefined,
+  max: number | undefined,
+): boolean {
+  return min !== undefined && max !== undefined && min > max;
+}

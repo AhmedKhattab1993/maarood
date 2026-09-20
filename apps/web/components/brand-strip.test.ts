@@ -11,7 +11,12 @@ describe("Explore shop-by-brand strip", () => {
     expect(page).not.toMatch(/brand-strip/);
     expect(page).not.toMatch(/shopByBrand/);
     expect(page).not.toMatch(/browseBrands/);
-    expect(page).toMatch(/ProductGrid/);
+    expect(page).toMatch(/DiscoveryFeed/);
+    const feed = readFileSync(
+      new URL("./discovery-feed.tsx", import.meta.url),
+      "utf8",
+    );
+    expect(feed).toMatch(/ProductGrid/);
     expect(existsSync(new URL("./brand-strip.tsx", import.meta.url))).toBe(false);
   });
 });

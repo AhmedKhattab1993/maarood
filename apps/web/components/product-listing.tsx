@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { Suspense, useCallback, useState } from "react";
 import type {
   BrandSummary,
   CategorySummary,
@@ -9,10 +9,15 @@ import type {
   PublicProduct,
   ProductSort,
 } from "@/lib/api/types";
+import type { DiscoverySource } from "@/lib/api/public-client";
+import { categoryName } from "@/lib/categories";
+import { invalidPriceRange, toNumber } from "@/lib/query";
+import { useQueryParams } from "@/lib/use-query-params";
 import { FilterBar } from "./filter-bar";
+import { FilterChips } from "./filter-chips";
 import { SortSelect } from "./sort-select";
-import { ProductGrid, ProductGridSkeleton } from "./product-grid";
-import { Pagination } from "./pagination";
+import { DiscoveryFeed } from "./discovery-feed";
+import { ProductGridSkeleton } from "./product-grid";
 import { EmptyState } from "./state-views";
 
 /**
@@ -34,6 +39,7 @@ export function ProductListing({
   isLoading = false,
   emptyTitle,
   emptyHint,
+  feed,
 }: {
   result: PaginatedResult<PublicProduct>;
   brands?: BrandSummary[];
@@ -45,36 +51,117 @@ export function ProductListing({
   isLoading?: boolean;
   emptyTitle: string;
   emptyHint?: string;
+  feed: DiscoverySource;
+}) {
+  return (
+    <Suspense fallback={<ProductGridSkeleton />}>
+      <ProductListingInner
+        result={result}
+        brands={brands}
+        categories={categories}
+        current={current}
+        sort={sort}
+        title={title}
+        isLoading={isLoading}
+        emptyTitle={emptyTitle}
+        emptyHint={emptyHint}
+        feed={feed}
+      />
+    </Suspense>
+  );
+}
+
+function ProductListingInner({
+  result,
+  brands,
+  categories,
+  current,
+  sort,
+  title,
+  isLoading = false,
+  emptyTitle,
+  emptyHint,
+  feed,
+}: {
+  result: PaginatedResult<PublicProduct>;
+  brands?: BrandSummary[];
+  categories?: CategorySummary[];
+  current: Record<string, string | undefined>;
+  sort?: ProductSort;
+  title: string;
+  isLoading?: boolean;
+  emptyTitle: string;
+  emptyHint?: string;
+  feed: DiscoverySource;
 }) {
   const t = useTranslations("Filters");
+  const tCat = useTranslations("Category");
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const { searchParams, pushParams } = useQueryParams();
 
-  const activeCount =
-    (current.brand ? 1 : 0) +
-    (current.category ? 1 : 0) +
-    (current.minPrice ? 1 : 0) +
-    (current.maxPrice ? 1 : 0) +
-    (current.color ? 1 : 0) +
-    (current.size ? 1 : 0) +
-    (current.availability ? 1 : 0);
+  const update = useCallback(
+    (key: string, value: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (value) params.set(key, value);
+      else params.delete(key);
+      pushParams(params, true);
+    },
+    [pushParams, searchParams],
+  );
+
+  const clearAll = useCallback(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    const q = params.get("q");
+    const kept = new URLSearchParams();
+    if (q) kept.set("q", q);
+    pushParams(kept);
+  }, [pushParams, searchParams]);
+
+  const chips = [
+    searchParams.get("brand")
+      ? {
+          key: "brand",
+          label:
+            brands?.find((b) => b.slug === current.brand)?.name ?? current.brand ?? "",
+        }
+      : null,
+    searchParams.get("category")
+      ? { key: "category", label: categoryName(current.category ?? "", tCat) }
+      : null,
+    searchParams.get("minPrice")
+      ? { key: "minPrice", label: `${current.minPrice}+` }
+      : null,
+    searchParams.get("maxPrice")
+      ? { key: "maxPrice", label: `≤ ${current.maxPrice}` }
+      : null,
+    searchParams.get("availability") &&
+    (current.availability === "in_stock" ||
+      current.availability === "out_of_stock" ||
+      current.availability === "unknown")
+      ? { key: "availability", label: t(current.availability) }
+      : null,
+    searchParams.get("color") ? { key: "color", label: current.color ?? "" } : null,
+    searchParams.get("size") ? { key: "size", label: current.size ?? "" } : null,
+  ].filter((c): c is { key: string; label: string } => c !== null);
+
+  const activeCount = chips.length;
+  const invalid = invalidPriceRange(
+    toNumber(current.minPrice),
+    toNumber(current.maxPrice),
+  );
 
   if (isLoading) {
     return <ProductGridSkeleton />;
   }
 
-  if (result.items.length === 0) {
-    return <EmptyState title={emptyTitle} hint={emptyHint} />;
-  }
-
   return (
     <div className="flex flex-col">
-      {/* Wall header — title+count left, filter toggle + sort right */}
       <div className="flex items-baseline justify-between gap-4 border-b border-stone-grey pb-4">
         <h1 className="text-2xl font-medium text-ink-black md:text-3xl">
-          {title} <span className="text-cool-grey">({result.total})</span>
+          {title}{" "}
+          <span className="text-cool-grey">({invalid ? 0 : result.total})</span>
         </h1>
         <div className="flex items-center gap-6">
-          {/* Filter toggle — controls the rail below */}
           <button
             type="button"
             onClick={() => setFiltersOpen((o) => !o)}
@@ -89,7 +176,6 @@ export function ProductListing({
         </div>
       </div>
 
-      {/* Body: rail (when open) + feed */}
       <div className="flex flex-col gap-4 pt-6 md:flex-row md:items-start md:gap-8">
         <FilterBar
           brands={brands ?? []}
@@ -99,12 +185,27 @@ export function ProductListing({
           onToggle={() => setFiltersOpen((o) => !o)}
         />
         <div className="flex min-w-0 flex-1 flex-col gap-5">
-          <ProductGrid products={result.items} brands={brands} />
-          <Pagination
-            page={result.page}
-            limit={result.limit}
-            total={result.total}
+          <FilterChips
+            items={chips}
+            onRemove={(key) => update(key, "")}
+            onClearAll={clearAll}
           />
+          {invalid ? (
+            <p role="alert" className="text-sm text-alert-red">
+              {t("invalidRange")}
+            </p>
+          ) : result.items.length === 0 ? (
+            <EmptyState
+              title={activeCount > 0 ? t("noMatches") : emptyTitle}
+              hint={activeCount > 0 ? t("adjust") : emptyHint}
+            />
+          ) : (
+            <DiscoveryFeed
+              initial={result}
+              brands={brands}
+              source={feed}
+            />
+          )}
         </div>
       </div>
     </div>

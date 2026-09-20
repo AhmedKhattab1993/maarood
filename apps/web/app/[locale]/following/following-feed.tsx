@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { getAuthToken, listFollowing } from "@/lib/auth";
-import { publicBackendUrl } from "@/lib/api/backend-url";
+import { publicGetBrands, publicGetProducts } from "@/lib/api/public-client";
 import { ApiError, type PaginatedResult, type PublicProduct, type BrandSummary } from "@/lib/api/types";
-import { ProductGrid, ProductGridSkeleton } from "@/components/product-grid";
+import { DiscoveryFeed } from "@/components/discovery-feed";
+import { ProductGridSkeleton } from "@/components/product-grid";
 import { EmptyState } from "@/components/state-views";
+import { FollowButton } from "@/components/follow-button";
 
 export function FollowingFeed({
   emptyTitle,
@@ -19,11 +22,21 @@ export function FollowingFeed({
   loginHint: string;
   browseLabel: string;
 }) {
+  const t = useTranslations("Following");
   const [state, setState] = useState<
     | { status: "loading" }
     | { status: "anon" }
-    | { status: "empty" }
-    | { status: "ready"; products: PublicProduct[]; brands: BrandSummary[] }
+    | {
+        status: "empty";
+        suggested: BrandSummary[];
+      }
+    | {
+        status: "ready";
+        products: PaginatedResult<PublicProduct>;
+        brands: BrandSummary[];
+        suggested: BrandSummary[];
+        merchantIds: string[];
+      }
     | { status: "error"; message: string }
   >({ status: "loading" });
 
@@ -35,18 +48,24 @@ export function FollowingFeed({
         return;
       }
       try {
-        const followed = await listFollowing();
+        const [followed, allBrands] = await Promise.all([
+          listFollowing(),
+          publicGetBrands().catch(() => [] as BrandSummary[]),
+        ]);
         if (cancelled) return;
+        const followedIds = new Set(followed.map((f) => f.merchantId));
+        const suggested = allBrands.filter((b) => !followedIds.has(b.id));
         if (followed.length === 0) {
-          setState({ status: "empty" });
+          setState({ status: "empty", suggested });
           return;
         }
-        const ids = followed.map((f) => f.merchantId);
-        const sp = new URLSearchParams({ sort: "newest", limit: "24" });
-        for (const id of ids) sp.append("merchantId", id);
-        const res = await fetch(`${publicBackendUrl()}/v1/products?${sp}`);
-        if (!res.ok) throw new Error("products");
-        const page = (await res.json()) as PaginatedResult<PublicProduct>;
+        const merchantIds = followed.map((f) => f.merchantId);
+        const page = await publicGetProducts({
+          sort: "newest",
+          limit: 24,
+          page: 1,
+          merchantId: merchantIds,
+        });
         const brands: BrandSummary[] = followed.map((f) => ({
           id: f.merchantId,
           name: f.name,
@@ -55,7 +74,15 @@ export function FollowingFeed({
           productCount: 0,
           logoUrl: f.logoUrl,
         }));
-        if (!cancelled) setState({ status: "ready", products: page.items, brands });
+        if (!cancelled) {
+          setState({
+            status: "ready",
+            products: page,
+            brands,
+            suggested,
+            merchantIds,
+          });
+        }
       } catch (err) {
         if (cancelled) return;
         const message = err instanceof ApiError ? err.message : "error";
@@ -83,15 +110,18 @@ export function FollowingFeed({
   }
   if (state.status === "empty") {
     return (
-      <EmptyState
-        title={emptyTitle}
-        hint={emptyHint}
-        action={
-          <Link href={{ pathname: "/" }} className="text-sm font-medium text-maaroud-blue hover:underline">
-            {browseLabel}
-          </Link>
-        }
-      />
+      <div className="flex flex-col gap-8">
+        <EmptyState
+          title={emptyTitle}
+          hint={emptyHint}
+          action={
+            <Link href={{ pathname: "/" }} className="text-sm font-medium text-maaroud-blue hover:underline">
+              {browseLabel}
+            </Link>
+          }
+        />
+        <SuggestedBrands brands={state.suggested} heading={t("suggested")} />
+      </div>
     );
   }
   if (state.status === "error") {
@@ -101,8 +131,76 @@ export function FollowingFeed({
       </div>
     );
   }
-  if (state.products.length === 0) {
-    return <EmptyState title={emptyTitle} hint={emptyHint} />;
-  }
-  return <ProductGrid products={state.products} brands={state.brands} />;
+
+  return (
+    <div className="flex flex-col gap-10">
+      <section>
+        <h2 className="mb-4 text-lg font-medium text-ink-black">{t("yourBrands")}</h2>
+        {state.products.items.length === 0 ? (
+          <EmptyState title={emptyTitle} hint={emptyHint} />
+        ) : (
+          <DiscoveryFeed
+            initial={state.products}
+            brands={state.brands}
+            source={{
+              kind: "products",
+              query: {
+                sort: "newest",
+                limit: 24,
+                merchantId: state.merchantIds,
+              },
+            }}
+          />
+        )}
+      </section>
+      <SuggestedBrands brands={state.suggested} heading={t("suggested")} />
+    </div>
+  );
+}
+
+function SuggestedBrands({
+  brands,
+  heading,
+}: {
+  brands: BrandSummary[];
+  heading: string;
+}) {
+  if (brands.length === 0) return null;
+  return (
+    <section>
+      <h2 className="mb-4 text-lg font-medium text-ink-black">{heading}</h2>
+      <ul className="flex flex-col gap-3">
+        {brands.map((b) => (
+          <li key={b.id} className="flex items-center justify-between gap-3">
+            <Link
+              href={{ pathname: "/brands/[slug]", params: { slug: b.slug } }}
+              className="flex min-w-0 items-center gap-3"
+            >
+              {b.logoUrl ? (
+                <img
+                  src={b.logoUrl}
+                  alt=""
+                  width={40}
+                  height={40}
+                  referrerPolicy="no-referrer"
+                  className="h-10 w-10 shrink-0 bg-white object-contain"
+                />
+              ) : (
+                <span
+                  aria-hidden
+                  className="flex h-10 w-10 shrink-0 items-center justify-center bg-stone-grey text-sm font-semibold"
+                >
+                  {b.name.trim().charAt(0)}
+                </span>
+              )}
+              <span className="truncate text-sm font-medium text-ink-black">
+                {b.name}
+              </span>
+            </Link>
+            <FollowButton merchantId={b.id} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
 }

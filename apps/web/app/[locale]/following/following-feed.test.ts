@@ -7,6 +7,7 @@ describe("Following product posts", () => {
   it("puts GET /v1/me/following logoUrl on the posting author payload", () => {
     expect(feed).toMatch(/listFollowing/);
     expect(feed).toMatch(/logoUrl: f\.logoUrl/);
-    expect(feed).toMatch(/<ProductGrid products=\{state\.products\} brands=\{state\.brands\} \/>/);
+    expect(feed).toMatch(/DiscoveryFeed/);
+    expect(feed).toMatch(/suggested/);
   });
 });

@@ -5,6 +5,7 @@
     "promise": "Discover products from Egyptian brands and buy directly from the brand.",
     "productsCount": "{count} products",
     "visitStore": "Visit store",
+    "website": "Brand website",
     "notFound": "Brand not found",
     "shopByCategory": "Shop by category"
   },
@@ -36,21 +37,26 @@
     "password": "Password",
     "error": "Could not sign in. Try again.",
     "haveAccount": "Already have an account? Log in",
-    "needAccount": "Need an account? Sign up"
+    "needAccount": "Need an account? Sign up",
+    "cancel": "Cancel"
   },
   "Follow": {
     "follow": "Follow",
-    "unfollow": "Following"
+    "unfollow": "Following",
+    "pending": "Updating…",
+    "failed": "Could not update. Try again."
   },
   "Following": {
     "empty": "You are not following any brands yet",
     "emptyHint": "Follow a brand from a product to see it here.",
     "loginHint": "Log in to see brands you follow.",
-    "browse": "Explore"
+    "browse": "Explore",
+    "suggested": "Suggested brands",
+    "yourBrands": "Your brands"
   },
   "Favourites": {
     "empty": "No favourites yet",
-    "emptyHint": "Heart a product to save it here.",
+    "emptyHint": "Save a product to keep it here, including items that are out of stock.",
     "browse": "Explore"
   },
   "Search": {
@@ -58,7 +64,10 @@
     "submit": "Search",
     "resultsFor": "Results for: {query}",
     "noResults": "No results found",
-    "noResultsHint": "Try a different term or adjust the filters."
+    "noResultsHint": "Try a different term or adjust the filters.",
+    "brands": "Brands",
+    "products": "Products",
+    "clear": "Clear search"
   },
   "Filters": {
     "title": "Filters",
@@ -76,7 +85,13 @@
     "apply": "Apply",
     "clear": "Clear filters",
     "showFilters": "Filters",
-    "hideFilters": "Hide"
+    "hideFilters": "Hide",
+    "budget": "Budget (EGP)",
+    "clearAll": "Clear all",
+    "invalidRange": "Min price must be less than or equal to max price",
+    "noMatches": "No matching products",
+    "adjust": "Adjust the filters and try again.",
+    "removeFilter": "Remove filter"
   },
   "Sort": {
     "label": "Sort",
@@ -87,6 +102,13 @@
   },
   "Product": {
     "buyFromBrand": "Buy from brand",
+    "viewAtBrand": "View at {brand}",
+    "leavesMaaroud": "Leaves Maaroud",
+    "linkUnavailable": "This product link is unavailable. Try again.",
+    "availabilityUnconfirmed": "Availability unconfirmed",
+    "alternatives": "More from this brand",
+    "savePending": "Saving…",
+    "saveFailed": "Could not save. Try again.",
     "checkoutAt": "Checkout on {brand}",
     "viewDetails": "View details",
     "save": "Save",
@@ -127,7 +149,10 @@
     "error": "Something went wrong",
     "retry": "Try again",
     "empty": "Nothing here yet",
-    "pagination": "Pagination"
+    "pagination": "Pagination",
+    "loadMore": "Load more",
+    "endOfResults": "You've reached the end",
+    "retryLoad": "Could not load more. Try again"
   },
   "Footer": {
     "about": "Maaroud is a product discovery platform. Checkout always happens directly with the brand.",
@@ -137,6 +162,9 @@
     "shop": "Shop",
     "help": "Help",
     "company": "Maaroud",
+    "maaroudHelp": "Maaroud help",
+    "orderHelp": "Orders, shipping, and returns are handled by the brand.",
+    "contactMaaroud": "Contact Maaroud",
     "shipping": "Shipping",
     "returns": "Returns",
     "contact": "Contact",
@@ -153,5 +181,10 @@
     "savedTitle": "Saved — Maaroud",
     "favouritesTitle": "Favourites — Maaroud",
     "followingTitle": "Following — Maaroud"
+  },
+  "Help": {
+    "title": "Help",
+    "maaroud": "Maaroud is a discovery platform. We can help you find brands and products.",
+    "brandOrders": "Orders, payment, shipping, and returns happen with the brand, not with Maaroud."
   }
 }

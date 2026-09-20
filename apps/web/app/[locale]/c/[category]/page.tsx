@@ -5,7 +5,7 @@ import { ProductListing } from "@/components/product-listing";
 import { FacetNav } from "@/components/facet-nav";
 import { ErrorState } from "@/components/state-views";
 import { Breadcrumbs } from "@/components/breadcrumbs";
-import { toNumber, toSort } from "@/lib/query";
+import { invalidPriceRange, toNumber, toSort } from "@/lib/query";
 import { notFound } from "next/navigation";
 import { isLocale } from "@/i18n/config";
 import { categoryName } from "@/lib/categories";
@@ -52,20 +52,24 @@ export default async function CategoryPage({
   const brandList = brands.status === "fulfilled" ? brands.value : [];
   const categoryList = categories.status === "fulfilled" ? categories.value : [];
 
+  const listingQuery = {
+    category: categoryValue,
+    brand: current.brand || undefined,
+    minPrice: toNumber(current.minPrice),
+    maxPrice: toNumber(current.maxPrice),
+    availability: current.availability as never,
+    color: current.color || undefined,
+    size: current.size || undefined,
+    sort: toSort(sp.sort) ?? "newest",
+    limit: 24,
+  };
+  const invalid = invalidPriceRange(listingQuery.minPrice, listingQuery.maxPrice);
+
   let body: React.ReactNode;
   try {
-    const result = await getProducts({
-      category: categoryValue,
-      brand: current.brand,
-      minPrice: toNumber(current.minPrice),
-      maxPrice: toNumber(current.maxPrice),
-      availability: current.availability as never,
-      color: current.color,
-      size: current.size,
-      sort: toSort(sp.sort) ?? "newest",
-      page: toNumber(sp.page) ?? 1,
-      limit: 24,
-    });
+    const result = invalid
+      ? { items: [], page: 1, limit: 24, total: 0 }
+      : await getProducts({ ...listingQuery, page: 1 });
     body = (
       <>
         <FacetNav
@@ -89,6 +93,10 @@ export default async function CategoryPage({
           title={categoryName(categoryValue, tCat)}
           emptyTitle={t("Search.noResults")}
           emptyHint={t("Search.noResultsHint")}
+          feed={{
+            kind: "products",
+            query: listingQuery,
+          }}
         />
       </>
     );

@@ -1,4 +1,5 @@
 import type { PublicProduct } from "@/lib/api/types";
+import { shoppingDestination } from "@/lib/shopping-destination";
 
 /**
  * JSON-LD Product schema for SEO (06:14 — SEO-friendly product pages). Inlined
@@ -11,19 +12,21 @@ export function ProductJsonLd({
   product: PublicProduct;
   brandName: string;
 }) {
+  const dest = shoppingDestination(product.redirectUrl);
+  const availability =
+    product.availability === "in_stock"
+      ? "https://schema.org/InStock"
+      : product.availability === "out_of_stock"
+        ? "https://schema.org/OutOfStock"
+        : undefined;
   const offers =
-    product.redirectUrl || product.currentPrice
+    product.currentPrice || dest.ok
       ? {
           "@type": "Offer",
           price: product.currentPrice,
           priceCurrency: product.currency,
-          availability:
-            product.availability === "in_stock"
-              ? "https://schema.org/InStock"
-              : product.availability === "out_of_stock"
-                ? "https://schema.org/OutOfStock"
-                : "https://schema.org/InStock",
-          url: product.redirectUrl ?? product.sourceUrl,
+          availability,
+          url: dest.ok ? dest.url : undefined,
         }
       : undefined;
 

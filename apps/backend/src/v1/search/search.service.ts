@@ -10,27 +10,43 @@
  */
 
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq, gte, lte, sql, type SQL } from 'drizzle-orm';
+import { and, asc, count, eq, gte, lte, sql, type SQL } from 'drizzle-orm';
 import { merchants, products } from '@maarood/schema';
 import { DRIZZLE, type DrizzleDB } from '../../db/db.module';
 import type { ProductQuery } from '../products/products.dto';
 import { mapProduct, type PaginatedResult, type PublicProduct } from '../products/product-mapper';
+import { brandMatchesNormalizedQuery } from './brand-match';
 import { normalizeSearchQuery, toTsqueryString } from './normalize';
 
 // The generated `search_vector` column isn't declared in the Drizzle schema;
 // reference it as a typed SQL identifier.
 const searchVector = sql.raw('search_vector');
 
+const BRAND_HIT_LIMIT = 8;
+
+export interface SearchBrandHit {
+  id: string;
+  name: string;
+  slug: string;
+  domain: string;
+  productCount: number;
+  logoUrl: string | null;
+}
+
+export interface SearchResult extends PaginatedResult<PublicProduct> {
+  brands: SearchBrandHit[];
+}
+
 @Injectable()
 export class SearchService {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
-  async search(text: string, q: ProductQuery): Promise<PaginatedResult<PublicProduct>> {
+  async search(text: string, q: ProductQuery): Promise<SearchResult> {
     const normalized = normalizeSearchQuery(text);
     const tsq = toTsqueryString(normalized);
 
     if (tsq.length === 0 && !normalized) {
-      return { items: [], page: q.page, limit: q.limit, total: 0 };
+      return { items: [], page: q.page, limit: q.limit, total: 0, brands: [] };
     }
 
     // Resolve brand filter to a merchant id.
@@ -67,26 +83,52 @@ export class SearchService {
     const fullWhere =
       conditions.length > 0 ? and(...conditions, searchCondition) : searchCondition;
 
-    const totalRows = await this.db
-      .select({ n: sql<number>`count(*)::int` })
-      .from(products)
-      .where(fullWhere);
-    const total = Number(totalRows[0]?.n ?? 0);
+    const [merchantRows, totalRows, rows] = await Promise.all([
+      this.db
+        .select({
+          id: merchants.id,
+          name: merchants.name,
+          slug: merchants.slug,
+          domain: merchants.domain,
+          logoUrl: merchants.logoUrl,
+          productCount: count(products.id),
+        })
+        .from(merchants)
+        .leftJoin(products, eq(products.merchantId, merchants.id))
+        .where(eq(merchants.optedOut, false))
+        .groupBy(merchants.id)
+        .orderBy(asc(merchants.name)),
+      this.db
+        .select({ n: sql<number>`count(*)::int` })
+        .from(products)
+        .where(fullWhere),
+      this.db
+        .select()
+        .from(products)
+        .where(fullWhere)
+        .orderBy(sql`${relevance} desc`)
+        .limit(q.limit)
+        .offset((q.page - 1) * q.limit),
+    ]);
 
-    const offset = (q.page - 1) * q.limit;
-    const rows = await this.db
-      .select()
-      .from(products)
-      .where(fullWhere)
-      .orderBy(sql`${relevance} desc`)
-      .limit(q.limit)
-      .offset(offset);
+    const brands = merchantRows
+      .filter((m) => brandMatchesNormalizedQuery(m.name, m.slug, normalized))
+      .slice(0, BRAND_HIT_LIMIT)
+      .map((m) => ({
+        id: m.id,
+        name: m.name,
+        slug: m.slug,
+        domain: m.domain,
+        productCount: Number(m.productCount),
+        logoUrl: m.logoUrl ?? null,
+      }));
 
     return {
       items: rows.map((r) => mapProduct(r as unknown as Record<string, unknown>)),
       page: q.page,
       limit: q.limit,
-      total,
+      total: Number(totalRows[0]?.n ?? 0),
+      brands,
     };
   }
 }

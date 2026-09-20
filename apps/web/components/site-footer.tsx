@@ -63,9 +63,19 @@ export async function SiteFooter() {
             {t("help")}
           </h2>
           <ul className="flex flex-col gap-2 text-sm text-cool-grey">
-            <li><a href="#" className="transition-colors hover:text-ink-black">{t("shipping")}</a></li>
-            <li><a href="#" className="transition-colors hover:text-ink-black">{t("returns")}</a></li>
-            <li><a href="#" className="transition-colors hover:text-ink-black">{t("contact")}</a></li>
+            <li>
+              <Link href={{ pathname: "/help" }} className="transition-colors hover:text-ink-black">
+                {t("maaroudHelp")}
+              </Link>
+            </li>
+            <li>
+              <Link href={{ pathname: "/help" }} className="transition-colors hover:text-ink-black">
+                {t("contactMaaroud")}
+              </Link>
+            </li>
+            <li>
+              <p>{t("orderHelp")}</p>
+            </li>
           </ul>
         </div>
 

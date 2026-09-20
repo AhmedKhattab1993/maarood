@@ -5,6 +5,8 @@ import { useState, useTransition } from "react";
 import { saveProduct, unsaveProduct } from "@/lib/saved";
 import { ApiError } from "@/lib/api/types";
 import { getAuthToken } from "@/lib/auth";
+import { saveIntent, toggleVisual } from "@/lib/follow-intent";
+import { currentReturnTo, stash } from "@/lib/pending-action";
 import { useRouter } from "@/i18n/navigation";
 
 /** Heart/bookmark toggle that calls the anonymous saved-products API. */
@@ -20,18 +22,23 @@ export function SaveButton({
   const t = useTranslations("Product");
   const router = useRouter();
   const [saved, setSaved] = useState(initialSaved);
+  const [failed, setFailed] = useState(false);
   const [pending, startTransition] = useTransition();
+  const visual = toggleVisual(saved, pending, failed);
 
   function toggle(e?: React.MouseEvent) {
     e?.preventDefault();
     e?.stopPropagation();
-    if (!getAuthToken()) {
+    const intent = saveIntent(Boolean(getAuthToken()), saved);
+    if (intent === "login") {
+      stash({ type: "save", productId, returnTo: currentReturnTo() });
       router.push("/login");
       return;
     }
+    setFailed(false);
     startTransition(async () => {
       try {
-        if (saved) {
+        if (intent === "unsave") {
           await unsaveProduct(productId);
           setSaved(false);
         } else {
@@ -39,38 +46,81 @@ export function SaveButton({
           setSaved(true);
         }
       } catch (err) {
-        // Surface the backend message if available; savedProducts is non-critical.
+        setFailed(true);
         const message = err instanceof ApiError ? err.message : t("error");
-        // Avoid blocking the UI; could be wired to a toast later.
         console.warn("save toggle failed", message);
       }
     });
   }
 
+  const ariaLabel =
+    visual === "pending"
+      ? t("savePending")
+      : visual === "failed"
+        ? t("saveFailed")
+        : saved
+          ? t("unsave")
+          : t("save");
+
   if (variant === "label") {
+    const labelClass =
+      visual === "active"
+        ? "border-ink-black bg-ink-black text-white"
+        : visual === "failed"
+          ? "border-alert-red bg-white text-alert-red"
+          : "border-stone-grey bg-white text-ink-black hover:bg-stone-grey";
     return (
+      <span className="inline-flex flex-col gap-1">
+        <button
+          type="button"
+          onClick={toggle}
+          disabled={pending}
+          aria-pressed={saved}
+          aria-busy={pending || undefined}
+          aria-label={ariaLabel}
+          className={`rounded-default border px-4 py-2 text-sm transition-colors disabled:opacity-50 ${labelClass}`}
+        >
+          {visual === "pending"
+            ? t("savePending")
+            : saved
+              ? t("saved")
+              : t("save")}
+        </button>
+        {visual === "failed" && (
+          <span role="alert" aria-live="polite" className="text-xs text-alert-red">
+            {t("saveFailed")}
+          </span>
+        )}
+      </span>
+    );
+  }
+
+  const iconClass =
+    visual === "active"
+      ? "border-ink-black bg-ink-black text-white"
+      : visual === "failed"
+        ? "border-alert-red bg-white text-alert-red"
+        : "border-stone-grey bg-white/90 text-ink-black hover:bg-stone-grey";
+
+  return (
+    <span className="inline-flex flex-col items-center gap-0.5">
       <button
         type="button"
         onClick={toggle}
         disabled={pending}
-        className="rounded-default border border-stone-grey bg-white px-4 py-2 text-sm text-ink-black transition-colors hover:bg-stone-grey disabled:opacity-50"
+        aria-pressed={saved}
+        aria-busy={pending || undefined}
+        aria-label={ariaLabel}
+        className={`inline-flex h-9 w-9 items-center justify-center rounded-pill border backdrop-blur transition-colors disabled:opacity-50 ${iconClass}`}
       >
-        {saved ? t("saved") : t("save")}
+        <BookmarkIcon filled={saved && visual !== "failed"} />
       </button>
-    );
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={toggle}
-      disabled={pending}
-      aria-pressed={saved}
-      aria-label={saved ? t("unsave") : t("save")}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-pill border border-stone-grey bg-white/90 text-ink-black backdrop-blur transition-colors hover:bg-stone-grey disabled:opacity-50"
-    >
-      <BookmarkIcon filled={saved} />
-    </button>
+      {visual === "failed" && (
+        <span role="alert" aria-live="polite" className="sr-only">
+          {t("saveFailed")}
+        </span>
+      )}
+    </span>
   );
 }
 
