@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { getProduct, getBrands, getProducts } from "@/lib/api/client";
-import { NotFoundError, type PublicProduct } from "@/lib/api/types";
+import { NotFoundError, ApiError, type PublicProduct } from "@/lib/api/types";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { SaveButton } from "@/components/save-button";
 import { ViewAtBrand } from "@/components/view-at-brand";
@@ -30,7 +30,11 @@ export async function generateMetadata({
       description: product.description || undefined,
       openGraph: { images },
     };
-  } catch {
+  } catch (err) {
+    // Metadata resolves before streaming, so a 404 here carries the status.
+    // A malformed id (API 400) can never resolve to a product — same treatment.
+    if (err instanceof NotFoundError) notFound();
+    if (err instanceof ApiError && err.status === 400) notFound();
     const t = await getTranslations({ locale, namespace: "Product" });
     return { title: t("notFound") };
   }
@@ -50,6 +54,8 @@ export default async function ProductPage({
     product = await getProduct(id);
   } catch (err) {
     if (err instanceof NotFoundError) notFound();
+    // Malformed ids can never resolve to a product — treat as not found too.
+    if (err instanceof ApiError && err.status === 400) notFound();
     return (
       <div className="mx-auto max-w-[var(--container-max)] px-4 py-10">
         <ErrorState error={err} />

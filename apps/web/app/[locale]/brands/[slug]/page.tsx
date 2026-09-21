@@ -23,8 +23,10 @@ export async function generateMetadata({
   try {
     const { brand } = await getBrand(slug);
     name = brand.name;
-  } catch {
-    // keep slug as fallback title
+  } catch (err) {
+    // Metadata resolves before streaming, so a 404 here carries the status.
+    if (err instanceof NotFoundError) notFound();
+    // keep slug as fallback title otherwise
   }
   return { title: t("brandTitle", { brand: name }) };
 }
