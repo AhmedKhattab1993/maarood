@@ -36,6 +36,8 @@
     "email": "Email",
     "password": "Password",
     "error": "Could not sign in. Try again.",
+    "invalidCredentials": "Invalid email or password.",
+    "emailTaken": "That email is already registered. Try logging in.",
     "haveAccount": "Already have an account? Log in",
     "needAccount": "Need an account? Sign up",
     "cancel": "Cancel"

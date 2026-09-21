@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Link, useRouter } from "@/i18n/navigation";
+import { Link } from "@/i18n/navigation";
 import { followBrand, login, signup } from "@/lib/auth";
 import { saveProduct } from "@/lib/saved";
 import { ApiError } from "@/lib/api/types";
@@ -10,7 +10,6 @@ import { peek, safeReturnTo, take } from "@/lib/pending-action";
 
 export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const t = useTranslations("Auth");
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -23,12 +22,10 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   }, []);
 
   function go(path: string | null) {
+    // Always a full page load: AuthLink re-fetches the session on mount, so
+    // the header reflects the signed-in state on the landing page itself.
     const dest = path ? safeReturnTo(path) : null;
-    if (dest) {
-      window.location.assign(dest);
-      return;
-    }
-    router.push("/");
+    window.location.assign(dest ?? "/");
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -49,9 +46,12 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
         go(action.returnTo);
         return;
       }
-      router.push("/");
+      go(null);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : t("error"));
+      // Backend messages are English constants; show localized copy instead.
+      if (err instanceof ApiError && err.status === 401) setError(t("invalidCredentials"));
+      else if (err instanceof ApiError && err.status === 409) setError(t("emailTaken"));
+      else setError(t("error"));
     } finally {
       setPending(false);
     }
