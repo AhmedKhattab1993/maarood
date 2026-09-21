@@ -71,6 +71,7 @@ Why this shape (see `06_TECHNICAL_ARCHITECTURE.md` for the full rationale):
    |---|---|
    | `DATABASE_URL` | Neon connection string (`?sslmode=require`) |
    | `ADMIN_TOKEN` | strong secret (≥ 16 chars), same as `~/.maarood.env` |
+   | `AUTH_SECRET` | optional (≥ 16 chars) but recommended — when unset, user session tokens are signed with `ADMIN_TOKEN`, so rotating the admin token logs out all users |
    | `CORS_ORIGIN` | `https://<web-domain>` |
    | `NODE_ENV` | `production` |
 
