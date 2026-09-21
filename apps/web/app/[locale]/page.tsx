@@ -4,7 +4,7 @@ import { getProducts, getBrands, getCategories } from "@/lib/api/client";
 import { ExploreControls } from "@/components/explore-controls";
 import { DiscoveryFeed } from "@/components/discovery-feed";
 import { EmptyState, ErrorState } from "@/components/state-views";
-import { invalidPriceRange, toNumber } from "@/lib/query";
+import { invalidPriceRange, toNumber, toSort } from "@/lib/query";
 
 export async function generateMetadata({
   params,
@@ -29,6 +29,7 @@ export default async function ExplorePage({
     category?: string;
     minPrice?: string;
     maxPrice?: string;
+    sort?: string;
   }>;
 }) {
   const { locale } = await params;
@@ -43,10 +44,11 @@ export default async function ExplorePage({
   const category = current.category || undefined;
   const minPrice = toNumber(current.minPrice);
   const maxPrice = toNumber(current.maxPrice);
+  const sort = toSort(sp.sort) ?? "newest";
   const invalid = invalidPriceRange(minPrice, maxPrice);
   const limit = 24;
   const query = {
-    sort: "newest" as const,
+    sort,
     limit,
     category,
     minPrice,
@@ -84,7 +86,7 @@ export default async function ExplorePage({
 
   return (
     <div className="mx-auto max-w-[var(--container-max)] px-4 py-6 md:px-8 md:py-8">
-      <ExploreControls categories={categories} current={current} />
+      <ExploreControls categories={categories} current={current} sort={sort} />
       {body}
     </div>
   );

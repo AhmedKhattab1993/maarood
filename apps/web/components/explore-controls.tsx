@@ -7,17 +7,21 @@ import { categoryName } from "@/lib/categories";
 import { invalidPriceRange, mergePriceParams, toNumber } from "@/lib/query";
 import { useQueryParams } from "@/lib/use-query-params";
 import { FilterChips } from "./filter-chips";
+import { SortSelect } from "./sort-select";
+import type { ProductSort } from "@/lib/api/types";
 
 export function ExploreControls({
   categories,
   current,
+  sort,
 }: {
   categories: CategorySummary[];
   current: { category?: string; minPrice?: string; maxPrice?: string };
+  sort?: ProductSort;
 }) {
   return (
     <Suspense fallback={null}>
-      <ExploreControlsInner categories={categories} current={current} />
+      <ExploreControlsInner categories={categories} current={current} sort={sort} />
     </Suspense>
   );
 }
@@ -25,9 +29,11 @@ export function ExploreControls({
 function ExploreControlsInner({
   categories,
   current,
+  sort,
 }: {
   categories: CategorySummary[];
   current: { category?: string; minPrice?: string; maxPrice?: string };
+  sort?: ProductSort;
 }) {
   const t = useTranslations("Filters");
   const tCat = useTranslations("Category");
@@ -145,6 +151,7 @@ function ExploreControlsInner({
             />
           </div>
         </fieldset>
+        <SortSelect current={sort} />
       </div>
       <FilterChips
         items={chips}
