@@ -19,6 +19,15 @@ in `04_PRODUCT_AND_UX_REFERENCES.md`. Load them via your font provider of choice
 or self-host; the CSS references them by name and falls back to `system-ui`.
 Swap is trivial — change `--font-sans` in `app/globals.css`.
 
+## Known upstream limitation: notFound() pages return HTTP 200
+
+The async locale layout streams the shell (header/footer) before a page's data
+resolves, so when `notFound()` fires afterwards the status is already committed
+as 200. The localized 404 UI still renders (see `app/[locale]/not-found.tsx`),
+and `generateMetadata` routes known-missing resources to it, but the HTTP status
+for streamed 404s stays 200. This is documented Next.js 14 behavior for streamed
+responses; revisiting if/when the app upgrades Next.
+
 ## Environment
 
 Copy `.env.example` to `.env.local`:
