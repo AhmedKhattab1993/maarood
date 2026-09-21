@@ -43,6 +43,18 @@ function availabilityCheckedAtIsFresh(): SQL {
   return sql`${products.availabilityCheckedAt} > now() - (${AVAILABILITY_FRESHNESS_HOURS} * interval '1 hour')`;
 }
 
+/**
+ * Case-insensitive membership test against a JSON text-array column
+ * (products.colors / products.sizes). Stored values keep the merchant's
+ * casing ("Black", "أسود"), so matching must ignore case.
+ */
+export function jsonArrayContainsIgnoreCase(
+  column: typeof products.colors | typeof products.sizes,
+  value: string,
+): SQL {
+  return sql`EXISTS (SELECT 1 FROM jsonb_array_elements_text(${column}::jsonb) AS v WHERE lower(v) = lower(${value}))`;
+}
+
 /** Build the common filter conditions (excluding brand, which is passed in resolved). */
 export function buildFilters(
   q: ProductQuery,
@@ -58,9 +70,9 @@ export function buildFilters(
   if (q.availability) conditions.push(eq(products.availability, q.availability));
   if (q.minPrice !== undefined) conditions.push(gte(products.currentPrice, q.minPrice.toFixed(2)));
   if (q.maxPrice !== undefined) conditions.push(lte(products.currentPrice, q.maxPrice.toFixed(2)));
-  // color/size are stored as JSON text arrays; a containment check is sufficient for the MVP.
-  if (q.color) conditions.push(sql`${products.colors}::jsonb @> ${JSON.stringify([q.color])}::jsonb`);
-  if (q.size) conditions.push(sql`${products.sizes}::jsonb @> ${JSON.stringify([q.size])}::jsonb`);
+  // color/size are stored as JSON text arrays with the merchant's original casing.
+  if (q.color) conditions.push(jsonArrayContainsIgnoreCase(products.colors, q.color));
+  if (q.size) conditions.push(jsonArrayContainsIgnoreCase(products.sizes, q.size));
   if (options?.excludeConfirmedOutOfStock) {
     const confirmedOutOfStock = and(
       eq(products.availability, 'out_of_stock'),

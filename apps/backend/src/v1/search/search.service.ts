@@ -14,6 +14,7 @@ import { and, asc, count, eq, gte, lte, sql, type SQL } from 'drizzle-orm';
 import { merchants, products } from '@maarood/schema';
 import { DRIZZLE, type DrizzleDB } from '../../db/db.module';
 import type { ProductQuery } from '../products/products.dto';
+import { jsonArrayContainsIgnoreCase } from '../products/product-filter';
 import { mapProduct, type PaginatedResult, type PublicProduct } from '../products/product-mapper';
 import { brandMatchesNormalizedQuery } from './brand-match';
 import { normalizeSearchQuery, toTsqueryString } from './normalize';
@@ -66,8 +67,8 @@ export class SearchService {
     if (q.availability) conditions.push(eq(products.availability, q.availability));
     if (q.minPrice !== undefined) conditions.push(gte(products.currentPrice, q.minPrice.toFixed(2)));
     if (q.maxPrice !== undefined) conditions.push(lte(products.currentPrice, q.maxPrice.toFixed(2)));
-    if (q.color) conditions.push(sql`${products.colors}::jsonb @> ${JSON.stringify([q.color])}::jsonb`);
-    if (q.size) conditions.push(sql`${products.sizes}::jsonb @> ${JSON.stringify([q.size])}::jsonb`);
+    if (q.color) conditions.push(jsonArrayContainsIgnoreCase(products.colors, q.color));
+    if (q.size) conditions.push(jsonArrayContainsIgnoreCase(products.sizes, q.size));
 
     // Relevance score: max of FTS rank and trigram similarity on title+description.
     // FTS catches whole-word matches; trigram catches typos / partial words.

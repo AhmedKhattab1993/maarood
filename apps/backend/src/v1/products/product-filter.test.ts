@@ -86,6 +86,15 @@ describe('buildFilters', () => {
     expect(withExclude).toMatch(/out_of_stock/);
     expect(buildFilters(q, null)).toBeUndefined();
   });
+
+  it('matches color and size case-insensitively over the JSON arrays', () => {
+    const q = productQuery.parse({ color: 'black', size: 'm' });
+    const text = sqlText(buildFilters(q, null));
+    expect(text).toMatch(/jsonb_array_elements_text/);
+    expect(text).toMatch(/lower\(v\) = lower/);
+    expect(text).toContain('black');
+    expect(text).toContain('m');
+  });
 });
 
 describe('sortSql newest', () => {
