@@ -8,13 +8,14 @@ import { AuthLink } from "./auth-link";
 export async function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-[var(--container-max)] items-center gap-4 px-4 md:gap-8">
+      <div className="mx-auto flex min-h-16 max-w-[var(--container-max)] flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2 md:h-16 md:flex-nowrap md:gap-8 md:py-0">
         <Logo />
         <MainTabBar variant="header" />
-        <div className="flex flex-1 items-center justify-end gap-4 md:flex-none">
-          <div className="w-full max-w-[10rem] sm:max-w-xs">
-            <SearchBar />
-          </div>
+        {/* Own row on mobile (full width), inline right-aligned from sm up. */}
+        <div className="order-last w-full min-w-0 basis-full sm:order-none sm:ml-auto sm:w-64 sm:basis-auto">
+          <SearchBar />
+        </div>
+        <div className="flex items-center gap-4">
           <AuthLink />
           <LanguageSwitcher />
         </div>
