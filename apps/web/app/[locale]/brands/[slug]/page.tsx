@@ -6,7 +6,9 @@ import { FacetNav } from "@/components/facet-nav";
 import { FollowButton } from "@/components/follow-button";
 import { ErrorState } from "@/components/state-views";
 import { Breadcrumbs } from "@/components/breadcrumbs";
+import { BrandAvatar } from "@/components/brand-avatar";
 import { NotFoundError } from "@/lib/api/types";
+import { categoryItems } from "@/lib/categories";
 import { invalidPriceRange, toNumber, toSort } from "@/lib/query";
 import { notFound } from "next/navigation";
 
@@ -38,6 +40,7 @@ export default async function BrandPage({
   setRequestLocale(locale);
   const sp = await searchParams;
   const t = await getTranslations({ locale });
+  const tCat = await getTranslations({ locale, namespace: "Category" });
 
   const current = {
     brand: slug,
@@ -61,6 +64,8 @@ export default async function BrandPage({
   const invalid = invalidPriceRange(productQuery.minPrice, productQuery.maxPrice);
 
   let body: React.ReactNode;
+  // The slug is only a fallback when the brand record itself failed to load.
+  let brandName = slug;
   try {
     const [{ brand, products }, brandCategories] = await Promise.all([
       invalid
@@ -71,28 +76,13 @@ export default async function BrandPage({
         : getBrand(slug, { ...productQuery, page: 1 }),
       getCategories(slug).catch(() => []),
     ]);
+    brandName = brand.name;
 
     body = (
       <>
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <div className="flex min-w-0 items-center gap-4">
-            {brand.logoUrl ? (
-              <img
-                src={brand.logoUrl}
-                alt=""
-                width={64}
-                height={64}
-                referrerPolicy="no-referrer"
-                className="h-16 w-16 shrink-0 bg-white object-contain"
-              />
-            ) : (
-              <span
-                aria-hidden
-                className="flex h-16 w-16 shrink-0 items-center justify-center bg-stone-grey text-lg font-semibold text-ink-black"
-              >
-                {brand.name.trim().charAt(0)}
-              </span>
-            )}
+            <BrandAvatar name={brand.name} logoUrl={brand.logoUrl} size={64} />
             <div className="min-w-0">
               <h1 className="text-2xl font-semibold text-ink-black">{brand.name}</h1>
               <a
@@ -112,10 +102,10 @@ export default async function BrandPage({
           activeValue={current.category || undefined}
           basePath={`/brands/${slug}`}
           baseQuery={withoutCategory(sp)}
-          items={brandCategories.map((c) => ({
-            label: c.name,
-            count: c.productCount,
-            value: c.name,
+          items={categoryItems(brandCategories, tCat).map((c) => ({
+            label: c.label,
+            count: c.count,
+            value: c.value,
           }))}
         />
         <ProductListing
@@ -133,6 +123,7 @@ export default async function BrandPage({
           current={current}
           sort={toSort(sp.sort) ?? "newest"}
           title={brand.name}
+          hideAuthor
           emptyTitle={t("Search.noResults")}
           emptyHint={t("Search.noResultsHint")}
           feed={{
@@ -154,7 +145,7 @@ export default async function BrandPage({
         items={[
           { label: t("Nav.home"), href: { pathname: "/" } },
           { label: t("Nav.brands"), href: { pathname: "/brands" } },
-          { label: slug },
+          { label: brandName },
         ]}
       />
       <div className="mt-4">{body}</div>

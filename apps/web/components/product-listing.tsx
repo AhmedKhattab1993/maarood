@@ -36,6 +36,7 @@ export function ProductListing({
   current,
   sort,
   title,
+  hideAuthor = false,
   isLoading = false,
   emptyTitle,
   emptyHint,
@@ -48,6 +49,8 @@ export function ProductListing({
   sort?: ProductSort;
   /** Wall title, e.g. the category or brand name (count is appended inline). */
   title: string;
+  /** Hide the author row on cards (brand page already owns the brand identity). */
+  hideAuthor?: boolean;
   isLoading?: boolean;
   emptyTitle: string;
   emptyHint?: string;
@@ -66,6 +69,7 @@ export function ProductListing({
         emptyTitle={emptyTitle}
         emptyHint={emptyHint}
         feed={feed}
+        hideAuthor={hideAuthor}
       />
     </Suspense>
   );
@@ -78,6 +82,7 @@ function ProductListingInner({
   current,
   sort,
   title,
+  hideAuthor = false,
   isLoading = false,
   emptyTitle,
   emptyHint,
@@ -89,6 +94,7 @@ function ProductListingInner({
   current: Record<string, string | undefined>;
   sort?: ProductSort;
   title: string;
+  hideAuthor?: boolean;
   isLoading?: boolean;
   emptyTitle: string;
   emptyHint?: string;
@@ -204,6 +210,7 @@ function ProductListingInner({
               initial={result}
               brands={brands}
               source={feed}
+              hideAuthor={hideAuthor}
             />
           )}
         </div>
