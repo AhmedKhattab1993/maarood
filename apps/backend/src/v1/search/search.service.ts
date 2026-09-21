@@ -1,8 +1,9 @@
 /**
  * Search service — PostgreSQL full-text search + pg_trgm typo tolerance.
  *
- * Strategy: combine trigram similarity (catches typos, partial words) with
- * tsvector ranking (catches full-term relevance), take the better score.
+ * Strategy: combine whole-word trigram typos with tsvector ranking, and take
+ * the better score. A query must resemble a whole word ("hoodi" → "hoodie"),
+ * not a shorter word inside a longer one ("bag" does not match "baggy").
  * Applies the same filters as /v1/products.
  *
  * The `search_vector` column is added by raw SQL in migration 0003 (a GENERATED
@@ -25,6 +26,23 @@ import { expandSynonyms } from './synonyms';
 const searchVector = sql.raw('search_vector');
 
 const BRAND_HIT_LIMIT = 8;
+
+/**
+ * Minimum strict word similarity for a typo hit.
+ * "bag" vs "baggy" scores about 0.43; a one-edit typo like "hoodi" vs
+ * "hoodie" scores about 0.6. 0.5 keeps the typo and drops the other word.
+ */
+const WORD_TYPO_THRESHOLD = 0.5;
+
+/** True when any query token is a whole-word typo of a word in `column`. */
+function wordTypoMatch(column: 'title' | 'description', normalized: string): SQL {
+  const tokens = normalized.split(' ').filter((token) => token.length > 1);
+  if (tokens.length === 0) return sql`false`;
+  const checks = tokens.map(
+    (token) => sql`strict_word_similarity(${token}, ${sql.raw(column)}) >= ${WORD_TYPO_THRESHOLD}`,
+  );
+  return sql`(${sql.join(checks, sql` OR `)})`;
+}
 
 export interface SearchBrandHit {
   id: string;
@@ -69,24 +87,26 @@ export class SearchService {
     if (brandId) conditions.push(eq(products.merchantId, brandId));
     if (q.category) conditions.push(eq(products.category, q.category));
     if (q.availability) conditions.push(eq(products.availability, q.availability));
-    if (q.minPrice !== undefined) conditions.push(gte(products.currentPrice, q.minPrice.toFixed(2)));
-    if (q.maxPrice !== undefined) conditions.push(lte(products.currentPrice, q.maxPrice.toFixed(2)));
+    if (q.minPrice !== undefined)
+      conditions.push(gte(products.currentPrice, q.minPrice.toFixed(2)));
+    if (q.maxPrice !== undefined)
+      conditions.push(lte(products.currentPrice, q.maxPrice.toFixed(2)));
     if (q.color) conditions.push(jsonArrayContainsIgnoreCase(products.colors, q.color));
     if (q.size) conditions.push(jsonArrayContainsIgnoreCase(products.sizes, q.size));
 
-    // Relevance score: max of FTS rank and trigram similarity on title+description.
-    // FTS catches whole-word matches; trigram catches typos / partial words.
+    // Relevance: full-text rank, or how close the query is to a whole word
+    // in the title (description counts less). Not whole-string similarity,
+    // which treats "bag" as similar to "baggy".
     const relevance = sql<number>`greatest(
       coalesce(ts_rank_cd(${searchVector}, to_tsquery('simple', ${tsq})), 0),
-      coalesce(similarity(title, ${normalized}), 0) +
-      coalesce(similarity(description, ${normalized}), 0) * 0.5
+      coalesce(strict_word_similarity(${normalized}, title), 0) +
+      coalesce(strict_word_similarity(${normalized}, description), 0) * 0.5
     )`;
 
     const searchCondition = sql`(to_tsquery('simple', ${tsq}) @@ ${searchVector}
-      OR title % ${normalized}
-      OR description % ${normalized})`;
-    const fullWhere =
-      conditions.length > 0 ? and(...conditions, searchCondition) : searchCondition;
+      OR ${wordTypoMatch('title', normalized)}
+      OR ${wordTypoMatch('description', normalized)})`;
+    const fullWhere = conditions.length > 0 ? and(...conditions, searchCondition) : searchCondition;
 
     const [merchantRows, totalRows, rows] = await Promise.all([
       this.db

@@ -44,6 +44,40 @@ describe('taxonomy.categorize', () => {
     expect(categorize({ title: 'Mystery', handle: 'leather-belt' }).category).toBe('accessories');
   });
 
+  it('does not treat a shorter word as a match inside a longer one', () => {
+    expect(categorize({ title: 'Baggy Trousers' }).category).toBe('apparel');
+    expect(categorize({ title: 'Baggy Jeans in Blue' }).category).toBe('apparel');
+    expect(categorize({ title: 'BAGGY DENIM – LIGHT GREY' }).category).toBe('apparel');
+    expect(categorize({ title: 'Baggy Waistband Jorts' }).category).toBe('apparel');
+    expect(categorize({ title: 'AirFlex Baggy', productType: 'Men / Pants' }).category).toBe(
+      'apparel',
+    );
+    expect(categorize({ title: 'Bootcut Jeans' }).category).toBe('apparel');
+    expect(categorize({ title: 'Drawstring Pants' }).category).toBe('apparel');
+    expect(categorize({ title: 'That cotton shirt' }).category).toBe('apparel');
+    expect(categorize({ title: 'Steel water bottle' }).category).toBe('other');
+  });
+
+  it('lets the merchant product type beat an incidental word in the title', () => {
+    expect(
+      categorize({
+        title: 'قفازات ملاكمة مع حقيبة',
+        productType: 'Boxing Gloves',
+      }).category,
+    ).toBe('accessories');
+    expect(categorize({ title: 'Tote Bag', productType: 'Women / Bags' }).category).toBe('bags');
+  });
+
+  it('still matches plurals and real bag words', () => {
+    expect(categorize({ title: 'Leather Handbags' }).category).toBe('bags');
+    expect(categorize({ title: 'Hard Shell Suitcase' }).category).toBe('bags');
+    expect(categorize({ title: 'Quilted Pouch' }).category).toBe('bags');
+    expect(categorize({ title: 'Oversized T-Shirts' }).category).toBe('apparel');
+    expect(categorize({ title: 'Cap Sleeve Top' }).category).toBe('apparel');
+    expect(categorize({ title: 'Printed Linen Sundress' }).category).toBe('apparel');
+    expect(categorize({ title: 'Cotton Cap' }).category).toBe('accessories');
+  });
+
   it('returns only canonical categories', () => {
     for (const cat of CANONICAL_CATEGORIES) {
       expect(['apparel', 'footwear', 'accessories', 'bags', 'jewelry', 'other']).toContain(cat);
