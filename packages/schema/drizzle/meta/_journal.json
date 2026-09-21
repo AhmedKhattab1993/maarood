@@ -64,6 +64,12 @@
       "when": 1790100000000,
       "tag": "0008_availability_checked_at",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "when": 1790150000000,
+      "tag": "0009_search_vector_arabic_fold",
+      "breakpoints": true
     }
   ]
 }

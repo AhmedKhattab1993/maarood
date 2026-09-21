@@ -18,6 +18,7 @@ import { jsonArrayContainsIgnoreCase } from '../products/product-filter';
 import { mapProduct, type PaginatedResult, type PublicProduct } from '../products/product-mapper';
 import { brandMatchesNormalizedQuery } from './brand-match';
 import { normalizeSearchQuery, toTsqueryString } from './normalize';
+import { expandSynonyms } from './synonyms';
 
 // The generated `search_vector` column isn't declared in the Drizzle schema;
 // reference it as a typed SQL identifier.
@@ -44,11 +45,14 @@ export class SearchService {
 
   async search(text: string, q: ProductQuery): Promise<SearchResult> {
     const normalized = normalizeSearchQuery(text);
-    const tsq = toTsqueryString(normalized);
-
-    if (tsq.length === 0 && !normalized) {
+    if (!normalized) {
       return { items: [], page: q.page, limit: q.limit, total: 0, brands: [] };
     }
+
+    // Arabic shoppers often search terms the English-titled catalog stores
+    // differently ("شنطه" vs "bag"), so OR the query with its synonyms.
+    const synonyms = expandSynonyms(normalized);
+    const tsq = toTsqueryString([normalized, ...synonyms].join(' '));
 
     // Resolve brand filter to a merchant id.
     let brandId: string | null = null;
