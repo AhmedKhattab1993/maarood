@@ -126,6 +126,8 @@
     "unknown": "غير معروف",
     "lastUpdated": "آخر تحديث {date}",
     "error": "تعذّر حفظ المنتج. حاول تاني.",
+    "optionSize": "المقاس",
+    "optionColor": "اللون",
     "onSale": "خصم {percent}%",
     "priceLabel": "السعر",
     "availabilityLabel": "التوفّر",

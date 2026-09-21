@@ -17,7 +17,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale, category } = await params;
   const t = await getTranslations({ locale, namespace: "Meta" });
-  return { title: t("categoryTitle", { category: decodeCategory(category) }) };
+  const tCat = await getTranslations({ locale, namespace: "Category" });
+  const name = categoryName(decodeCategory(category), tCat);
+  return { title: t("categoryTitle", { category: name }) };
 }
 
 export default async function CategoryPage({

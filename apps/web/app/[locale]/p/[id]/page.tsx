@@ -154,7 +154,11 @@ export default async function ProductPage({
           {product.options.length > 0 && (
             <div className="flex flex-col gap-2 text-sm">
               {product.options.map((o) => (
-                <DetailRow key={o.name} label={o.name} value={o.values.join(" · ")} />
+                <DetailRow
+                  key={o.name}
+                  label={optionLabel(o.name, (key) => t(`Product.${key}`))}
+                  value={o.values.join(" · ")}
+                />
               ))}
             </div>
           )}
@@ -212,6 +216,23 @@ export default async function ProductPage({
       )}
     </div>
   );
+}
+
+/**
+ * Localize the common merchant option names; anything else (style, material,
+ * merchant Arabic naming) renders as scraped.
+ */
+const OPTION_LABEL_KEYS: Record<string, string> = {
+  size: "optionSize",
+  color: "optionColor",
+  colour: "optionColor",
+  "المقاس": "optionSize",
+  "اللون": "optionColor",
+};
+
+function optionLabel(name: string, t: (key: string) => string): string {
+  const key = OPTION_LABEL_KEYS[name.trim().toLowerCase()];
+  return key ? t(key) : name;
 }
 
 function DetailRow({ label, value }: { label: string; value: string }) {

@@ -126,6 +126,8 @@
     "unknown": "Unknown",
     "lastUpdated": "Last updated {date}",
     "error": "Could not save the product. Try again.",
+    "optionSize": "Size",
+    "optionColor": "Color",
     "onSale": "{percent}% off",
     "priceLabel": "Price",
     "availabilityLabel": "Availability",
