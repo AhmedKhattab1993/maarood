@@ -35,7 +35,7 @@ function SortSelectInner({ current }: { current: ProductSort }) {
         value={current}
         onChange={onChange}
         aria-label={t("label")}
-        className="cursor-pointer appearance-none bg-transparent pr-4 text-sm font-medium text-ink-black outline-none"
+        className="cursor-pointer rounded-default border border-cool-grey bg-white px-3 py-2 text-sm font-medium text-ink-black outline-none focus:border-ink-black"
       >
         {SORTS.map((s) => (
           <option key={s} value={s}>
@@ -43,9 +43,6 @@ function SortSelectInner({ current }: { current: ProductSort }) {
           </option>
         ))}
       </select>
-      <span aria-hidden className="-ms-4 pointer-events-none text-ink-black">
-        ▾
-      </span>
     </label>
   );
 }

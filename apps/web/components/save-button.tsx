@@ -143,7 +143,7 @@ export function SaveButton({
         aria-pressed={saved}
         aria-busy={pending || undefined}
         aria-label={ariaLabel}
-        className={`inline-flex h-9 w-9 items-center justify-center rounded-pill border backdrop-blur transition-colors disabled:opacity-50 ${iconClass}`}
+        className={`inline-flex h-11 w-11 items-center justify-center rounded-pill border backdrop-blur transition-colors disabled:opacity-50 md:h-9 md:w-9 ${iconClass}`}
       >
         <BookmarkIcon filled={saved && visual !== "failed"} />
       </button>

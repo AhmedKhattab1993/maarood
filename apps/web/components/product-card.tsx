@@ -47,7 +47,7 @@ export function ProductCard({
   return (
     <article className="flex w-full flex-col">
       {!hideAuthor && (
-        <header className="mb-3 flex items-center justify-between gap-3">
+        <header className="mb-3 flex flex-nowrap items-center justify-between gap-3">
           {brand ? (
             <Link
               href={{ pathname: "/brands/[slug]", params: { slug: brand.slug } }}

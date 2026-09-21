@@ -12,10 +12,10 @@ export async function SiteHeader() {
         <Logo />
         <MainTabBar variant="header" />
         {/* Own row on mobile (full width), inline right-aligned from sm up. */}
-        <div className="order-last w-full min-w-0 basis-full sm:order-none sm:ml-auto sm:w-64 sm:basis-auto">
+        <div className="order-last w-full min-w-0 basis-full sm:order-none sm:w-64 sm:basis-auto">
           <SearchBar />
         </div>
-        <div className="flex items-center gap-4">
+        <div className="ms-auto flex items-center gap-4">
           <AuthLink />
           <LanguageSwitcher />
         </div>

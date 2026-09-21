@@ -93,7 +93,9 @@
     "invalidRange": "Min price must be less than or equal to max price",
     "noMatches": "No matching products",
     "adjust": "Adjust the filters and try again.",
-    "removeFilter": "Remove filter"
+    "removeFilter": "Remove filter",
+    "showAll": "Show all ({count})",
+    "showLess": "Show less"
   },
   "Sort": {
     "label": "Sort",
@@ -170,7 +172,8 @@
     "contactMaaroud": "Contact Maaroud",
     "shipping": "Shipping",
     "returns": "Returns",
-    "contact": "Contact"
+    "contact": "Contact",
+    "blurb": "Maaroud is a product discovery platform. Checkout always happens directly with the brand."
   },
   "Meta": {
     "homeTitle": "Maaroud — Discover Egyptian brands",
@@ -186,6 +189,8 @@
   "Help": {
     "title": "Help",
     "maaroud": "Maaroud is a discovery platform. We can help you find brands and products.",
-    "brandOrders": "Orders, payment, shipping, and returns happen with the brand, not with Maaroud."
+    "brandOrders": "Orders, payment, shipping, and returns happen with the brand, not with Maaroud.",
+    "contactTitle": "Contact Maaroud",
+    "contactBody": "Maaroud is a discovery platform: we pull product data from Egyptian brand websites. If a product looks outdated or its link is broken, visit the product page on the brand's own site."
   }
 }

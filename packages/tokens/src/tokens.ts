@@ -19,8 +19,8 @@ export const color = {
   inkBlack: "#111111",
   stoneGrey: "#E6E3DE",
   coolGrey: "#8B9099",
-  successGreen: "#22C55E",
-  alertRed: "#EF4444",
+  successGreen: "#15803D",
+  alertRed: "#DC2626",
   warmSand: "#DBC4A3",
   // Optional marketing gradient endpoint
   indigo: "#6366F1",

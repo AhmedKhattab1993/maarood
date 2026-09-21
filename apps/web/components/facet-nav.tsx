@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 
 /** The href shape accepted by the locale-aware Link. */
@@ -37,12 +41,56 @@ export function FacetNav({
   if (items.length === 0) return null;
 
   return (
+    <Collapsible
+      title={title}
+      items={items}
+      paramKey={paramKey}
+      activeValue={activeValue}
+      basePath={basePath}
+      baseQuery={baseQuery}
+    />
+  );
+}
+
+/** Collapses long chip walls (e.g. 60+ brands on a category page). */
+const CHIP_LIMIT = 12;
+
+function Collapsible({
+  title,
+  items,
+  paramKey,
+  activeValue,
+  basePath,
+  baseQuery,
+}: {
+  title: string;
+  items: FacetNavItem[];
+  paramKey: "category" | "brand";
+  activeValue?: string;
+  basePath: string;
+  baseQuery?: Record<string, string | undefined>;
+}) {
+  const t = useTranslations("Filters");
+  const [expanded, setExpanded] = useState(false);
+  // Always keep an active chip visible when collapsed.
+  const pinned = activeValue
+    ? items.filter((i) => i.value === activeValue)
+    : [];
+  const visible = expanded
+    ? items
+    : [
+        ...items.slice(0, CHIP_LIMIT),
+        ...pinned.filter((p) => !items.slice(0, CHIP_LIMIT).includes(p)),
+      ];
+  const collapsible = items.length > CHIP_LIMIT;
+
+  return (
     <section className="mb-6">
       <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-nike-grey">
         {title}
       </h2>
       <ul className="flex flex-wrap gap-2">
-        {items.map((item) => {
+        {visible.map((item) => {
           const active = item.value === activeValue;
           // Preserve the existing query (e.g. price filters) and set our key.
           const query: Record<string, string | undefined> = { ...baseQuery };
@@ -61,7 +109,7 @@ export function FacetNav({
               <Link
                 href={href as Href}
                 aria-current={active ? "page" : undefined}
-                className={`inline-flex items-center gap-1.5 border px-3 py-1.5 text-sm transition-colors ${
+                className={`inline-flex items-center gap-1.5 border px-3 py-2 text-sm transition-colors ${
                   active
                     ? "border-ink-black bg-ink-black text-white"
                     : "border-stone-grey bg-white text-ink-black hover:border-ink-black"
@@ -79,6 +127,28 @@ export function FacetNav({
             </li>
           );
         })}
+        {collapsible && !expanded && (
+          <li>
+            <button
+              type="button"
+              onClick={() => setExpanded(true)}
+              className="inline-flex items-center px-3 py-2 text-sm font-medium text-maaroud-blue hover:underline"
+            >
+              {t("showAll", { count: items.length })}
+            </button>
+          </li>
+        )}
+        {collapsible && expanded && (
+          <li>
+            <button
+              type="button"
+              onClick={() => setExpanded(false)}
+              className="inline-flex items-center px-3 py-2 text-sm font-medium text-maaroud-blue hover:underline"
+            >
+              {t("showLess")}
+            </button>
+          </li>
+        )}
       </ul>
     </section>
   );

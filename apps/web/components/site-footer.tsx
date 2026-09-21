@@ -14,7 +14,7 @@ export async function SiteFooter() {
 
   return (
     <footer className="border-t border-stone-grey bg-white">
-      <div className="mx-auto grid max-w-[var(--container-max)] grid-cols-2 gap-8 px-4 py-12 md:grid-cols-3 md:px-12">
+      <div className="mx-auto grid max-w-[var(--container-max)] grid-cols-2 gap-8 px-4 py-12 md:grid-cols-4 md:px-12">
         <div className="flex flex-col gap-3">
           <p className="text-sm font-semibold uppercase tracking-wide text-ink-black">
             {t("discover")}
@@ -69,7 +69,7 @@ export async function SiteFooter() {
               </Link>
             </li>
             <li>
-              <Link href={{ pathname: "/help" }} className="transition-colors hover:text-ink-black">
+              <Link href={{ pathname: "/help", hash: "contact" }} className="transition-colors hover:text-ink-black">
                 {t("contactMaaroud")}
               </Link>
             </li>
@@ -84,11 +84,8 @@ export async function SiteFooter() {
           <p className="text-sm font-semibold uppercase tracking-wide text-ink-black">
             {t("company")}
           </p>
-          <ul className="flex flex-col gap-2 text-sm text-nike-grey">
-            <li>
-              <p>{t("redirectNote")}</p>
-            </li>
-          </ul>
+          <p className="text-sm text-nike-grey">{t("blurb")}</p>
+          <p className="text-sm text-nike-grey">{t("redirectNote")}</p>
         </div>
       </div>
 

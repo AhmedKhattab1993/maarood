@@ -29,6 +29,14 @@ export default async function HelpPage({
         <p>{t("maaroud")}</p>
         <p>{t("brandOrders")}</p>
       </div>
+
+      <section id="contact" className="mt-10 border-t border-stone-grey pt-6">
+        <h2 className="mb-3 text-lg font-semibold text-ink-black">{t("contactTitle")}</h2>
+        <p className="text-sm leading-relaxed text-ink-black md:text-base">
+          {t("contactBody")}
+        </p>
+      </section>
+
       <p className="mt-8">
         <Link
           href={{ pathname: "/" }}
