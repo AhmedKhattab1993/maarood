@@ -2,8 +2,8 @@
  * Maaroud category taxonomy — shared between ingestion normalization and any
  * admin re-categorization. Lives in the schema package so the contract is single-sourced.
  *
- * Canonical categories reflect the MVP focus on fashion and accessories
- * (per 01_PROJECT_OVERVIEW_AND_MVP.md). Each category has English + Arabic
+ * Canonical categories reflect the MVP focus on fashion and accessories.
+ * Each category has English + Arabic
  * keyword matchers checked (case-insensitive) against title, product_type,
  * tags, and handle. First match wins; 'other' is the fallback.
  *

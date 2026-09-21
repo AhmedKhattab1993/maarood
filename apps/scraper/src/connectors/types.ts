@@ -3,8 +3,7 @@
  * in that merchant's native shape; the shared pipeline handles validation,
  * change detection, and storage.
  *
- * A connector isolates store-specific extraction from the core pipeline,
- * per the locked connector architecture in 07_SCRAPING_AND_CATALOG_INGESTION.md.
+ * A connector isolates store-specific extraction from the core pipeline.
  */
 
 import type { Product } from '@maarood/schema';

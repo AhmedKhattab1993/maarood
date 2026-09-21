@@ -40,7 +40,7 @@ in the Vercel dashboard (project → Observability → Workflows).
                                    └───────────────────┘
 ```
 
-Why this shape (see `06_TECHNICAL_ARCHITECTURE.md` for the full rationale):
+Why this shape:
 
 - **No Docker anywhere.** Vercel runs the NestJS app as a Node.js server
   function (zero-config `src/main.ts` detection) and the crawler as workflow

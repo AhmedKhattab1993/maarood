@@ -4,7 +4,6 @@ Ingestion pipeline — a plain TypeScript library + CLI (not NestJS). In product
 it runs as a **Vercel Workflow** (apps/web/workflows/crawl.ts): one durable,
 retried step per due merchant, triggered every 6h by Vercel Cron. The web app
 imports this package as `@maarood/scraper`.
-Implements the 10-stage pipeline from [`07_SCRAPING_AND_CATALOG_INGESTION.md`](../../07_SCRAPING_AND_CATALOG_INGESTION.md).
 
 ## Commands
 

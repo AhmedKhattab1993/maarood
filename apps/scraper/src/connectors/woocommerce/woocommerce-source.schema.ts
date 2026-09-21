@@ -3,8 +3,7 @@
  *
  * Mobaco (and any WP + WooCommerce store) exposes
  *   GET /wp-json/wc/store/v1/products?per_page=100&page=N
- * with no authentication. This is retrieval priority #2 (structured JSON)
- * per 07_SCRAPING_AND_CATALOG_INGESTION.md — preferred over HTML scraping.
+ * with no authentication. Structured JSON is preferred over HTML scraping.
  *
  * Unlike Shopify, WooCommerce returns the full product (with variations and
  * structured attributes) in one record, and ships the response as a bare JSON

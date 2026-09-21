@@ -1,7 +1,7 @@
 export const locales = ["ar", "en"] as const;
 export type Locale = (typeof locales)[number];
 
-/** Arabic-first — locked by 03_VISUAL_IDENTITY.md. */
+/** Arabic-first. */
 export const defaultLocale: Locale = "ar";
 
 export const localeLabels: Record<Locale, string> = {

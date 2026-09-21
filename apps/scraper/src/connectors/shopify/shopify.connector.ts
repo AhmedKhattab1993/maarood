@@ -1,9 +1,8 @@
 /**
  * Shopify connector — fetches products from a store's public /products.json.
  *
- * Shopify exposes a stable JSON API at {domain}/products.json?page=N. This is
- * retrieval priority #2 (structured JSON) per 07_SCRAPING_AND_CATALOG_INGESTION.md,
- * preferred over HTML scraping (Cheerio) or browser rendering (Playwright).
+ * Shopify exposes a stable JSON API at {domain}/products.json?page=N. Structured
+ * JSON is preferred over HTML scraping (Cheerio) or browser rendering (Playwright).
  *
  * Fetching goes through the shared connector HTTP helper (curl-first with a
  * Node-fetch fallback — see connectors/http.ts) because many Shopify stores sit

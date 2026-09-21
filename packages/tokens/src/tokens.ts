@@ -1,8 +1,8 @@
 /**
  * Maarood design tokens.
  *
- * Color values are locked by `03_VISUAL_IDENTITY.md`. Spacing and type scales are
- * implementation decisions (the visual-identity doc locks color only) chosen to
+ * Color values are locked brand decisions. Spacing and type scales are
+ * implementation decisions chosen to
  * express the editorial, restrained SSENSE/Aritzia direction: tight 4px base
  * spacing, a modest modular type scale, calm radii.
  *
@@ -12,7 +12,7 @@
  */
 
 export const color = {
-  // Locked — 03_VISUAL_IDENTITY.md
+  // Locked brand colors
   maaroudBlue: "#1D4ED8",
   warmIvory: "#FAF7F0",
   inkBlack: "#111111",
@@ -21,7 +21,7 @@ export const color = {
   successGreen: "#22C55E",
   alertRed: "#EF4444",
   warmSand: "#DBC4A3",
-  // Optional marketing gradient endpoint — 03_VISUAL_IDENTITY.md
+  // Optional marketing gradient endpoint
   indigo: "#6366F1",
 } as const;
 

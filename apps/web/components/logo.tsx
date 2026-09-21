@@ -2,7 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 
 /**
- * Maaroud wordmark. Primary Arabic per 03_VISUAL_IDENTITY.md ("Arabic-first
+ * Maaroud wordmark. Primary Arabic ("Arabic-first
  * hierarchy"). The Arabic wordmark معروض carries the brand identity; the Latin
  * "MAAROUD" is secondary. A Warm Sand dot at the lower-right echoes the
  * locked symbol direction (open display frame + product dot).

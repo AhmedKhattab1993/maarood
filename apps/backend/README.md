@@ -65,7 +65,7 @@ The public API serves the future web frontend and mobile app. No authentication;
 
 Pagination: `?page=1&limit=24` (max 60); responses return `{ items, page, limit, total }`.
 
-Search uses PostgreSQL full-text (tsvector over title/description/category) plus `pg_trgm` similarity for typo tolerance, with a simple Arabic+English normalizer. Synonyms and semantic search are deferred per `06_TECHNICAL_ARCHITECTURE.md`.
+Search uses PostgreSQL full-text (tsvector over title/description/category) plus `pg_trgm` similarity for typo tolerance, with a simple Arabic+English normalizer and an Arabic↔English shopping-term synonym map.
 
 ## Admin API
 

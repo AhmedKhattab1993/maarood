@@ -5,17 +5,18 @@ discovery for Egyptian brands. Consumes the `@maarood/backend` public `/v1` API.
 
 ## Stack
 
-- **Next.js 14** App Router (server components + SSR for SEO, per `06_TECHNICAL_ARCHITECTURE.md`)
+- **Next.js 14** App Router (server components + SSR for SEO)
 - **Tailwind v4** via `@theme`, tokens sourced from `@maarood/tokens`
-- **next-intl** with locale-prefixed routing (`/ar`, `/en`; `ar` is default — `03_VISUAL_IDENTITY.md`)
+- **next-intl** with locale-prefixed routing (`/ar`, `/en`; `ar` is default)
 - **RTL** by default (Arabic); English renders LTR
-- Anonymous **saved products** keyed to a per-device UUID (`X-Device-Id`) — no accounts in MVP
+- **Accounts** — saved products and followed brands are keyed to a signed-in
+  user (bearer token in localStorage)
 
 ## Typography
 
 Arabic-first pairing: **IBM Plex Sans Arabic** (Arabic) + **Inter** (Latin). Both
-open-source and editorial-neutral, matching the SSENSE/Aritzia restraint locked
-in `04_PRODUCT_AND_UX_REFERENCES.md`. Load them via your font provider of choice
+open-source and editorial-neutral, matching the SSENSE/Aritzia restraint.
+Load them via your font provider of choice
 or self-host; the CSS references them by name and falls back to `system-ui`.
 Swap is trivial — change `--font-sans` in `app/globals.css`.
 
@@ -81,5 +82,4 @@ All listing/search/category/brand pages are server-rendered with per-page
 
 ## Out of scope (deferred)
 
-Nike-style guided finder, user accounts/auth, following brands, collections (no
-backend entity), native mobile app. See root `08_PREBUILD_CHECKLIST_AND_BUILD_ORDER.md`.
+Nike-style guided finder, collections (no backend entity), native mobile app.

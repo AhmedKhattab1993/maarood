@@ -1,7 +1,7 @@
 /**
  * Pipeline orchestrator for a single merchant.
  *
- * Implements the stages from 07_SCRAPING_AND_CATALOG_INGESTION.md:
+ * Pipeline stages:
  *   discover -> retrieve -> extract -> validate -> normalize -> match ->
  *   detect change -> upsert + snapshot -> publish (implicit) -> flag failures.
  *

@@ -2,8 +2,7 @@
  * Canonical Maarood product schema.
  *
  * Single source of truth for the product record shared across ingestion,
- * normalization, storage, and the public API. Fields mirror the
- * "Canonical product data requirements" in 07_SCRAPING_AND_CATALOG_INGESTION.md.
+ * normalization, storage, and the public API.
  *
  * The Drizzle table in ./drizzle/products.ts is typed from these Zod schemas
  * so the DB contract cannot drift from the API contract.
