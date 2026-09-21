@@ -9,8 +9,8 @@ const explore = readFileSync(
   "utf8",
 );
 const feed = readFileSync(new URL("./discovery-feed.tsx", import.meta.url), "utf8");
-const controls = readFileSync(
-  new URL("./explore-controls.tsx", import.meta.url),
+const listing = readFileSync(
+  new URL("./product-listing.tsx", import.meta.url),
   "utf8",
 );
 const tabs = readFileSync(new URL("./main-tabs.ts", import.meta.url), "utf8");
@@ -62,15 +62,15 @@ describe("product post author row", () => {
 describe("Explore product posts", () => {
   it("passes brands into the stacked feed so author names can SSR", () => {
     expect(explore).toMatch(/getBrands/);
-    expect(explore).toMatch(/DiscoveryFeed/);
+    expect(explore).toMatch(/ProductListing/);
+    expect(listing).toMatch(/DiscoveryFeed/);
     expect(feed).toMatch(/ProductGrid/);
   });
 
-  it("exposes Category and Budget controls and load-more instead of numbered pages", () => {
-    expect(explore).toMatch(/ExploreControls/);
-    expect(controls).toMatch(/t\("category"\)/);
-    expect(controls).toMatch(/t\("budget"\)/);
+  it("exposes the filter rail and sort with load-more instead of numbered pages", () => {
     expect(explore).toMatch(/getCategories/);
+    expect(listing).toMatch(/FilterBar/);
+    expect(listing).toMatch(/SortSelect/);
     expect(explore).not.toMatch(/Pagination/);
     expect(feed).toMatch(/loadMore/);
     expect(feed).not.toMatch(/pageCount/);

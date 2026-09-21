@@ -198,11 +198,16 @@ function ProductListingInner({
           onToggle={() => setFiltersOpen((o) => !o)}
         />
         <div className="flex min-w-0 flex-1 flex-col gap-5">
-          <FilterChips
-            items={chips}
-            onRemove={(key) => update(key, "")}
-            onClearAll={clearAll}
-          />
+          {/* Chips restate what the rail shows, so hide them on desktop while it is open. */}
+          {chips.length > 0 && (
+            <div className={filtersOpen ? "md:hidden" : undefined}>
+              <FilterChips
+                items={chips}
+                onRemove={(key) => update(key, "")}
+                onClearAll={clearAll}
+              />
+            </div>
+          )}
           {invalid ? (
             <p role="alert" className="text-sm text-alert-red">
               {t("invalidRange")}

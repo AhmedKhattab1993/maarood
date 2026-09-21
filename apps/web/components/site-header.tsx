@@ -7,7 +7,7 @@ import { AuthLink } from "./auth-link";
 /** Top bar: logo, Following | Explore | Favourites, search, account. */
 export async function SiteHeader() {
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-stone-grey bg-white/95 backdrop-blur">
       <div className="mx-auto flex min-h-16 max-w-[var(--container-max)] flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2 md:h-16 md:flex-nowrap md:gap-8 md:py-0">
         <Logo />
         <MainTabBar variant="header" />

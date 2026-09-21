@@ -88,7 +88,6 @@
     "clear": "Clear filters",
     "showFilters": "Filters",
     "hideFilters": "Hide",
-    "budget": "Budget (EGP)",
     "clearAll": "Clear all",
     "invalidRange": "Min price must be less than or equal to max price",
     "noMatches": "No matching products",

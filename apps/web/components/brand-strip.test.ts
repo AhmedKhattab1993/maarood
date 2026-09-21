@@ -11,7 +11,7 @@ describe("Explore shop-by-brand strip", () => {
     expect(page).not.toMatch(/brand-strip/);
     expect(page).not.toMatch(/shopByBrand/);
     expect(page).not.toMatch(/browseBrands/);
-    expect(page).toMatch(/DiscoveryFeed/);
+    expect(page).toMatch(/ProductListing/);
     const feed = readFileSync(
       new URL("./discovery-feed.tsx", import.meta.url),
       "utf8",
