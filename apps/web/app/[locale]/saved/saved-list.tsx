@@ -60,7 +60,7 @@ export function SavedList({
     };
   }, []);
 
-  if (state.status === "loading") return <ProductGridSkeleton />;
+  if (state.status === "loading") return <ProductGridSkeleton layout="grid" />;
   if (state.status === "anon") {
     return (
       <EmptyState
@@ -103,6 +103,7 @@ export function SavedList({
 
   return (
     <ProductGrid
+      layout="grid"
       products={state.items.map((s) => s.product)}
       brands={state.brands}
       allSaved

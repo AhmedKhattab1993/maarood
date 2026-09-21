@@ -49,7 +49,7 @@ function SearchBarShell({
   placeholder?: string;
 }) {
   return (
-    <form onSubmit={onSubmit} role="search" className="w-full max-w-xl">
+    <form onSubmit={onSubmit} role="search" className="w-full">
       <input
         type="search"
         name="q"

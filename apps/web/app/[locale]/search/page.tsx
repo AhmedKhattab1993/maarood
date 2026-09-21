@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { searchProducts, getBrands, getCategories } from "@/lib/api/client";
+import { searchProducts, getBrands, getCategories, getFacets } from "@/lib/api/client";
 import { ProductListing } from "@/components/product-listing";
 import { ErrorState } from "@/components/state-views";
-import { SearchBar } from "@/components/search-bar";
 import { Link } from "@/i18n/navigation";
 import { invalidPriceRange, toNumber, toSort } from "@/lib/query";
 import type { SearchResult } from "@/lib/api/types";
@@ -49,9 +48,18 @@ export default async function SearchPage({
     sort: str(sp.sort),
   };
 
-  const [brands, categories] = await Promise.allSettled([getBrands(), getCategories()]);
+  const [brands, categories, facets] = await Promise.allSettled([
+    getBrands(),
+    getCategories(),
+    getFacets({
+      brand: current.brand || undefined,
+      category: current.category || undefined,
+    }),
+  ]);
   const brandList = brands.status === "fulfilled" ? brands.value : [];
   const categoryList = categories.status === "fulfilled" ? categories.value : [];
+  const facetList =
+    facets.status === "fulfilled" ? facets.value : { colors: [], sizes: [] };
 
   const minPrice = toNumber(current.minPrice);
   const maxPrice = toNumber(current.maxPrice);
@@ -71,9 +79,7 @@ export default async function SearchPage({
   let body: React.ReactNode;
   if (!q) {
     body = (
-      <div className="mx-auto max-w-xl py-10">
-        <SearchBar autoFocus />
-      </div>
+      <p className="mx-auto max-w-xl py-10 text-sm text-nike-grey">{t("startHint")}</p>
     );
   } else if (invalid) {
     body = (
@@ -85,6 +91,7 @@ export default async function SearchPage({
         sort={toSort(current.sort)}
         title={t("products")}
         emptyTitle={tFilters("invalidRange")}
+        facets={facetList}
         feed={{ kind: "search", q, query }}
       />
     );
@@ -134,6 +141,7 @@ export default async function SearchPage({
             title={t("products")}
             emptyTitle={t("noResults")}
             emptyHint={t("noResultsHint")}
+            facets={facetList}
             feed={{ kind: "search", q, query }}
           />
         </div>

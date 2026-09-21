@@ -3,6 +3,7 @@ import "server-only";
 import type {
   BrandDetailResponse,
   BrandSummary,
+  CatalogFacets,
   CategorySummary,
   PaginatedResult,
   ProductQuery,
@@ -103,6 +104,13 @@ export async function getCategories(brand?: string): Promise<CategorySummary[]> 
   return fetchJson<CategorySummary[]>(
     `/v1/categories${buildSearchParams({ brand })}`,
   );
+}
+
+export async function getFacets(query: {
+  brand?: string;
+  category?: string;
+} = {}): Promise<CatalogFacets> {
+  return fetchJson<CatalogFacets>(`/v1/facets${buildSearchParams(query)}`);
 }
 
 export async function searchProducts(

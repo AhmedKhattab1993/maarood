@@ -16,7 +16,8 @@
   --color-ink-black: #111111;
   --color-stone-grey: #e6e3de;
   --color-cool-grey: #8b9099;
-  --color-nike-grey: #707072;
+  /* Meta text. Dark enough to read on white; not a locked brand color. */
+  --color-nike-grey: #3f4248;
   --color-success-green: #15803d;
   --color-alert-red: #dc2626;
   --color-warm-sand: #dbc4a3;

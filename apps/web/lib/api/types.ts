@@ -100,6 +100,12 @@ export interface CategorySummary {
   productCount: number;
 }
 
+/** GET /v1/facets — most common color and size values in the current scope. */
+export interface CatalogFacets {
+  colors: string[];
+  sizes: string[];
+}
+
 /** Saved product entry (GET /v1/saved). */
 export interface SavedProduct {
   savedAt: string;

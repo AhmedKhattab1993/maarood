@@ -9,13 +9,19 @@ function product(
 }
 
 describe("displayAvailability", () => {
-  it("keeps confirmed product-level states as-is", () => {
-    expect(displayAvailability(product("in_stock", ["out_of_stock"]))).toBe("in_stock");
-    expect(displayAvailability(product("out_of_stock", ["in_stock"]))).toBe("out_of_stock");
+  it("says in stock when any size is in stock, even if the product row disagrees", () => {
+    expect(displayAvailability(product("unknown", ["in_stock", "unknown"]))).toBe("in_stock");
+    expect(displayAvailability(product("out_of_stock", ["in_stock"]))).toBe("in_stock");
+    expect(displayAvailability(product("unknown", ["in_stock", "out_of_stock"]))).toBe("in_stock");
   });
 
-  it("derives in-stock from any in-stock variant when the product is unknown", () => {
-    expect(displayAvailability(product("unknown", ["in_stock", "unknown"]))).toBe("in_stock");
+  it("keeps an explicit out-of-stock product when no size is in stock", () => {
+    expect(displayAvailability(product("out_of_stock", ["unknown"]))).toBe("out_of_stock");
+    expect(displayAvailability(product("out_of_stock", []))).toBe("out_of_stock");
+  });
+
+  it("says out of stock when every size is out, even if the product row says in stock", () => {
+    expect(displayAvailability(product("in_stock", ["out_of_stock"]))).toBe("out_of_stock");
   });
 
   it("derives out-of-stock only when every variant is out", () => {

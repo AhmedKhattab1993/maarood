@@ -10,6 +10,7 @@ import {
 } from "@/lib/api/public-client";
 import { mergeUniqueById } from "@/lib/feed-append";
 import { ProductGrid } from "./product-grid";
+import type { ProductLayout } from "./product-feed-layout";
 
 type CachedFeed = {
   items: PublicProduct[];
@@ -50,12 +51,15 @@ export function DiscoveryFeed({
   brands,
   source,
   hideAuthor = false,
+  layout = "grid",
 }: {
   initial: PaginatedResult<PublicProduct>;
   brands?: BrandSummary[];
   source: DiscoverySource;
   /** Hide the author row on cards (brand page already owns the brand identity). */
   hideAuthor?: boolean;
+  /** Following stays a single column. Catalog pages use the grid. */
+  layout?: ProductLayout;
 }) {
   const t = useTranslations("State");
   const pathname = usePathname();
@@ -111,7 +115,7 @@ export function DiscoveryFeed({
 
   return (
     <div className="flex flex-col gap-5">
-      <ProductGrid products={items} brands={brands} hideAuthor={hideAuthor} />
+      <ProductGrid products={items} brands={brands} hideAuthor={hideAuthor} layout={layout} />
       {loadState === "error" && (
         <div className="flex flex-col items-center gap-2 py-4">
           <p role="alert" className="text-sm text-alert-red">

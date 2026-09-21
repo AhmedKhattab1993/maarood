@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { getBrand, getCategories } from "@/lib/api/client";
+import { getBrand, getCategories, getFacets } from "@/lib/api/client";
 import { ProductListing } from "@/components/product-listing";
 import { FacetNav } from "@/components/facet-nav";
 import { FollowButton } from "@/components/follow-button";
@@ -69,7 +69,7 @@ export default async function BrandPage({
   // The slug is only a fallback when the brand record itself failed to load.
   let brandName = slug;
   try {
-    const [{ brand, products }, brandCategories] = await Promise.all([
+    const [{ brand, products }, brandCategories, facets] = await Promise.all([
       invalid
         ? getBrand(slug, { page: 1, limit: 24 }).then((data) => ({
             brand: data.brand,
@@ -77,6 +77,10 @@ export default async function BrandPage({
           }))
         : getBrand(slug, { ...productQuery, page: 1 }),
       getCategories(slug).catch(() => []),
+      getFacets({
+        brand: slug,
+        category: current.category || undefined,
+      }).catch(() => ({ colors: [] as string[], sizes: [] as string[] })),
     ]);
     brandName = brand.name;
 
@@ -129,6 +133,7 @@ export default async function BrandPage({
           hideAuthor
           emptyTitle={t("Search.noResults")}
           emptyHint={t("Search.noResultsHint")}
+          facets={facets}
           feed={{
             kind: "brand",
             slug,

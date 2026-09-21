@@ -3,77 +3,87 @@ import { describe, expect, it } from "vitest";
 
 const card = readFileSync(new URL("./product-card.tsx", import.meta.url), "utf8");
 const avatar = readFileSync(new URL("./brand-avatar.tsx", import.meta.url), "utf8");
-const viewAt = readFileSync(new URL("./view-at-brand.tsx", import.meta.url), "utf8");
-const explore = readFileSync(
-  new URL("../app/[locale]/page.tsx", import.meta.url),
-  "utf8",
-);
+const explore = readFileSync(new URL("../app/[locale]/page.tsx", import.meta.url), "utf8");
 const feed = readFileSync(new URL("./discovery-feed.tsx", import.meta.url), "utf8");
-const listing = readFileSync(
-  new URL("./product-listing.tsx", import.meta.url),
-  "utf8",
-);
+const listing = readFileSync(new URL("./product-listing.tsx", import.meta.url), "utf8");
 const tabs = readFileSync(new URL("./main-tabs.ts", import.meta.url), "utf8");
 
-describe("product post author row", () => {
-  it("places brand identity and Follow in a header before the cover image", () => {
-    const header = card.indexOf("<header");
-    const name = card.indexOf("{brand.name}");
-    const follow = card.indexOf("<FollowButton");
-    const headerEnd = card.indexOf("</header>");
-    const coverImg = card.slice(headerEnd).indexOf("<img");
-    expect(header).toBeGreaterThan(-1);
-    expect(name).toBeGreaterThan(header);
-    expect(follow).toBeGreaterThan(header);
-    expect(follow).toBeLessThan(headerEnd);
-    expect(name).toBeLessThan(headerEnd);
-    expect(coverImg).toBeGreaterThan(-1);
-    expect(card.match(/<FollowButton/g)?.length).toBe(1);
+function sliceFn(src: string, name: string): string {
+  const start = src.indexOf(`function ${name}`);
+  if (start < 0) throw new Error(`missing ${name}`);
+  const next = src.indexOf("\nfunction ", start + 1);
+  return src.slice(start, next === -1 ? src.length : next);
+}
+
+const gridCard = sliceFn(card, "GridCard");
+const feedPost = sliceFn(card, "FeedPost");
+
+describe("catalog grid card", () => {
+  it("shows the brand, title, and price, and saves on the photo", () => {
+    expect(gridCard).toMatch(/brand\.name/);
+    expect(gridCard).toMatch(/product\.title/);
+    expect(gridCard).toMatch(/<Price/);
+    expect(gridCard).toMatch(/absolute end-2 top-2/);
+    expect(gridCard).toMatch(/<SaveButton/);
+    expect(gridCard).toMatch(/pathname: "\/p\/\[id\]"/);
   });
 
-  it("renders the brand logo <img> in the author row when a URL is present", () => {
-    const header = card.slice(card.indexOf("<header"), card.indexOf("</header>"));
+  it("does not follow or leave Maaroud from the tile", () => {
+    expect(gridCard).not.toMatch(/FollowButton/);
+    expect(gridCard).not.toMatch(/ViewAtBrand/);
+    expect(card).not.toMatch(/ViewAtBrand/);
+  });
+});
+
+describe("Following feed post", () => {
+  it("places brand identity and Follow in a header before the cover", () => {
+    const headerStart = feedPost.indexOf("<header");
+    const headerEnd = feedPost.indexOf("</header>");
+    const header = feedPost.slice(headerStart, headerEnd);
+    expect(header).toMatch(/\{brand\.name\}/);
+    expect(header).toMatch(/<FollowButton/);
     expect(header).toMatch(/<BrandAvatar/);
-    expect(header).toMatch(/logoUrl=\{brand\.logoUrl\}/);
+    expect(header).toMatch(/@\$\{brand\.slug\}/);
+    expect(header).toMatch(/dir="ltr"/);
+    expect(feedPost.indexOf("<Cover")).toBeGreaterThan(headerEnd);
     expect(avatar).toMatch(/src=\{logoUrl\}/);
-    expect(avatar).toMatch(/<img/);
-    expect(card + avatar).not.toMatch(/from ["']next\/image["']/);
-  });
-
-  it("keeps the initial-letter avatar when the logo is absent", () => {
     expect(avatar).toMatch(/charAt\(0\)/);
-    expect(avatar).toMatch(/logoFailed/);
   });
 
-  it("does not use a Nike-style brand subtitle under the image", () => {
-    const afterHeader = card.slice(card.indexOf("</header>"));
-    expect(afterHeader).not.toMatch(/brand\.name/);
-    expect(afterHeader).not.toMatch(/@\$\{brand\.slug\}/);
+  it("keeps save on the photo and the product link internal", () => {
+    expect(feedPost).toMatch(/absolute end-2 top-2/);
+    expect(feedPost).toMatch(/pathname: "\/p\/\[id\]"/);
+    expect(feedPost).not.toMatch(/ViewAtBrand/);
   });
+});
 
-  it("links the display name to the brand page", () => {
-    expect(card).toMatch(/pathname: "\/brands\/\[slug\]"/);
-    expect(card).toMatch(/params: \{ slug: brand\.slug \}/);
-    expect(card).toMatch(/dir="ltr"/);
-    expect(card).toMatch(/@\$\{brand\.slug\}/);
+describe("card imagery", () => {
+  it("crops the cover instead of letterboxing it", () => {
+    expect(card).toMatch(/coverSrc\(product\.imageUrls\)/);
+    expect(card).toMatch(/object-cover/);
+    expect(card).not.toMatch(/object-contain/);
+    expect(card).toMatch(/line-clamp-2/);
   });
 });
 
 describe("Explore product posts", () => {
-  it("passes brands into the stacked feed so author names can SSR", () => {
+  it("passes brands into the catalog grid", () => {
     expect(explore).toMatch(/getBrands/);
     expect(explore).toMatch(/ProductListing/);
+    expect(listing).toMatch(/layout = "grid"/);
     expect(listing).toMatch(/DiscoveryFeed/);
     expect(feed).toMatch(/ProductGrid/);
+    expect(feed).toMatch(/layout = "grid"/);
   });
 
-  it("exposes the filter rail and sort with load-more instead of numbered pages", () => {
+  it("keeps filters, sort, and load-more", () => {
     expect(explore).toMatch(/getCategories/);
+    expect(explore).toMatch(/getFacets/);
     expect(listing).toMatch(/FilterBar/);
+    expect(listing).toMatch(/CategoryStrip/);
     expect(listing).toMatch(/SortSelect/);
     expect(explore).not.toMatch(/Pagination/);
     expect(feed).toMatch(/loadMore/);
-    expect(feed).not.toMatch(/pageCount/);
   });
 });
 
@@ -85,29 +95,5 @@ describe("MAIN_TABS", () => {
     expect(tabs).toMatch(/pathname: "\/following"/);
     expect(tabs).toMatch(/pathname: "\/"/);
     expect(tabs).toMatch(/pathname: "\/favourites"/);
-  });
-});
-
-describe("shopping CTA and media", () => {
-  it("keeps image+title as an internal product link and View at brand outside it", () => {
-    expect(card + viewAt).toMatch(/viewAtBrand/);
-    expect(card).toMatch(/ViewAtBrand/);
-    expect(card).toMatch(/pathname: "\/p\/\[id\]"/);
-    expect(card).toMatch(/object-contain/);
-    expect(card).toMatch(/line-clamp-2/);
-    expect(card).not.toMatch(/line-clamp-1/);
-    expect(card).not.toMatch(/object-cover/);
-
-    const headerEnd = card.indexOf("</header>");
-    const afterHeader = card.slice(headerEnd);
-    const productLinkClose = afterHeader.indexOf("</Link>");
-    const insideProductLink = afterHeader.slice(0, productLinkClose);
-    const afterProductLink = afterHeader.slice(productLinkClose);
-    expect(insideProductLink).toMatch(/pathname: "\/p\/\[id\]"/);
-    expect(insideProductLink).not.toMatch(/FollowButton/);
-    expect(insideProductLink).not.toMatch(/SaveButton/);
-    expect(insideProductLink).not.toMatch(/ViewAtBrand/);
-    expect(afterProductLink).toMatch(/SaveButton/);
-    expect(afterProductLink).toMatch(/ViewAtBrand/);
   });
 });

@@ -2,44 +2,51 @@
 
 import { useTranslations } from "next-intl";
 import { useQueryParams } from "@/lib/use-query-params";
+import { facetChoices, shopperFacets } from "@/lib/facet-choices";
+import { nextPriceParams } from "@/lib/price-draft";
+import type { CatalogFacets } from "@/lib/api/types";
 import {
   Suspense,
   useCallback,
+  useEffect,
+  useState,
   type ChangeEvent,
   type ReactNode,
 } from "react";
-import type { BrandSummary, CategorySummary } from "@/lib/api/types";
-import { categoryName } from "@/lib/categories";
+import type { BrandSummary } from "@/lib/api/types";
+
+const EMPTY_FACETS: CatalogFacets = { colors: [], sizes: [] };
 
 /**
- * Nike-style filter controls. Owns the query-param mutation logic and renders:
- *  - a borderless "Show Filters"/"Hide Filters" toggle (placed in the wall-header)
- *  - the facet list (placed in the rail/drawer by the caller)
- *
- * The caller (product-listing) owns the `open` state so it can place the toggle
- * and the rail in different layout regions.
+ * Filter drawer and desktop rail. Category is the scrolling row above the
+ * listing. Price commits on blur or when the drawer closes. Color and size
+ * are catalog choices, not free-text fields.
  */
 export function FilterBar({
   brands,
-  categories,
+  facets = EMPTY_FACETS,
   current,
   open,
   onToggle,
+  onRegisterCommit,
 }: {
   brands: BrandSummary[];
-  categories: CategorySummary[];
+  facets?: CatalogFacets;
   current: Record<string, string | undefined>;
   open: boolean;
   onToggle: () => void;
+  /** Lets the header "Hide" control commit a price draft before closing. */
+  onRegisterCommit?: (commit: () => void) => void;
 }) {
   return (
     <Suspense fallback={null}>
       <FilterBarInner
         brands={brands}
-        categories={categories}
+        facets={facets}
         current={current}
         open={open}
         onToggle={onToggle}
+        onRegisterCommit={onRegisterCommit}
       />
     </Suspense>
   );
@@ -47,20 +54,28 @@ export function FilterBar({
 
 function FilterBarInner({
   brands,
-  categories,
+  facets,
   current,
   open,
   onToggle,
+  onRegisterCommit,
 }: {
   brands: BrandSummary[];
-  categories: CategorySummary[];
+  facets: CatalogFacets;
   current: Record<string, string | undefined>;
   open: boolean;
   onToggle: () => void;
+  onRegisterCommit?: (commit: () => void) => void;
 }) {
   const t = useTranslations("Filters");
-  const tCat = useTranslations("Category");
   const { searchParams, pushParams } = useQueryParams();
+  const [minDraft, setMinDraft] = useState(current.minPrice ?? "");
+  const [maxDraft, setMaxDraft] = useState(current.maxPrice ?? "");
+
+  useEffect(() => {
+    setMinDraft(current.minPrice ?? "");
+    setMaxDraft(current.maxPrice ?? "");
+  }, [current.minPrice, current.maxPrice]);
 
   const update = useCallback(
     (key: string, value: string) => {
@@ -72,6 +87,20 @@ function FilterBarInner({
     [pushParams, searchParams],
   );
 
+  const commitPrice = useCallback(() => {
+    const next = nextPriceParams(searchParams, minDraft, maxDraft);
+    if (next) pushParams(next, true);
+  }, [maxDraft, minDraft, pushParams, searchParams]);
+
+  useEffect(() => {
+    onRegisterCommit?.(commitPrice);
+  }, [commitPrice, onRegisterCommit]);
+
+  const close = () => {
+    commitPrice();
+    onToggle();
+  };
+
   const clearAll = () => {
     const params = new URLSearchParams(searchParams.toString());
     const q = params.get("q");
@@ -82,71 +111,78 @@ function FilterBarInner({
 
   const activeCount =
     (current.brand ? 1 : 0) +
-    (current.category ? 1 : 0) +
     (current.minPrice ? 1 : 0) +
     (current.maxPrice ? 1 : 0) +
     (current.color ? 1 : 0) +
     (current.size ? 1 : 0) +
     (current.availability ? 1 : 0);
 
+  if (!open) return null;
+
+  const facetList = (
+    <FacetList
+      brands={brands}
+      facets={facets}
+      current={current}
+      update={update}
+      minDraft={minDraft}
+      maxDraft={maxDraft}
+      onMinDraft={setMinDraft}
+      onMaxDraft={setMaxDraft}
+      onPriceBlur={commitPrice}
+    />
+  );
+
   return (
     <>
-      {/* Desktop rail */}
-      {open && (
-        <aside className="hidden w-48 shrink-0 md:block">
-          <div className="sticky top-20 flex flex-col gap-4">
-            <FilterHeader onClear={clearAll} showClear={activeCount > 0} />
-            <FacetList
-              brands={brands}
-              categories={categories}
-              current={current}
-              update={update}
-              tCat={tCat}
-            />
-          </div>
-        </aside>
-      )}
+      <aside className="hidden w-56 shrink-0 md:block">
+        <div className="sticky top-20 flex flex-col gap-4">
+          <FilterHeader onClear={clearAll} showClear={activeCount > 0} />
+          {facetList}
+        </div>
+      </aside>
 
-      {/* Mobile drawer */}
-      {open && (
-        <div className="fixed inset-0 z-50 md:hidden">
-          <button
-            type="button"
-            aria-label={t("hideFilters")}
-            onClick={onToggle}
-            className="absolute inset-0 bg-ink-black/40"
-          />
-          <div className="absolute inset-y-0 start-0 flex w-[85%] max-w-sm flex-col gap-5 bg-white p-4 shadow-xl">
-            <div className="flex items-center justify-between">
-              <FilterHeader onClear={clearAll} showClear={activeCount > 0} />
-              <button
-                type="button"
-                aria-label={t("hideFilters")}
-                onClick={onToggle}
-                className="text-nike-grey hover:text-ink-black"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              <FacetList
-                brands={brands}
-                categories={categories}
-                current={current}
-                update={update}
-                tCat={tCat}
-              />
-            </div>
+      <div className="fixed inset-0 z-50 md:hidden">
+        <button
+          type="button"
+          aria-label={t("hideFilters")}
+          onClick={close}
+          className="absolute inset-0 bg-ink-black/40"
+        />
+        <div className="absolute inset-y-0 start-0 flex w-[85%] max-w-sm flex-col gap-5 bg-white p-4 shadow-xl">
+          <div className="flex items-center justify-between">
+            <FilterHeader onClear={clearAll} showClear={activeCount > 0} />
             <button
               type="button"
-              onClick={onToggle}
-              className="border border-ink-black bg-ink-black px-4 py-2.5 text-sm font-medium text-white"
+              aria-label={t("hideFilters")}
+              onClick={close}
+              className="text-nike-grey hover:text-ink-black"
             >
-              {t("apply")}
+              ✕
             </button>
           </div>
+          <div className="flex-1 overflow-y-auto">
+            <FacetList
+              brands={brands}
+              facets={facets}
+              current={current}
+              update={update}
+              minDraft={minDraft}
+              maxDraft={maxDraft}
+              onMinDraft={setMinDraft}
+              onMaxDraft={setMaxDraft}
+              onPriceBlur={commitPrice}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={close}
+            className="border border-ink-black bg-ink-black px-4 py-2.5 text-sm font-medium text-white"
+          >
+            {t("apply")}
+          </button>
         </div>
-      )}
+      </div>
     </>
   );
 }
@@ -177,43 +213,39 @@ function FilterHeader({
 
 function FacetList({
   brands,
-  categories,
+  facets,
   current,
   update,
-  tCat,
+  minDraft,
+  maxDraft,
+  onMinDraft,
+  onMaxDraft,
+  onPriceBlur,
 }: {
   brands: BrandSummary[];
-  categories: CategorySummary[];
+  facets: CatalogFacets;
   current: Record<string, string | undefined>;
   update: (key: string, value: string) => void;
-  tCat: (key: string) => string;
+  minDraft: string;
+  maxDraft: string;
+  onMinDraft: (value: string) => void;
+  onMaxDraft: (value: string) => void;
+  onPriceBlur: () => void;
 }) {
   const t = useTranslations("Filters");
+  const shown = shopperFacets(facets);
+  const colors = facetChoices(shown.colors, current.color);
+  const sizes = facetChoices(shown.sizes, current.size);
   return (
     <div className="flex flex-col divide-y divide-stone-grey">
       {brands.length > 0 && (
         <Facet label={t("brand")}>
           <Select
             value={current.brand ?? ""}
-            onChange={(e) => update("brand", e.target.value)}
+            onChange={(event) => update("brand", event.target.value)}
             options={[
-              { value: "", label: "—" },
-              ...brands.map((b) => ({ value: b.slug, label: b.name })),
-            ]}
-          />
-        </Facet>
-      )}
-      {categories.length > 0 && (
-        <Facet label={t("category")}>
-          <Select
-            value={current.category ?? ""}
-            onChange={(e) => update("category", e.target.value)}
-            options={[
-              { value: "", label: "—" },
-              ...categories.map((c) => ({
-                value: c.name,
-                label: categoryName(c.name, tCat),
-              })),
+              { value: "", label: t("all") },
+              ...brands.map((brand) => ({ value: brand.slug, label: brand.name })),
             ]}
           />
         </Facet>
@@ -221,47 +253,90 @@ function FacetList({
       <Facet label={t("price")}>
         <div className="flex items-center gap-2">
           <NumberField
-            value={current.minPrice ?? ""}
-            onChange={(e) => update("minPrice", e.target.value)}
-            placeholder="0"
+            value={minDraft}
+            onChange={onMinDraft}
+            onBlur={onPriceBlur}
+            placeholder={t("minPrice")}
+            label={t("minPrice")}
           />
           <span className="text-nike-grey">–</span>
           <NumberField
-            value={current.maxPrice ?? ""}
-            onChange={(e) => update("maxPrice", e.target.value)}
-            placeholder="∞"
+            value={maxDraft}
+            onChange={onMaxDraft}
+            onBlur={onPriceBlur}
+            placeholder={t("maxPrice")}
+            label={t("maxPrice")}
           />
         </div>
       </Facet>
       <Facet label={t("availability")}>
         <Select
           value={current.availability ?? ""}
-          onChange={(e) => update("availability", e.target.value)}
+          onChange={(event) => update("availability", event.target.value)}
           options={[
-            { value: "", label: "—" },
+            { value: "", label: t("all") },
             { value: "in_stock", label: t("in_stock") },
             { value: "out_of_stock", label: t("out_of_stock") },
             { value: "unknown", label: t("unknown") },
           ]}
         />
       </Facet>
-      <Facet label={t("color")}>
-        <TextField
-          value={current.color ?? ""}
-          onChange={(e) => update("color", e.target.value)}
-        />
-      </Facet>
-      <Facet label={t("size")}>
-        <TextField
-          value={current.size ?? ""}
-          onChange={(e) => update("size", e.target.value)}
-        />
-      </Facet>
+      {colors.length > 0 && (
+        <Facet label={t("color")}>
+          <ChoiceList
+            values={colors}
+            selected={current.color}
+            onSelect={(value) => update("color", value)}
+          />
+        </Facet>
+      )}
+      {sizes.length > 0 && (
+        <Facet label={t("size")}>
+          <ChoiceList
+            values={sizes}
+            selected={current.size}
+            onSelect={(value) => update("size", value)}
+          />
+        </Facet>
+      )}
     </div>
   );
 }
 
-/** A collapsible facet section. Native <details> keeps it JS-free and RTL-safe. */
+function ChoiceList({
+  values,
+  selected,
+  onSelect,
+}: {
+  values: string[];
+  selected?: string;
+  onSelect: (value: string) => void;
+}) {
+  return (
+    <ul className="flex max-h-40 flex-wrap gap-2 overflow-y-auto">
+      {values.map((value) => {
+        const active = selected?.toLocaleLowerCase() === value.toLocaleLowerCase();
+        return (
+          <li key={value}>
+            <button
+              type="button"
+              aria-pressed={active}
+              onClick={() => onSelect(active ? "" : value)}
+              className={
+                active
+                  ? "border border-ink-black bg-ink-black px-2 py-1 text-xs text-white"
+                  : "border border-stone-grey px-2 py-1 text-xs text-ink-black hover:border-ink-black"
+              }
+            >
+              {value}
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 function Facet({ label, children }: { label: string; children: ReactNode }) {
   return (
     <details open className="group border-b border-stone-grey py-3">
@@ -282,7 +357,7 @@ function Select({
   options,
 }: {
   value: string;
-  onChange: (e: ChangeEvent<HTMLSelectElement>) => void;
+  onChange: (event: ChangeEvent<HTMLSelectElement>) => void;
   options: Array<{ value: string; label: string }>;
 }) {
   return (
@@ -291,43 +366,27 @@ function Select({
       onChange={onChange}
       className="w-full rounded-default border border-cool-grey bg-white px-3 py-2 text-sm text-ink-black outline-none focus:border-ink-black"
     >
-      {options.map((o) => (
-        <option key={o.value} value={o.value}>
-          {o.label}
+      {options.map((option) => (
+        <option key={option.value || "all"} value={option.value}>
+          {option.label}
         </option>
       ))}
     </select>
   );
 }
 
-function TextField({
-  value,
-  onChange,
-  placeholder,
-}: {
-  value: string;
-  onChange: (e: ChangeEvent<HTMLInputElement>) => void;
-  placeholder?: string;
-}) {
-  return (
-    <input
-      type="text"
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      className="w-full rounded-default border border-cool-grey bg-white px-3 py-2 text-sm text-ink-black outline-none focus:border-ink-black"
-    />
-  );
-}
-
 function NumberField({
   value,
   onChange,
+  onBlur,
   placeholder,
+  label,
 }: {
   value: string;
-  onChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  onChange: (value: string) => void;
+  onBlur: () => void;
   placeholder?: string;
+  label: string;
 }) {
   return (
     <input
@@ -335,7 +394,9 @@ function NumberField({
       inputMode="numeric"
       min="0"
       value={value}
-      onChange={onChange}
+      aria-label={label}
+      onChange={(event) => onChange(event.target.value)}
+      onBlur={onBlur}
       placeholder={placeholder}
       className="w-full rounded-default border border-cool-grey bg-white px-3 py-2 text-sm text-ink-black outline-none focus:border-ink-black"
     />

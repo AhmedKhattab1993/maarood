@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Suspense, useCallback, useState } from "react";
+import { Suspense, useCallback, useRef, useState } from "react";
 import type {
   BrandSummary,
   CategorySummary,
@@ -19,6 +19,9 @@ import { SortSelect } from "./sort-select";
 import { DiscoveryFeed } from "./discovery-feed";
 import { ProductGridSkeleton } from "./product-grid";
 import { EmptyState } from "./state-views";
+import { CategoryStrip } from "./category-strip";
+import type { ProductLayout } from "./product-feed-layout";
+import type { CatalogFacets } from "@/lib/api/types";
 
 /**
  * Shared listing body used by Search, Category, and Brand pages — Nike-style.
@@ -42,6 +45,9 @@ export function ProductListing({
   emptyTitle,
   emptyHint,
   feed,
+  layout = "grid",
+  categoryNav = "query",
+  facets,
 }: {
   result: PaginatedResult<PublicProduct>;
   brands?: BrandSummary[];
@@ -58,9 +64,14 @@ export function ProductListing({
   emptyTitle: string;
   emptyHint?: string;
   feed: DiscoverySource;
+  /** Following is not this component. Catalog pages stay on the grid. */
+  layout?: ProductLayout;
+  /** `path` is the /c/[category] page. Brand pages pass no categories. */
+  categoryNav?: "query" | "path";
+  facets?: CatalogFacets;
 }) {
   return (
-    <Suspense fallback={<ProductGridSkeleton />}>
+    <Suspense fallback={<ProductGridSkeleton layout={layout} />}>
       <ProductListingInner
         result={result}
         brands={brands}
@@ -74,6 +85,9 @@ export function ProductListing({
         emptyHint={emptyHint}
         feed={feed}
         hideAuthor={hideAuthor}
+        layout={layout}
+        categoryNav={categoryNav}
+        facets={facets}
       />
     </Suspense>
   );
@@ -92,6 +106,9 @@ function ProductListingInner({
   emptyTitle,
   emptyHint,
   feed,
+  layout = "grid",
+  categoryNav = "query",
+  facets,
 }: {
   result: PaginatedResult<PublicProduct>;
   brands?: BrandSummary[];
@@ -105,11 +122,18 @@ function ProductListingInner({
   emptyTitle: string;
   emptyHint?: string;
   feed: DiscoverySource;
+  layout?: ProductLayout;
+  categoryNav?: "query" | "path";
+  facets?: CatalogFacets;
 }) {
   const Heading = heading;
   const t = useTranslations("Filters");
   const tCat = useTranslations("Category");
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const commitPrice = useRef<() => void>(() => {});
+  const registerCommit = useCallback((commit: () => void) => {
+    commitPrice.current = commit;
+  }, []);
   const { searchParams, pushParams } = useQueryParams();
 
   const update = useCallback(
@@ -164,11 +188,18 @@ function ProductListingInner({
   );
 
   if (isLoading) {
-    return <ProductGridSkeleton />;
+    return <ProductGridSkeleton layout={layout} />;
   }
 
   return (
     <div className="flex flex-col">
+      {(categories?.length ?? 0) > 0 && (
+        <CategoryStrip
+          categories={categories ?? []}
+          active={current.category}
+          mode={categoryNav}
+        />
+      )}
       <div className="flex items-baseline justify-between gap-4 border-b border-stone-grey pb-4">
         <Heading className="text-2xl font-semibold text-ink-black md:text-3xl">
           {title}{" "}
@@ -177,7 +208,10 @@ function ProductListingInner({
         <div className="flex items-center gap-6">
           <button
             type="button"
-            onClick={() => setFiltersOpen((o) => !o)}
+            onClick={() => {
+              if (filtersOpen) commitPrice.current();
+              setFiltersOpen((open) => !open);
+            }}
             className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-black"
           >
             <span>{filtersOpen ? t("hideFilters") : t("showFilters")}</span>
@@ -192,10 +226,11 @@ function ProductListingInner({
       <div className="flex flex-col gap-4 pt-6 md:flex-row md:items-start md:gap-8">
         <FilterBar
           brands={brands ?? []}
-          categories={categories ?? []}
+          facets={facets}
           current={current}
           open={filtersOpen}
-          onToggle={() => setFiltersOpen((o) => !o)}
+          onToggle={() => setFiltersOpen((open) => !open)}
+          onRegisterCommit={registerCommit}
         />
         <div className="flex min-w-0 flex-1 flex-col gap-5">
           {/* Chips restate what the rail shows, so hide them on desktop while it is open. */}
@@ -223,6 +258,7 @@ function ProductListingInner({
               brands={brands}
               source={feed}
               hideAuthor={hideAuthor}
+              layout={layout}
             />
           )}
         </div>

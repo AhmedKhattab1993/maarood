@@ -8,12 +8,12 @@ import { ViewAtBrand } from "@/components/view-at-brand";
 import { ProductGrid } from "@/components/product-grid";
 import { ErrorState } from "@/components/state-views";
 import { ProductPrice } from "@/components/product-price";
+import { ProductGallery } from "@/components/product-gallery";
+import { ProductOptions } from "@/components/product-options";
 import { ProductJsonLd } from "./product-jsonld";
-import { formatPrice } from "@/lib/format";
 import { gallerySrcs } from "@/lib/product-image";
 import { priceDiscount } from "@/lib/price-display";
 import { displayAvailability } from "@/lib/availability";
-import type { Variant } from "@/lib/api/types";
 import { notFound } from "next/navigation";
 
 export async function generateMetadata({
@@ -75,7 +75,7 @@ export default async function ProductPage({
   const availability = displayAvailability(product);
 
   let alternatives: PublicProduct[] = [];
-  if (product.availability === "out_of_stock") {
+  if (availability === "out_of_stock") {
     const alt = await getProducts({
       category: product.category || undefined,
       merchantId: product.merchantId,
@@ -86,7 +86,7 @@ export default async function ProductPage({
   }
 
   return (
-    <div className="mx-auto max-w-[var(--container-max)] px-4 py-6 md:py-10">
+    <div className="mx-auto max-w-[var(--container-max)] px-4 pb-36 pt-6 md:py-10">
       <Breadcrumbs
         items={[
           { label: t("Nav.home"), href: { pathname: "/" } },
@@ -108,7 +108,7 @@ export default async function ProductPage({
       <ProductJsonLd product={product} brandName={vendorName} />
 
       <div className="mt-6 grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-12">
-        <Gallery imageUrls={gallerySrcs(product.imageUrls)} title={product.title} />
+        <ProductGallery imageUrls={gallerySrcs(product.imageUrls)} title={product.title} />
 
         <div className="flex flex-col gap-4">
           {vendorName && (
@@ -156,33 +156,13 @@ export default async function ProductPage({
             <p className="text-sm text-nike-grey">{t("Product.stale")}</p>
           )}
 
-          {/* Structured option groups (Size: S M L, Color: Black White) */}
-          {product.options.length > 0 && (
-            <div className="flex flex-col gap-2 text-sm">
-              {product.options.map((o) => (
-                <DetailRow
-                  key={o.name}
-                  label={optionLabel(o.name, (key) => t(`Product.${key}`))}
-                  value={o.values.join(" · ")}
-                />
-              ))}
-            </div>
-          )}
-
-          {/* Per-variant table: size + price + struck original + availability */}
-          <VariantTable
+          <ProductOptions
+            sizes={product.sizes}
+            colors={product.colors}
+            options={product.options}
             variants={product.variants}
-            currency={product.currency}
-            locale={locale}
-            labels={{
-              heading: t("Product.sizeAndAvailability"),
-              sizes: t("Product.sizes"),
-              price: t("Product.priceLabel"),
-              availability: t("Product.availabilityLabel"),
-              inStock: t("Product.inStock"),
-              outOfStock: t("Product.outOfStock"),
-              unknown: t("Product.unknown"),
-            }}
+            sizeLabel={t("Product.optionSize")}
+            colorLabel={t("Product.optionColor")}
           />
 
           {product.description && (
@@ -191,14 +171,15 @@ export default async function ProductPage({
             </p>
           )}
 
-          <div className="mt-2 flex flex-wrap items-center gap-3">
-            <ViewAtBrand
-              productId={product.id}
-              redirectUrl={product.redirectUrl}
-              brandName={brandName || vendorName}
-              variant="detail"
-            />
-            <SaveButton productId={product.id} variant="label" />
+          <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 border-t border-stone-grey bg-white px-4 py-3 md:static md:inset-auto md:z-auto md:mt-2 md:border-0 md:bg-transparent md:p-0">
+            <div className="mx-auto flex max-w-[var(--container-max)] items-center gap-3 md:mx-0">
+              <ViewAtBrand
+                productId={product.id}
+                redirectUrl={product.redirectUrl}
+                brandName={brandName || vendorName}
+              />
+              <SaveButton productId={product.id} variant="label" />
+            </div>
           </div>
 
           {brandName && (
@@ -219,166 +200,6 @@ export default async function ProductPage({
             brands={brand ? [ { id: brand.id, name: brand.name, slug: brand.slug, domain: brand.domain, productCount: 0, logoUrl: brand.logoUrl } ] : []}
           />
         </section>
-      )}
-    </div>
-  );
-}
-
-/**
- * Localize the common merchant option names; anything else (style, material,
- * merchant Arabic naming) renders as scraped.
- */
-const OPTION_LABEL_KEYS: Record<string, string> = {
-  size: "optionSize",
-  color: "optionColor",
-  colour: "optionColor",
-  "المقاس": "optionSize",
-  "اللون": "optionColor",
-};
-
-function optionLabel(name: string, t: (key: string) => string): string {
-  const key = OPTION_LABEL_KEYS[name.trim().toLowerCase()];
-  return key ? t(key) : name;
-}
-
-function DetailRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex gap-2">
-      <span className="min-w-20 text-nike-grey">{label}</span>
-      <span className="text-ink-black">{value}</span>
-    </div>
-  );
-}
-
-/**
- * Per-variant table — size + this variant's price + struck original (when
- * discounted) + per-variant availability. Only renders when variants carry
- * meaningful per-variant data (a size or price), so simple single-price
- * products with no variants don't show an empty table.
- */
-function VariantTable({
-  variants,
-  currency,
-  locale,
-  labels,
-}: {
-  variants: Variant[];
-  currency: string;
-  locale: string;
-  labels: {
-    heading: string;
-    sizes: string;
-    price: string;
-    availability: string;
-    inStock: string;
-    outOfStock: string;
-    unknown: string;
-  };
-}) {
-  // Show only variants that carry a size (the meaningful per-variant axis here).
-  const rows = variants.filter((v) => v.size);
-  if (rows.length === 0) return null;
-
-  return (
-    <div className="border-t border-stone-grey pt-4">
-      <h2 className="mb-3 text-sm font-semibold text-ink-black">{labels.heading}</h2>
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-stone-grey text-left text-nike-grey">
-            <th className="py-2 font-normal">{labels.sizes}</th>
-            <th className="py-2 font-normal">{labels.price}</th>
-            <th className="py-2 font-normal">{labels.availability}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((v, i) => {
-            const rowDiscount =
-              v.price !== undefined
-                ? priceDiscount(v.price, v.compareAtPrice ?? null)
-                : { show: false as const };
-            return (
-              <tr key={`${v.label}-${i}`} className="border-b border-stone-grey">
-                <td className="py-2 text-ink-black">{v.size}</td>
-                <td className="py-2">
-                  {v.price !== undefined ? (
-                    <span className="flex items-baseline gap-2">
-                      <span className="text-ink-black">
-                        {formatPrice(v.price, currency, locale)}
-                      </span>
-                      {rowDiscount.show && v.compareAtPrice != null && (
-                        <span className="text-xs text-nike-grey line-through">
-                          {formatPrice(v.compareAtPrice, currency, locale)}
-                        </span>
-                      )}
-                    </span>
-                  ) : (
-                    <span className="text-nike-grey">—</span>
-                  )}
-                </td>
-                <td className="py-2">
-                  {v.availability === "in_stock" ? (
-                    <span className="text-success-green">{labels.inStock}</span>
-                  ) : v.availability === "out_of_stock" ? (
-                    <span className="text-alert-red">{labels.outOfStock}</span>
-                  ) : (
-                    <span className="text-nike-grey">{labels.unknown}</span>
-                  )}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function Gallery({
-  imageUrls,
-  title,
-}: {
-  imageUrls: string[];
-  title: string;
-}) {
-  if (imageUrls.length === 0) {
-    return (
-      <div className="flex aspect-square w-full items-center justify-center bg-stone-grey text-nike-grey">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" aria-hidden>
-          <rect x="3" y="3" width="18" height="18" rx="2" />
-          <circle cx="8.5" cy="8.5" r="1.5" />
-          <path d="m21 15-5-5L5 21" />
-        </svg>
-      </div>
-    );
-  }
-  return (
-    <div className="flex flex-col gap-3">
-      {/* Merchant CDN imagery (06:49 — preserve original URLs). Plain <img>
-          with unoptimized loading to avoid Next image optimizer round-trips for
-          arbitrary merchant hosts. */}
-      <div className="aspect-square w-full overflow-hidden bg-stone-grey">
-        <img
-          src={imageUrls[0]}
-          alt={title}
-          referrerPolicy="no-referrer"
-          className="h-full w-full object-contain"
-        />
-      </div>
-      {imageUrls.length > 1 && (
-        <ul className="grid grid-cols-4 gap-2">
-          {imageUrls.slice(1, 9).map((src, i) => (
-            <li key={i}>
-              <div className="aspect-square w-full overflow-hidden rounded-default bg-stone-grey">
-                <img
-                  src={src}
-                  alt={`${title} ${i + 2}`}
-                  referrerPolicy="no-referrer"
-                  className="h-full w-full object-contain"
-                />
-              </div>
-            </li>
-          ))}
-        </ul>
       )}
     </div>
   );

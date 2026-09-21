@@ -69,7 +69,8 @@
     "noResultsHint": "Try a different term or adjust the filters.",
     "brands": "Brands",
     "products": "Products",
-    "clear": "Clear search"
+    "clear": "Clear search",
+    "startHint": "Use the search field above to find a brand or a product."
   },
   "Filters": {
     "title": "Filters",
@@ -94,7 +95,8 @@
     "adjust": "Adjust the filters and try again.",
     "removeFilter": "Remove filter",
     "showAll": "Show all ({count})",
-    "showLess": "Show less"
+    "showLess": "Show less",
+    "all": "All"
   },
   "Sort": {
     "label": "Sort",

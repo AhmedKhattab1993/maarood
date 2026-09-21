@@ -1,26 +1,29 @@
 import { readFileSync } from "node:fs";
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
-  productFeedItemClass,
   productFeedListClass,
+  productGridListClass,
+  productListClass,
 } from "./product-feed-layout";
 
-const MULTI_COL = /grid-cols-2|md:grid-cols-3|lg:grid-cols-4|xl:grid-cols-5/;
-
-describe("productFeedListClass", () => {
-  it("is a single-column stacked feed, not a multi-column product wall", () => {
+describe("product layouts", () => {
+  it("keeps Following as a single column", () => {
     const cls = productFeedListClass();
     expect(cls).toMatch(/flex-col/);
-    expect(cls).not.toMatch(MULTI_COL);
-    expect(cls).not.toMatch(/\bgrid\b/);
+    expect(cls).toMatch(/max-w-xl/);
+    expect(cls).not.toMatch(/grid-cols-/);
+    expect(productListClass("feed")).toBe(cls);
   });
 
-  it("is the same layout the skeleton uses", () => {
-    expect(productFeedItemClass()).toMatch(/\bw-full\b/);
-    expect(productFeedItemClass()).not.toMatch(MULTI_COL);
+  it("lays the catalog out as two columns, four on a large screen", () => {
+    const cls = productGridListClass();
+    expect(cls).toMatch(/grid-cols-2/);
+    expect(cls).toMatch(/lg:grid-cols-4/);
+    expect(productListClass("grid")).toBe(cls);
+  });
+
+  it("uses the same layout class for the list and the skeleton", () => {
     const src = readFileSync(new URL("./product-grid.tsx", import.meta.url), "utf8");
-    expect(src).toMatch(/className=\{productFeedListClass\(\)\}/);
-    expect(src.match(/productFeedListClass\(\)/g)?.length).toBeGreaterThanOrEqual(2);
-    expect(src).not.toMatch(MULTI_COL);
+    expect(src.match(/productListClass\(layout\)/g)?.length).toBeGreaterThanOrEqual(2);
   });
 });

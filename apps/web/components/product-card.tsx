@@ -6,9 +6,9 @@ import { formatPrice } from "@/lib/format";
 import { coverSrc } from "@/lib/product-image";
 import { priceDiscount } from "@/lib/price-display";
 import type { BrandSummary, PublicProduct } from "@/lib/api/types";
+import type { ProductLayout } from "./product-feed-layout";
 import { SaveButton } from "./save-button";
 import { FollowButton } from "./follow-button";
-import { ViewAtBrand } from "./view-at-brand";
 import { BrandAvatar } from "./brand-avatar";
 
 interface ProductCardProps {
@@ -23,26 +23,87 @@ interface ProductCardProps {
   onUnsaved?: (productId: string) => void;
   /** Hide the author row (brand page already owns the brand identity). */
   hideAuthor?: boolean;
+  /** Feed keeps the brand header. Grid is the catalog tile. */
+  layout?: ProductLayout;
 }
 
 /**
- * Stacked product post: X-style author row (brand as the poster) then the
- * product image, title, and price as the body.
+ * Catalog tile or Following post. The photo opens the product. Saving sits
+ * on the photo. Buying happens on the product page, not on the card.
  */
 export function ProductCard({
+  layout = "grid",
+  ...props
+}: ProductCardProps) {
+  if (layout === "feed") return <FeedPost {...props} />;
+  return <GridCard {...props} />;
+}
+
+function GridCard({
   product,
   brands,
   priority,
   initialSaved = false,
   onUnsaved,
   hideAuthor = false,
-}: ProductCardProps) {
-  const t = useTranslations("Product");
-  const locale = useLocale();
-  const brand = brands?.find((b) => b.id === product.merchantId);
-  const cover = coverSrc(product.imageUrls);
-  const discount = priceDiscount(product.currentPrice, product.previousPrice);
+}: Omit<ProductCardProps, "layout">) {
+  const brand = brands?.find((item) => item.id === product.merchantId);
   const brandName = brand?.name || product.vendor || "";
+
+  return (
+    <article className="flex w-full flex-col">
+      <div className="relative">
+        <Link
+          href={{ pathname: "/p/[id]", params: { id: product.id } }}
+          className="block"
+        >
+          <Cover product={product} priority={priority} />
+        </Link>
+        <div className="absolute end-2 top-2 z-10">
+          <SaveButton
+            productId={product.id}
+            initialSaved={initialSaved}
+            onSavedChange={(id, saved) => {
+              if (!saved) onUnsaved?.(id);
+            }}
+          />
+        </div>
+      </div>
+      <div className="mt-2 flex flex-col gap-0.5">
+        {!hideAuthor && brand && (
+          <Link
+            href={{ pathname: "/brands/[slug]", params: { slug: brand.slug } }}
+            className="truncate text-sm font-medium text-ink-black"
+          >
+            {brand.name}
+          </Link>
+        )}
+        {!hideAuthor && !brand && brandName && (
+          <p className="truncate text-sm font-medium text-ink-black">{brandName}</p>
+        )}
+        <Link
+          href={{ pathname: "/p/[id]", params: { id: product.id } }}
+          className="flex flex-col gap-0.5"
+        >
+          <h3 className="line-clamp-2 text-sm text-ink-black md:text-base">
+            {product.title}
+          </h3>
+          <Price product={product} />
+        </Link>
+      </div>
+    </article>
+  );
+}
+
+function FeedPost({
+  product,
+  brands,
+  priority,
+  initialSaved = false,
+  onUnsaved,
+  hideAuthor = false,
+}: Omit<ProductCardProps, "layout">) {
+  const brand = brands?.find((item) => item.id === product.merchantId);
 
   return (
     <article className="flex w-full flex-col">
@@ -69,72 +130,89 @@ export function ProductCard({
           <FollowButton merchantId={product.merchantId} />
         </header>
       )}
-
-      <Link
-        href={{ pathname: "/p/[id]", params: { id: product.id } }}
-        className="flex w-full flex-col"
-      >
-        <div className="relative aspect-square w-full overflow-hidden bg-stone-grey">
-          {cover ? (
-            // Plain <img> to the merchant CDN — Next's optimizer 400s on
-            // arbitrary Shopify/Woo hosts (`/_next/image?url=...`).
-            <img
-              src={cover}
-              alt={product.title}
-              fetchPriority={priority ? "high" : undefined}
-              decoding="async"
-              referrerPolicy="no-referrer"
-              className="h-full w-full object-contain"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-nike-grey">
-              <PlaceholderIcon />
-            </div>
-          )}
-          <div className="absolute start-2 top-2 flex flex-col gap-1">
-            {product.availability === "out_of_stock" && (
-              <Badge tone="muted">{t("outOfStock")}</Badge>
-            )}
-            {product.stale && <Badge tone="alert">{t("stale")}</Badge>}
+      <div className="relative">
+        <Link
+          href={{ pathname: "/p/[id]", params: { id: product.id } }}
+          className="flex w-full flex-col"
+        >
+          <Cover product={product} priority={priority} />
+          <div className="mt-2 flex flex-col gap-0.5">
+            <h3 className="line-clamp-2 text-base font-normal text-ink-black">
+              {product.title}
+            </h3>
+            <Price product={product} />
           </div>
+        </Link>
+        <div className="absolute end-2 top-2 z-10">
+          <SaveButton
+            productId={product.id}
+            initialSaved={initialSaved}
+            onSavedChange={(id, saved) => {
+              if (!saved) onUnsaved?.(id);
+            }}
+          />
         </div>
-
-        <div className="mt-2 flex flex-col gap-0.5">
-          <h3 className="line-clamp-2 text-base font-normal text-ink-black">
-            {product.title}
-          </h3>
-          <div className="flex items-baseline gap-2">
-            <span className="text-base font-normal text-ink-black">
-              {formatPrice(product.currentPrice, product.currency, locale)}
-            </span>
-            {discount.show && product.previousPrice !== null && (
-              <>
-                <span className="text-sm text-nike-grey line-through">
-                  {formatPrice(product.previousPrice, product.currency, locale)}
-                </span>
-                <span className="text-xs font-medium text-alert-red">
-                  -{discount.percent}%
-                </span>
-              </>
-            )}
-          </div>
-        </div>
-      </Link>
-      <div className="mt-2 flex items-center gap-2">
-        <ViewAtBrand
-          productId={product.id}
-          redirectUrl={product.redirectUrl}
-          brandName={brandName}
-        />
-        <SaveButton
-          productId={product.id}
-          initialSaved={initialSaved}
-          onSavedChange={(id, saved) => {
-            if (!saved) onUnsaved?.(id);
-          }}
-        />
       </div>
     </article>
+  );
+}
+
+function Cover({
+  product,
+  priority,
+}: {
+  product: PublicProduct;
+  priority?: boolean;
+}) {
+  const t = useTranslations("Product");
+  const cover = coverSrc(product.imageUrls);
+  return (
+    <div className="relative aspect-square w-full overflow-hidden bg-stone-grey">
+      {cover ? (
+        // Plain <img> to the merchant CDN — Next's optimizer 400s on
+        // arbitrary Shopify/Woo hosts (`/_next/image?url=...`).
+        <img
+          src={cover}
+          alt={product.title}
+          fetchPriority={priority ? "high" : undefined}
+          decoding="async"
+          referrerPolicy="no-referrer"
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center text-nike-grey">
+          <PlaceholderIcon />
+        </div>
+      )}
+      <div className="absolute start-2 top-2 flex flex-col gap-1">
+        {product.availability === "out_of_stock" && (
+          <Badge tone="muted">{t("outOfStock")}</Badge>
+        )}
+        {product.stale && <Badge tone="alert">{t("stale")}</Badge>}
+      </div>
+    </div>
+  );
+}
+
+function Price({ product }: { product: PublicProduct }) {
+  const locale = useLocale();
+  const discount = priceDiscount(product.currentPrice, product.previousPrice);
+  return (
+    <div className="flex items-baseline gap-2">
+      <span className="text-sm text-ink-black md:text-base">
+        {formatPrice(product.currentPrice, product.currency, locale)}
+      </span>
+      {discount.show && product.previousPrice !== null && (
+        <>
+          <span className="text-xs text-nike-grey line-through md:text-sm">
+            {formatPrice(product.previousPrice, product.currency, locale)}
+          </span>
+          <span className="text-xs font-medium text-alert-red">
+            -{discount.percent}%
+          </span>
+        </>
+      )}
+    </div>
   );
 }
 
@@ -146,9 +224,7 @@ function Badge({
   children: React.ReactNode;
 }) {
   const cls =
-    tone === "alert"
-      ? "bg-alert-red text-white"
-      : "bg-ink-black text-white";
+    tone === "alert" ? "bg-alert-red text-white" : "bg-ink-black text-white";
   return (
     <span
       className={`px-1.5 py-0.5 text-2xs font-medium uppercase tracking-wide ${cls}`}

@@ -95,7 +95,7 @@ export function FollowingFeed({
     };
   }, []);
 
-  if (state.status === "loading") return <ProductGridSkeleton />;
+  if (state.status === "loading") return <ProductGridSkeleton layout="feed" />;
   if (state.status === "anon") {
     return (
       <EmptyState
@@ -140,6 +140,7 @@ export function FollowingFeed({
           <EmptyState title={emptyTitle} hint={emptyHint} />
         ) : (
           <DiscoveryFeed
+            layout="feed"
             initial={state.products}
             brands={state.brands}
             source={{

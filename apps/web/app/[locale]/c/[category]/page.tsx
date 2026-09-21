@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { getProducts, getBrands, getCategories } from "@/lib/api/client";
+import { getProducts, getBrands, getCategories, getFacets } from "@/lib/api/client";
 import { ProductListing } from "@/components/product-listing";
 import { FacetNav } from "@/components/facet-nav";
 import { ErrorState } from "@/components/state-views";
@@ -47,12 +47,18 @@ export default async function CategoryPage({
     size: str(sp.size),
   };
 
-  const [brands, categories] = await Promise.allSettled([
+  const [brands, categories, facets] = await Promise.allSettled([
     getBrands(categoryValue),
     getCategories(),
+    getFacets({
+      category: categoryValue,
+      brand: current.brand || undefined,
+    }),
   ]);
   const brandList = brands.status === "fulfilled" ? brands.value : [];
   const categoryList = categories.status === "fulfilled" ? categories.value : [];
+  const facetList =
+    facets.status === "fulfilled" ? facets.value : { colors: [], sizes: [] };
 
   const listingQuery = {
     category: categoryValue,
@@ -95,6 +101,8 @@ export default async function CategoryPage({
           title={categoryName(categoryValue, tCat)}
           emptyTitle={t("Search.noResults")}
           emptyHint={t("Search.noResultsHint")}
+          categoryNav="path"
+          facets={facetList}
           feed={{
             kind: "products",
             query: listingQuery,

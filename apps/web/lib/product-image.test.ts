@@ -45,13 +45,19 @@ describe("gallerySrcs", () => {
 });
 
 describe("card imagery", () => {
-  it("fits the cover with object-contain and still skips size charts via coverSrc", () => {
+  it("crops listing covers and keeps the full photo on the product page", () => {
     const card = readFileSync(
       new URL("../components/product-card.tsx", import.meta.url),
       "utf8",
     );
+    const gallery = readFileSync(
+      new URL("../components/product-gallery.tsx", import.meta.url),
+      "utf8",
+    );
     expect(card).toMatch(/coverSrc\(product\.imageUrls\)/);
-    expect(card).toMatch(/object-contain/);
-    expect(card).not.toMatch(/object-cover/);
+    expect(card).toMatch(/object-cover/);
+    expect(card).not.toMatch(/object-contain/);
+    expect(gallery).toMatch(/object-contain/);
+    expect(gallery).not.toMatch(/object-cover/);
   });
 });

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { getProducts, getBrands, getCategories } from "@/lib/api/client";
+import { getProducts, getBrands, getCategories, getFacets } from "@/lib/api/client";
 import { ProductListing } from "@/components/product-listing";
 import { ErrorState } from "@/components/state-views";
 import { invalidPriceRange, toNumber, toSort } from "@/lib/query";
@@ -41,12 +41,18 @@ export default async function ExplorePage({
     size: str(sp.size),
   };
 
-  const [brands, categories] = await Promise.allSettled([
+  const [brands, categories, facets] = await Promise.allSettled([
     getBrands(),
     getCategories(),
+    getFacets({
+      brand: current.brand || undefined,
+      category: current.category || undefined,
+    }),
   ]);
   const brandList = brands.status === "fulfilled" ? brands.value : [];
   const categoryList = categories.status === "fulfilled" ? categories.value : [];
+  const facetList =
+    facets.status === "fulfilled" ? facets.value : { colors: [], sizes: [] };
 
   const query = {
     brand: current.brand || undefined,
@@ -76,6 +82,7 @@ export default async function ExplorePage({
         title={tNav("explore")}
         emptyTitle={tFilters("noMatches")}
         emptyHint={tFilters("adjust")}
+        facets={facetList}
         feed={{ kind: "products", query }}
       />
     );

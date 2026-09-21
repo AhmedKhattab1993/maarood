@@ -9,12 +9,10 @@ export function ViewAtBrand({
   productId,
   redirectUrl,
   brandName,
-  variant = "card",
 }: {
   productId: string;
   redirectUrl: string | null;
   brandName: string;
-  variant?: "card" | "detail";
 }) {
   const t = useTranslations("Product");
   const [unavailable, setUnavailable] = useState(false);
@@ -24,9 +22,7 @@ export function ViewAtBrand({
     : t("buyFromBrand");
   const ariaLabel = `${label}. ${t("leavesMaaroud")}`;
   const cls =
-    variant === "detail"
-      ? "inline-flex items-center justify-center gap-1 rounded-default bg-ink-black px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-      : "inline-flex flex-1 items-center justify-center gap-1 rounded-default bg-ink-black px-3 py-2 text-sm font-semibold text-white hover:opacity-90";
+    "inline-flex w-full items-center justify-center gap-1 rounded-default bg-maaroud-blue px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-maaroud-blue-dark";
 
   function onUnavailable(e: React.MouseEvent) {
     e.preventDefault();
