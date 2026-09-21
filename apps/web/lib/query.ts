@@ -29,3 +29,23 @@ export function invalidPriceRange(
 ): boolean {
   return min !== undefined && max !== undefined && min > max;
 }
+
+/**
+ * Write both budget bounds onto one set of params for a single commit, so
+ * committing one field never discards the value typed into the other.
+ * Empty (or blank) values remove their bound.
+ */
+export function mergePriceParams(
+  params: URLSearchParams,
+  min: string,
+  max: string,
+): URLSearchParams {
+  const next = new URLSearchParams(params);
+  const minTrimmed = min.trim();
+  const maxTrimmed = max.trim();
+  if (minTrimmed) next.set("minPrice", minTrimmed);
+  else next.delete("minPrice");
+  if (maxTrimmed) next.set("maxPrice", maxTrimmed);
+  else next.delete("maxPrice");
+  return next;
+}

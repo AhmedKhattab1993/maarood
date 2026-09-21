@@ -1,10 +1,10 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import type { CategorySummary } from "@/lib/api/types";
 import { categoryName } from "@/lib/categories";
-import { invalidPriceRange, toNumber } from "@/lib/query";
+import { invalidPriceRange, mergePriceParams, toNumber } from "@/lib/query";
 import { useQueryParams } from "@/lib/use-query-params";
 import { FilterChips } from "./filter-chips";
 
@@ -34,10 +34,13 @@ function ExploreControlsInner({
   const { searchParams, pushParams } = useQueryParams();
   const [min, setMin] = useState(current.minPrice ?? "");
   const [max, setMax] = useState(current.maxPrice ?? "");
+  // While a bound is focused it belongs to the typist — don't let URL
+  // round-trips (chip removal, sibling commit) overwrite in-progress input.
+  const editingRef = useRef<"min" | "max" | null>(null);
 
   useEffect(() => {
-    setMin(current.minPrice ?? "");
-    setMax(current.maxPrice ?? "");
+    if (editingRef.current !== "min") setMin(current.minPrice ?? "");
+    if (editingRef.current !== "max") setMax(current.maxPrice ?? "");
   }, [current.minPrice, current.maxPrice]);
 
   const update = useCallback(
@@ -50,8 +53,10 @@ function ExploreControlsInner({
     [pushParams, searchParams],
   );
 
-  const commitMin = () => update("minPrice", min.trim());
-  const commitMax = () => update("maxPrice", max.trim());
+  // One commit pushes both bounds so the sibling's value is never lost.
+  const commitPrices = useCallback(() => {
+    pushParams(mergePriceParams(new URLSearchParams(searchParams.toString()), min, max), true);
+  }, [pushParams, searchParams, min, max]);
 
   const clearAll = () => {
     const params = new URLSearchParams(searchParams.toString());
@@ -107,9 +112,13 @@ function ExploreControlsInner({
               min="0"
               value={min}
               onChange={(e) => setMin(e.target.value)}
-              onBlur={commitMin}
+              onFocus={() => (editingRef.current = "min")}
+              onBlur={() => {
+                editingRef.current = null;
+                commitPrices();
+              }}
               onKeyDown={(e) => {
-                if (e.key === "Enter") commitMin();
+                if (e.key === "Enter") commitPrices();
               }}
               placeholder={t("minPrice")}
               aria-label={t("minPrice")}
@@ -122,9 +131,13 @@ function ExploreControlsInner({
               min="0"
               value={max}
               onChange={(e) => setMax(e.target.value)}
-              onBlur={commitMax}
+              onFocus={() => (editingRef.current = "max")}
+              onBlur={() => {
+                editingRef.current = null;
+                commitPrices();
+              }}
               onKeyDown={(e) => {
-                if (e.key === "Enter") commitMax();
+                if (e.key === "Enter") commitPrices();
               }}
               placeholder={t("maxPrice")}
               aria-label={t("maxPrice")}
