@@ -157,7 +157,6 @@
     "retryLoad": "Could not load more. Try again"
   },
   "Footer": {
-    "about": "Maaroud is a product discovery platform. Checkout always happens directly with the brand.",
     "rights": "© {year} Maaroud",
     "redirectNote": "Checkout always happens directly with the brand.",
     "discover": "Discover",
@@ -169,9 +168,7 @@
     "contactMaaroud": "Contact Maaroud",
     "shipping": "Shipping",
     "returns": "Returns",
-    "contact": "Contact",
-    "privacy": "Privacy",
-    "terms": "Terms"
+    "contact": "Contact"
   },
   "Meta": {
     "homeTitle": "Maaroud — Discover Egyptian brands",

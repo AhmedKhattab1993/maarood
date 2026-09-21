@@ -16,4 +16,8 @@ describe("footer help", () => {
     expect(help).toMatch(/Help/);
     expect(help).toMatch(/brandOrders/);
   });
+
+  it("has no dead '#' placeholder links", () => {
+    expect(footer).not.toMatch(/href="#"/);
+  });
 });

@@ -79,15 +79,15 @@ export async function SiteFooter() {
           </ul>
         </div>
 
-        {/* Maaroud */}
+        {/* Maaroud — company pages (about/privacy/terms) don't exist yet. */}
         <div className="flex flex-col gap-3">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-black">
             {t("company")}
           </h2>
           <ul className="flex flex-col gap-2 text-sm text-cool-grey">
-            <li><a href="#" className="transition-colors hover:text-ink-black">{t("about")}</a></li>
-            <li><a href="#" className="transition-colors hover:text-ink-black">{t("privacy")}</a></li>
-            <li><a href="#" className="transition-colors hover:text-ink-black">{t("terms")}</a></li>
+            <li>
+              <p>{t("redirectNote")}</p>
+            </li>
           </ul>
         </div>
       </div>

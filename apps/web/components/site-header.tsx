@@ -11,8 +11,8 @@ export async function SiteHeader() {
       <div className="mx-auto flex h-16 max-w-[var(--container-max)] items-center gap-4 px-4 md:gap-8">
         <Logo />
         <MainTabBar variant="header" />
-        <div className="flex flex-1 justify-end gap-4 md:flex-none">
-          <div className="w-full max-w-xs">
+        <div className="flex flex-1 items-center justify-end gap-4 md:flex-none">
+          <div className="w-full max-w-[10rem] sm:max-w-xs">
             <SearchBar />
           </div>
           <AuthLink />
