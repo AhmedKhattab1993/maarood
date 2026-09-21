@@ -17,12 +17,18 @@ export function ProductGrid({
   brands,
   allSaved = false,
   savedIds,
+  onUnsaved,
+  hideAuthor = false,
 }: {
   products: PublicProduct[];
   brands?: BrandSummary[];
   /** Favourites: every row is already saved. */
   allSaved?: boolean;
   savedIds?: ReadonlySet<string>;
+  /** Called when a row is unsaved (Favourites removes it from the list). */
+  onUnsaved?: (productId: string) => void;
+  /** Hide the author row (brand page already owns the brand identity). */
+  hideAuthor?: boolean;
 }) {
   return (
     <ul className={productFeedListClass()}>
@@ -33,6 +39,8 @@ export function ProductGrid({
             brands={brands}
             priority={i < 4}
             initialSaved={allSaved || savedIds?.has(product.id) === true}
+            onUnsaved={onUnsaved}
+            hideAuthor={hideAuthor}
           />
         </li>
       ))}

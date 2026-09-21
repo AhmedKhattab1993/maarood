@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { formatPrice } from "@/lib/format";
@@ -10,6 +9,7 @@ import type { BrandSummary, PublicProduct } from "@/lib/api/types";
 import { SaveButton } from "./save-button";
 import { FollowButton } from "./follow-button";
 import { ViewAtBrand } from "./view-at-brand";
+import { BrandAvatar } from "./brand-avatar";
 
 interface ProductCardProps {
   product: PublicProduct;
@@ -19,6 +19,10 @@ interface ProductCardProps {
   priority?: boolean;
   /** Favourites already know this row is saved; skip a flash of the inactive state. */
   initialSaved?: boolean;
+  /** Called after the save state changes (unsave removes the row on /favourites). */
+  onUnsaved?: (productId: string) => void;
+  /** Hide the author row (brand page already owns the brand identity). */
+  hideAuthor?: boolean;
 }
 
 /**
@@ -30,58 +34,41 @@ export function ProductCard({
   brands,
   priority,
   initialSaved = false,
+  onUnsaved,
+  hideAuthor = false,
 }: ProductCardProps) {
   const t = useTranslations("Product");
   const locale = useLocale();
   const brand = brands?.find((b) => b.id === product.merchantId);
-  const [logoFailed, setLogoFailed] = useState(false);
   const cover = coverSrc(product.imageUrls);
   const discount = priceDiscount(product.currentPrice, product.previousPrice);
   const brandName = brand?.name || product.vendor || "";
 
   return (
     <article className="flex w-full flex-col">
-      <header className="mb-3 flex items-center justify-between gap-3">
-        {brand ? (
-          <Link
-            href={{ pathname: "/brands/[slug]", params: { slug: brand.slug } }}
-            className="flex min-w-0 items-center gap-3"
-          >
-            {brand.logoUrl && !logoFailed ? (
-              // Plain <img> to the merchant CDN — Next's optimizer 400s on
-              // arbitrary Shopify/Woo/Magento hosts (`/_next/image?url=...`).
-              <img
-                src={brand.logoUrl}
-                alt=""
-                width={40}
-                height={40}
-                decoding="async"
-                referrerPolicy="no-referrer"
-                onError={() => setLogoFailed(true)}
-                className="h-10 w-10 shrink-0 bg-white object-contain"
-              />
-            ) : (
-              <span
-                aria-hidden
-                className="flex h-10 w-10 shrink-0 items-center justify-center bg-stone-grey text-sm font-semibold text-ink-black"
-              >
-                {brand.name.trim().charAt(0)}
+      {!hideAuthor && (
+        <header className="mb-3 flex items-center justify-between gap-3">
+          {brand ? (
+            <Link
+              href={{ pathname: "/brands/[slug]", params: { slug: brand.slug } }}
+              className="flex min-w-0 items-center gap-3"
+            >
+              <BrandAvatar name={brand.name} logoUrl={brand.logoUrl} size={40} />
+              <span className="flex min-w-0 flex-col">
+                <span className="truncate text-sm font-semibold text-ink-black">
+                  {brand.name}
+                </span>
+                <span className="truncate text-xs text-cool-grey" dir="ltr">
+                  {`@${brand.slug}`}
+                </span>
               </span>
-            )}
-            <span className="flex min-w-0 flex-col">
-              <span className="truncate text-sm font-semibold text-ink-black">
-                {brand.name}
-              </span>
-              <span className="truncate text-xs text-cool-grey" dir="ltr">
-                {`@${brand.slug}`}
-              </span>
-            </span>
-          </Link>
-        ) : (
-          <span />
-        )}
-        <FollowButton merchantId={product.merchantId} />
-      </header>
+            </Link>
+          ) : (
+            <span />
+          )}
+          <FollowButton merchantId={product.merchantId} />
+        </header>
+      )}
 
       <Link
         href={{ pathname: "/p/[id]", params: { id: product.id } }}
@@ -142,7 +129,13 @@ export function ProductCard({
           redirectUrl={product.redirectUrl}
           brandName={brandName}
         />
-        <SaveButton productId={product.id} initialSaved={initialSaved} />
+        <SaveButton
+          productId={product.id}
+          initialSaved={initialSaved}
+          onSavedChange={(id, saved) => {
+            if (!saved) onUnsaved?.(id);
+          }}
+        />
       </div>
     </article>
   );

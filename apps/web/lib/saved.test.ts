@@ -73,4 +73,14 @@ describe("Favourites and cards pass saved through", () => {
     expect(card).toMatch(/initialSaved/);
     expect(card).toMatch(/<SaveButton[\s\S]*initialSaved=\{initialSaved\}/);
   });
+
+  it("unsaving on Favourites removes the row from the list without a reload", () => {
+    expect(card.replace(/\n/g, " ")).toMatch(
+      /onSavedChange=\{\(id, saved\) => \{[\s\S]*?if \(!saved\) onUnsaved\?\.\(id\);/,
+    );
+    expect(grid).toMatch(/onUnsaved\?/);
+    expect(grid).toMatch(/onUnsaved=\{onUnsaved\}/);
+    expect(list).toMatch(/onUnsaved=\{\(productId\) =>/);
+    expect(list).toMatch(/items: s\.items\.filter\(\(item\) => item\.product\.id !== productId\)/);
+  });
 });

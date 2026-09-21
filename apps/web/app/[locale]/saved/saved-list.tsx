@@ -10,8 +10,8 @@ import { EmptyState } from "@/components/state-views";
 import { Link } from "@/i18n/navigation";
 
 /**
- * Client-side saved list. Saved products are keyed to an anonymous device id
- * (localStorage), so this page must render on the client after the id is read.
+ * Client-side saved list. Saved products are keyed to the signed-in user's
+ * bearer token, so this page renders on the client after the token is read.
  */
 export function SavedList({
   emptyTitle,
@@ -106,6 +106,16 @@ export function SavedList({
       products={state.items.map((s) => s.product)}
       brands={state.brands}
       allSaved
+      onUnsaved={(productId) =>
+        setState((s) =>
+          s.status === "ready"
+            ? {
+                ...s,
+                items: s.items.filter((item) => item.product.id !== productId),
+              }
+            : s,
+        )
+      }
     />
   );
 }

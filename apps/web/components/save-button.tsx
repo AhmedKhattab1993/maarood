@@ -20,15 +20,18 @@ export function SaveButton({
   productId,
   initialSaved = false,
   variant = "icon",
+  onSavedChange,
 }: {
   productId: string;
   initialSaved?: boolean;
   variant?: "icon" | "label";
+  onSavedChange?: (productId: string, saved: boolean) => void;
 }) {
   const t = useTranslations("Product");
   const router = useRouter();
   const [saved, setSaved] = useState(initialSaved);
-  const [ready, setReady] = useState(initialSaved);
+  // Enabled until we know a signed-in sync is needed — guests never wait.
+  const [ready, setReady] = useState(true);
   const [failed, setFailed] = useState(false);
   const [pending, startTransition] = useTransition();
   const visual = toggleVisual(saved, pending, failed);
@@ -41,9 +44,9 @@ export function SaveButton({
     }
     if (!getAuthToken()) {
       setSaved(false);
-      setReady(true);
       return;
     }
+    setReady(false);
     void listSaved()
       .then((items) => {
         setSaved(
@@ -68,9 +71,11 @@ export function SaveButton({
         if (intent === "unsave") {
           await unsaveProduct(productId);
           setSaved(false);
+          onSavedChange?.(productId, false);
         } else {
           await saveProduct(productId);
           setSaved(true);
+          onSavedChange?.(productId, true);
         }
       } catch (err) {
         setFailed(true);

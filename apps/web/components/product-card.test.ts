@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const card = readFileSync(new URL("./product-card.tsx", import.meta.url), "utf8");
+const avatar = readFileSync(new URL("./brand-avatar.tsx", import.meta.url), "utf8");
 const viewAt = readFileSync(new URL("./view-at-brand.tsx", import.meta.url), "utf8");
 const explore = readFileSync(
   new URL("../app/[locale]/page.tsx", import.meta.url),
@@ -32,16 +33,16 @@ describe("product post author row", () => {
 
   it("renders the brand logo <img> in the author row when a URL is present", () => {
     const header = card.slice(card.indexOf("<header"), card.indexOf("</header>"));
-    expect(header).toMatch(/brand\.logoUrl/);
-    expect(header).toMatch(/src=\{brand\.logoUrl\}/);
-    expect(header).toMatch(/<img/);
-    expect(card).not.toMatch(/from ["']next\/image["']/);
+    expect(header).toMatch(/<BrandAvatar/);
+    expect(header).toMatch(/logoUrl=\{brand\.logoUrl\}/);
+    expect(avatar).toMatch(/src=\{logoUrl\}/);
+    expect(avatar).toMatch(/<img/);
+    expect(card + avatar).not.toMatch(/from ["']next\/image["']/);
   });
 
   it("keeps the initial-letter avatar when the logo is absent", () => {
-    const header = card.slice(card.indexOf("<header"), card.indexOf("</header>"));
-    expect(header).toMatch(/charAt\(0\)/);
-    expect(header).toMatch(/logoFailed/);
+    expect(avatar).toMatch(/charAt\(0\)/);
+    expect(avatar).toMatch(/logoFailed/);
   });
 
   it("does not use a Nike-style brand subtitle under the image", () => {

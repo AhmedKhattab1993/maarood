@@ -70,7 +70,8 @@ export function isProductSaved(
   const ids = options.savedIds;
   if (!ids) return false;
   if (ids instanceof Set) return ids.has(productId);
-  return ids.includes(productId);
+  if (Array.isArray(ids)) return ids.includes(productId);
+  return false;
 }
 
 /** Save a product. Idempotent — returns true on 201. */
