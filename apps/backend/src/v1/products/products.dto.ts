@@ -30,3 +30,6 @@ export const productQuery = z.object({
 });
 
 export type ProductQuery = z.infer<typeof productQuery>;
+
+/** Route param for /v1/products/:id — malformed ids are a 400, not a DB error. */
+export const productIdParam = z.string().trim().uuid();

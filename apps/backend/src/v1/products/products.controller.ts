@@ -20,7 +20,7 @@ import { count, eq } from 'drizzle-orm';
 import { outboundClicks, products } from '@maarood/schema';
 import type { Response } from 'express';
 import { DRIZZLE, type DrizzleDB } from '../../db/db.module';
-import { productQuery } from './products.dto';
+import { productQuery, productIdParam } from './products.dto';
 import { buildFilters, resolveBrandFilter, shouldExcludeConfirmedOutOfStock, sortSql } from './product-filter';
 import { mapProduct, type PaginatedResult, type PublicProduct } from './product-mapper';
 import { shoppingDestination } from './shopping-destination';
@@ -60,7 +60,9 @@ export class ProductsController {
 
   @Get(':id')
   async detail(@Param('id') id: string): Promise<PublicProduct> {
-    const rows = await this.db.select().from(products).where(eq(products.id, id)).limit(1);
+    const parsed = productIdParam.safeParse(id);
+    if (!parsed.success) throw new BadRequestException('Product id must be a UUID');
+    const rows = await this.db.select().from(products).where(eq(products.id, parsed.data)).limit(1);
     if (rows.length === 0) throw new NotFoundException('Product not found');
     return mapProduct(rows[0] as unknown as Record<string, unknown>);
   }
@@ -72,6 +74,8 @@ export class ProductsController {
     @Headers('referer') referer: string | undefined,
     @Res({ passthrough: false }) res: Response,
   ): Promise<void> {
+    const parsed = productIdParam.safeParse(id);
+    if (!parsed.success) throw new BadRequestException('Product id must be a UUID');
     const rows = await this.db
       .select({
         id: products.id,
@@ -79,7 +83,7 @@ export class ProductsController {
         redirectUrl: products.redirectUrl,
       })
       .from(products)
-      .where(eq(products.id, id))
+      .where(eq(products.id, parsed.data))
       .limit(1);
     if (rows.length === 0) throw new NotFoundException('Product not found');
     const p = rows[0]!;
