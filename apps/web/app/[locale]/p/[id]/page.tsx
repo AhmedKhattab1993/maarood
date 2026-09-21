@@ -12,6 +12,7 @@ import { ProductJsonLd } from "./product-jsonld";
 import { formatPrice } from "@/lib/format";
 import { gallerySrcs } from "@/lib/product-image";
 import { priceDiscount } from "@/lib/price-display";
+import { displayAvailability } from "@/lib/availability";
 import type { Variant } from "@/lib/api/types";
 import { notFound } from "next/navigation";
 
@@ -64,6 +65,8 @@ export default async function ProductPage({
   // store). Prefer it for SEO structured-data brand when present.
   const vendorName = product.vendor || brandName;
   const discount = priceDiscount(product.currentPrice, product.previousPrice);
+  // Product-level "unknown" often has a real signal in variant stock data.
+  const availability = displayAvailability(product);
 
   let alternatives: PublicProduct[] = [];
   if (product.availability === "out_of_stock") {
@@ -130,15 +133,15 @@ export default async function ProductPage({
             )}
           </div>
 
-          {product.availability === "in_stock" && (
+          {availability === "in_stock" && (
             <p className="text-sm text-success-green">{t("Product.inStock")}</p>
           )}
-          {product.availability === "out_of_stock" && (
+          {availability === "out_of_stock" && (
             <p className="text-sm font-medium text-alert-red">
               {t("Product.outOfStock")}
             </p>
           )}
-          {product.availability === "unknown" && (
+          {availability === "unknown" && (
             <p className="text-sm font-medium text-cool-grey">
               {t("Product.availabilityUnconfirmed")}
             </p>

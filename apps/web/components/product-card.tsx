@@ -95,9 +95,6 @@ export function ProductCard({
             {product.availability === "out_of_stock" && (
               <Badge tone="muted">{t("outOfStock")}</Badge>
             )}
-            {product.availability === "unknown" && (
-              <Badge tone="muted">{t("availabilityUnconfirmed")}</Badge>
-            )}
             {product.stale && <Badge tone="alert">{t("stale")}</Badge>}
           </div>
         </div>
