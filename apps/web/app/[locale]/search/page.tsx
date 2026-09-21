@@ -95,7 +95,7 @@ export default async function SearchPage({
       body = (
         <div className="flex flex-col gap-8">
           <div className="flex flex-wrap items-baseline justify-between gap-3">
-            <p className="text-sm text-cool-grey">{t("resultsFor", { query: q })}</p>
+            <p className="text-sm text-nike-grey">{t("resultsFor", { query: q })}</p>
             <Link
               href={{ pathname: "/" }}
               className="text-sm text-maaroud-blue hover:underline"

@@ -20,7 +20,7 @@ export function AuthLink() {
     return (
       <Link
         href={{ pathname: "/login" }}
-        className="text-sm font-medium text-ink-black hover:text-cool-grey"
+        className="text-sm font-medium text-ink-black hover:text-nike-grey"
       >
         {t("login")}
       </Link>
@@ -34,7 +34,7 @@ export function AuthLink() {
         setUser(null);
         window.location.href = "/";
       }}
-      className="text-sm font-medium text-cool-grey hover:text-ink-black"
+      className="text-sm font-medium text-nike-grey hover:text-ink-black"
     >
       {t("logout")}
     </button>

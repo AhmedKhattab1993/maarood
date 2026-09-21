@@ -75,7 +75,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 w-full border border-stone-grey px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-default border border-cool-grey px-3 py-2 text-sm"
             autoComplete="email"
           />
         </label>
@@ -87,7 +87,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
             minLength={8}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="mt-1 w-full border border-stone-grey px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-default border border-cool-grey px-3 py-2 text-sm"
             autoComplete={mode === "signup" ? "new-password" : "current-password"}
           />
         </label>
@@ -95,7 +95,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
         <button
           type="submit"
           disabled={pending}
-          className="mt-2 bg-ink-black px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+          className="mt-2 rounded-default bg-ink-black px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
         >
           {mode === "signup" ? t("signup") : t("login")}
         </button>
@@ -104,13 +104,13 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
             type="button"
             onClick={onCancel}
             disabled={pending}
-            className="border border-stone-grey bg-white px-4 py-2 text-sm text-ink-black hover:bg-stone-grey disabled:opacity-50"
+            className="rounded-default border border-cool-grey bg-white px-4 py-2 text-sm text-ink-black hover:bg-stone-grey disabled:opacity-50"
           >
             {t("cancel")}
           </button>
         )}
       </form>
-      <p className="mt-4 text-sm text-cool-grey">
+      <p className="mt-4 text-sm text-nike-grey">
         {mode === "signup" ? (
           <Link href={{ pathname: "/login" }} className="text-maaroud-blue hover:underline">
             {t("haveAccount")}

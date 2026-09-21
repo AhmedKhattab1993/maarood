@@ -16,7 +16,7 @@ export function EmptyState({
   return (
     <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-stone-grey px-6 py-16 text-center">
       <p className="text-base font-medium text-ink-black">{title}</p>
-      {hint && <p className="max-w-sm text-sm text-cool-grey">{hint}</p>}
+      {hint && <p className="max-w-sm text-sm text-nike-grey">{hint}</p>}
       {action}
     </div>
   );
@@ -34,7 +34,7 @@ export function ErrorState({ error }: { error: unknown }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-stone-grey bg-white px-6 py-16 text-center">
       <p className="text-base font-medium text-alert-red">{t("error")}</p>
-      <p className="max-w-sm text-sm text-cool-grey">{message}</p>
+      <p className="max-w-sm text-sm text-nike-grey">{message}</p>
       <button
         type="button"
         onClick={() => router.refresh()}

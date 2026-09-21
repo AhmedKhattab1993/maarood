@@ -27,7 +27,7 @@ export function MainTabBar({ variant }: { variant: "header" | "mobile" }) {
             className={
               active === tab.id
                 ? "font-semibold text-ink-black underline decoration-2 underline-offset-8"
-                : "text-cool-grey transition-colors hover:text-ink-black"
+                : "text-nike-grey transition-colors hover:text-ink-black"
             }
           >
             {labels[tab.id]}
@@ -49,10 +49,10 @@ export function MainTabBar({ variant }: { variant: "header" | "mobile" }) {
             <Link
               href={{ pathname: tab.pathname }}
               aria-current={active === tab.id ? "page" : undefined}
-              className={`flex flex-col items-center gap-1 py-2.5 text-[0.6875rem] ${
+              className={`flex flex-col items-center gap-1 py-2.5 text-xs ${
                 active === tab.id
                   ? "font-semibold text-ink-black"
-                  : "text-cool-grey"
+                  : "text-nike-grey"
               }`}
             >
               {labels[tab.id]}

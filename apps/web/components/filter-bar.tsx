@@ -123,7 +123,7 @@ function FilterBarInner({
                 type="button"
                 aria-label={t("hideFilters")}
                 onClick={onToggle}
-                className="text-cool-grey hover:text-ink-black"
+                className="text-nike-grey hover:text-ink-black"
               >
                 ✕
               </button>
@@ -225,7 +225,7 @@ function FacetList({
             onChange={(e) => update("minPrice", e.target.value)}
             placeholder="0"
           />
-          <span className="text-cool-grey">–</span>
+          <span className="text-nike-grey">–</span>
           <NumberField
             value={current.maxPrice ?? ""}
             onChange={(e) => update("maxPrice", e.target.value)}
@@ -267,7 +267,7 @@ function Facet({ label, children }: { label: string; children: ReactNode }) {
     <details open className="group border-b border-stone-grey py-3">
       <summary className="flex cursor-pointer list-none items-center justify-between py-1 text-sm font-medium text-ink-black">
         {label}
-        <span className="text-cool-grey transition-transform group-open:rotate-180">
+        <span className="text-nike-grey transition-transform group-open:rotate-180">
           ▾
         </span>
       </summary>
@@ -289,7 +289,7 @@ function Select({
     <select
       value={value}
       onChange={onChange}
-      className="w-full border border-stone-grey bg-white px-2 py-1.5 text-sm text-ink-black outline-none focus:border-ink-black"
+      className="w-full rounded-default border border-cool-grey bg-white px-3 py-2 text-sm text-ink-black outline-none focus:border-ink-black"
     >
       {options.map((o) => (
         <option key={o.value} value={o.value}>
@@ -315,7 +315,7 @@ function TextField({
       value={value}
       onChange={onChange}
       placeholder={placeholder}
-      className="w-full border border-stone-grey bg-white px-2 py-1.5 text-sm text-ink-black outline-none focus:border-ink-black"
+      className="w-full rounded-default border border-cool-grey bg-white px-3 py-2 text-sm text-ink-black outline-none focus:border-ink-black"
     />
   );
 }
@@ -337,7 +337,7 @@ function NumberField({
       value={value}
       onChange={onChange}
       placeholder={placeholder}
-      className="w-full border border-stone-grey bg-white px-2 py-1.5 text-sm text-ink-black outline-none focus:border-ink-black"
+      className="w-full rounded-default border border-cool-grey bg-white px-3 py-2 text-sm text-ink-black outline-none focus:border-ink-black"
     />
   );
 }

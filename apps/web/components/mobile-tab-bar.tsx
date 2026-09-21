@@ -57,8 +57,8 @@ function Tab({
       <Link
         href={href}
         aria-current={active ? "page" : undefined}
-        className={`flex flex-col items-center gap-1 py-2.5 text-[0.6875rem] transition-colors ${
-          active ? "text-maaroud-blue" : "text-cool-grey"
+        className={`flex flex-col items-center gap-1 py-2.5 text-xs transition-colors ${
+          active ? "text-maaroud-blue" : "text-nike-grey"
         }`}
       >
         {icon}

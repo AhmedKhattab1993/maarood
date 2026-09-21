@@ -24,7 +24,7 @@ export async function Logo({ compact = false }: { compact?: boolean }) {
       </span>
       {!compact && (
         <span
-          className="text-[0.625rem] uppercase tracking-[0.2em] text-cool-grey"
+          className="text-2xs uppercase tracking-[0.2em] text-nike-grey"
           style={{ fontFamily: "var(--font-latin)" }}
         >
           Maaroud

@@ -36,6 +36,7 @@ export function ProductListing({
   current,
   sort,
   title,
+  heading = "h1",
   hideAuthor = false,
   isLoading = false,
   emptyTitle,
@@ -49,6 +50,8 @@ export function ProductListing({
   sort?: ProductSort;
   /** Wall title, e.g. the category or brand name (count is appended inline). */
   title: string;
+  /** "h2" when another element is already the page's h1 (brand page). */
+  heading?: "h1" | "h2";
   /** Hide the author row on cards (brand page already owns the brand identity). */
   hideAuthor?: boolean;
   isLoading?: boolean;
@@ -65,6 +68,7 @@ export function ProductListing({
         current={current}
         sort={sort}
         title={title}
+        heading={heading}
         isLoading={isLoading}
         emptyTitle={emptyTitle}
         emptyHint={emptyHint}
@@ -82,6 +86,7 @@ function ProductListingInner({
   current,
   sort,
   title,
+  heading = "h1",
   hideAuthor = false,
   isLoading = false,
   emptyTitle,
@@ -94,12 +99,14 @@ function ProductListingInner({
   current: Record<string, string | undefined>;
   sort?: ProductSort;
   title: string;
+  heading?: "h1" | "h2";
   hideAuthor?: boolean;
   isLoading?: boolean;
   emptyTitle: string;
   emptyHint?: string;
   feed: DiscoverySource;
 }) {
+  const Heading = heading;
   const t = useTranslations("Filters");
   const tCat = useTranslations("Category");
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -163,10 +170,10 @@ function ProductListingInner({
   return (
     <div className="flex flex-col">
       <div className="flex items-baseline justify-between gap-4 border-b border-stone-grey pb-4">
-        <h1 className="text-2xl font-medium text-ink-black md:text-3xl">
+        <Heading className="text-2xl font-semibold text-ink-black md:text-3xl">
           {title}{" "}
-          <span className="text-cool-grey">({invalid ? 0 : result.total})</span>
-        </h1>
+          <span className="text-nike-grey">({invalid ? 0 : result.total})</span>
+        </Heading>
         <div className="flex items-center gap-6">
           <button
             type="button"
@@ -175,7 +182,7 @@ function ProductListingInner({
           >
             <span>{filtersOpen ? t("hideFilters") : t("showFilters")}</span>
             {activeCount > 0 && (
-              <span className="text-xs text-cool-grey">{activeCount}</span>
+              <span className="text-xs text-nike-grey">{activeCount}</span>
             )}
           </button>
           <SortSelect current={sort} />

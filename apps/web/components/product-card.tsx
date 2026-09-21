@@ -58,7 +58,7 @@ export function ProductCard({
                 <span className="truncate text-sm font-semibold text-ink-black">
                   {brand.name}
                 </span>
-                <span className="truncate text-xs text-cool-grey" dir="ltr">
+                <span className="truncate text-xs text-nike-grey" dir="ltr">
                   {`@${brand.slug}`}
                 </span>
               </span>
@@ -87,7 +87,7 @@ export function ProductCard({
               className="h-full w-full object-contain"
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center text-cool-grey">
+            <div className="flex h-full w-full items-center justify-center text-nike-grey">
               <PlaceholderIcon />
             </div>
           )}
@@ -109,7 +109,7 @@ export function ProductCard({
             </span>
             {discount.show && product.previousPrice !== null && (
               <>
-                <span className="text-sm text-cool-grey line-through">
+                <span className="text-sm text-nike-grey line-through">
                   {formatPrice(product.previousPrice, product.currency, locale)}
                 </span>
                 <span className="text-xs font-medium text-alert-red">
@@ -151,7 +151,7 @@ function Badge({
       : "bg-ink-black text-white";
   return (
     <span
-      className={`px-1.5 py-0.5 text-[0.625rem] font-medium uppercase tracking-wide ${cls}`}
+      className={`px-1.5 py-0.5 text-2xs font-medium uppercase tracking-wide ${cls}`}
     >
       {children}
     </span>

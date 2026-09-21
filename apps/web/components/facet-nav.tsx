@@ -38,7 +38,7 @@ export function FacetNav({
 
   return (
     <section className="mb-6">
-      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-cool-grey">
+      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-nike-grey">
         {title}
       </h2>
       <ul className="flex flex-wrap gap-2">
@@ -70,7 +70,7 @@ export function FacetNav({
                 <span className="capitalize">{item.label}</span>
                 <span
                   className={`text-xs ${
-                    active ? "text-white/70" : "text-cool-grey"
+                    active ? "text-white/70" : "text-nike-grey"
                   }`}
                 >
                   {item.count}

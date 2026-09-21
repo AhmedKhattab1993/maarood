@@ -98,7 +98,7 @@ function ExploreControlsInner({
             <select
               value={current.category ?? ""}
               onChange={(e) => update("category", e.target.value)}
-              className="border border-stone-grey bg-white px-2 py-1.5 text-sm outline-none focus:border-ink-black"
+              className="rounded-default border border-cool-grey bg-white px-3 py-2 text-sm outline-none focus:border-ink-black"
             >
               <option value="">—</option>
               {categories.map((c) => (
@@ -128,9 +128,9 @@ function ExploreControlsInner({
               }}
               placeholder={t("minPrice")}
               aria-label={t("minPrice")}
-              className="w-28 border border-stone-grey bg-white px-2 py-1.5 text-sm outline-none focus:border-ink-black"
+              className="w-28 rounded-default border border-cool-grey bg-white px-3 py-2 text-sm outline-none focus:border-ink-black"
             />
-            <span className="text-cool-grey">–</span>
+            <span className="text-nike-grey">–</span>
             <input
               type="number"
               inputMode="numeric"
@@ -147,7 +147,7 @@ function ExploreControlsInner({
               }}
               placeholder={t("maxPrice")}
               aria-label={t("maxPrice")}
-              className="w-28 border border-stone-grey bg-white px-2 py-1.5 text-sm outline-none focus:border-ink-black"
+              className="w-28 rounded-default border border-cool-grey bg-white px-3 py-2 text-sm outline-none focus:border-ink-black"
             />
           </div>
         </fieldset>

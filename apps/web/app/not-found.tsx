@@ -10,8 +10,8 @@ export default function RootNotFound() {
       <body style={{ fontFamily: "system-ui, sans-serif" }}>
         <div style={{ maxWidth: "32rem", margin: "6rem auto", textAlign: "center" }}>
           <h1 style={{ fontSize: "1.5rem", fontWeight: 600 }}>404</h1>
-          <p style={{ color: "#666" }}>This page could not be found.</p>
-          <Link href="/" style={{ color: "#1a53d8" }}>
+          <p style={{ color: "#707072" }}>This page could not be found.</p>
+          <Link href="/" style={{ color: "#1d4ed8" }}>
             Explore Maaroud
           </Link>
         </div>

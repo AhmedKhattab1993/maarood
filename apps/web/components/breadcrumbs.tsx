@@ -9,7 +9,7 @@ export interface Crumb {
 /** Lightweight RTL-aware breadcrumb trail. */
 export function Breadcrumbs({ items }: { items: Crumb[] }) {
   return (
-    <nav aria-label="breadcrumbs" className="flex flex-wrap items-center gap-1.5 text-xs text-cool-grey">
+    <nav aria-label="breadcrumbs" className="flex flex-wrap items-center gap-1.5 text-xs text-nike-grey">
       {items.map((item, i) => {
         const last = i === items.length - 1;
         return (

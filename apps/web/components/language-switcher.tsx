@@ -50,7 +50,7 @@ function LanguageSwitcherShell({ onClick, label }: { onClick: () => void; label:
     <button
       type="button"
       onClick={onClick}
-      className="rounded-md px-3 py-1.5 text-sm text-ink-black transition-colors hover:bg-stone-grey"
+      className="rounded-default px-3 py-2 text-sm text-ink-black transition-colors hover:bg-stone-grey"
       aria-label={label}
     >
       {label}

@@ -126,7 +126,7 @@ export function FollowingFeed({
   }
   if (state.status === "error") {
     return (
-      <div className="rounded-lg border border-stone-grey bg-white px-6 py-16 text-center text-sm text-cool-grey">
+      <div className="rounded-lg border border-stone-grey bg-white px-6 py-16 text-center text-sm text-nike-grey">
         {state.message}
       </div>
     );

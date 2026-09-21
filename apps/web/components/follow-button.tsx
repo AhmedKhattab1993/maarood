@@ -77,7 +77,7 @@ export function FollowButton({ merchantId }: { merchantId: string }) {
                 ? t("unfollow")
                 : t("follow")
         }
-        className={`rounded-default border px-3 py-1.5 text-xs font-medium disabled:opacity-50 ${visualClass}`}
+        className={`rounded-default border px-3 py-2 text-xs font-medium disabled:opacity-50 ${visualClass}`}
       >
         {visual === "pending"
           ? t("pending")

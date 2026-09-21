@@ -139,7 +139,7 @@ export function DiscoveryFeed({
         </div>
       )}
       {!hasMore && items.length > 0 && loadState !== "error" && (
-        <p className="py-4 text-center text-sm text-cool-grey">
+        <p className="py-4 text-center text-sm text-nike-grey">
           {t("endOfResults")}
         </p>
       )}

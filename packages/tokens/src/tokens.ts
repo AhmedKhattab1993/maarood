@@ -14,6 +14,7 @@
 export const color = {
   // Locked brand colors
   maaroudBlue: "#1D4ED8",
+  maaroudBlueDark: "#1E40AF",
   warmIvory: "#FAF7F0",
   inkBlack: "#111111",
   stoneGrey: "#E6E3DE",
@@ -56,6 +57,7 @@ export const container = {
  * legibility of Arabic glyphs, which generally read better slightly larger.
  */
 export const fontSize = {
+  "2xs": "0.625rem", // 10px — eyebrows/badges only
   xs: "0.75rem", // 12px
   sm: "0.875rem", // 14px
   base: "1rem", // 16px

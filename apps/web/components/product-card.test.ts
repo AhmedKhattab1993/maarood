@@ -48,7 +48,7 @@ describe("product post author row", () => {
   it("does not use a Nike-style brand subtitle under the image", () => {
     const afterHeader = card.slice(card.indexOf("</header>"));
     expect(afterHeader).not.toMatch(/brand\.name/);
-    expect(card).not.toMatch(/text-nike-grey/);
+    expect(afterHeader).not.toMatch(/@\$\{brand\.slug\}/);
   });
 
   it("links the display name to the brand page", () => {

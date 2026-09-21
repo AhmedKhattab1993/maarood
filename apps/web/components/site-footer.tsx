@@ -16,10 +16,10 @@ export async function SiteFooter() {
     <footer className="border-t border-stone-grey bg-white">
       <div className="mx-auto grid max-w-[var(--container-max)] grid-cols-2 gap-8 px-4 py-12 md:grid-cols-3 md:px-12">
         <div className="flex flex-col gap-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-black">
+          <p className="text-sm font-semibold uppercase tracking-wide text-ink-black">
             {t("discover")}
-          </h2>
-          <ul className="flex flex-col gap-2 text-sm text-cool-grey">
+          </p>
+          <ul className="flex flex-col gap-2 text-sm text-nike-grey">
             <li>
               <Link href={{ pathname: "/" }} className="transition-colors hover:text-ink-black">
                 {tNav("explore")}
@@ -40,10 +40,10 @@ export async function SiteFooter() {
 
         {/* Shop */}
         <div className="flex flex-col gap-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-black">
+          <p className="text-sm font-semibold uppercase tracking-wide text-ink-black">
             {t("shop")}
-          </h2>
-          <ul className="flex flex-col gap-2 text-sm text-cool-grey">
+          </p>
+          <ul className="flex flex-col gap-2 text-sm text-nike-grey">
             <li>
               <Link href={{ pathname: "/search" }} className="transition-colors hover:text-ink-black">
                 {tNav("search")}
@@ -59,10 +59,10 @@ export async function SiteFooter() {
 
         {/* Help */}
         <div className="flex flex-col gap-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-black">
+          <p className="text-sm font-semibold uppercase tracking-wide text-ink-black">
             {t("help")}
-          </h2>
-          <ul className="flex flex-col gap-2 text-sm text-cool-grey">
+          </p>
+          <ul className="flex flex-col gap-2 text-sm text-nike-grey">
             <li>
               <Link href={{ pathname: "/help" }} className="transition-colors hover:text-ink-black">
                 {t("maaroudHelp")}
@@ -81,10 +81,10 @@ export async function SiteFooter() {
 
         {/* Maaroud — company pages (about/privacy/terms) don't exist yet. */}
         <div className="flex flex-col gap-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-black">
+          <p className="text-sm font-semibold uppercase tracking-wide text-ink-black">
             {t("company")}
-          </h2>
-          <ul className="flex flex-col gap-2 text-sm text-cool-grey">
+          </p>
+          <ul className="flex flex-col gap-2 text-sm text-nike-grey">
             <li>
               <p>{t("redirectNote")}</p>
             </li>
@@ -93,7 +93,7 @@ export async function SiteFooter() {
       </div>
 
       <div className="border-t border-stone-grey">
-        <div className="mx-auto flex max-w-[var(--container-max)] flex-col items-center justify-between gap-2 px-4 py-6 text-xs text-cool-grey md:flex-row md:px-12">
+        <div className="mx-auto flex max-w-[var(--container-max)] flex-col items-center justify-between gap-2 px-4 py-6 text-xs text-nike-grey md:flex-row md:px-12">
           <p>{t("rights", { year })}</p>
           <p>{t("redirectNote")}</p>
         </div>

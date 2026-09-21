@@ -112,7 +112,7 @@ export default async function ProductPage({
 
         <div className="flex flex-col gap-4">
           {vendorName && (
-            <span className="text-sm uppercase tracking-wide text-cool-grey">
+            <span className="text-sm uppercase tracking-wide text-nike-grey">
               {vendorName}
             </span>
           )}
@@ -126,7 +126,7 @@ export default async function ProductPage({
             </span>
             {discount.show && product.previousPrice !== null && (
               <>
-                <span className="text-base text-cool-grey line-through">
+                <span className="text-base text-nike-grey line-through">
                   <ProductPrice
                     amount={product.previousPrice}
                     currency={product.currency}
@@ -148,12 +148,12 @@ export default async function ProductPage({
             </p>
           )}
           {availability === "unknown" && (
-            <p className="text-sm font-medium text-cool-grey">
+            <p className="text-sm font-medium text-nike-grey">
               {t("Product.availabilityUnconfirmed")}
             </p>
           )}
           {product.stale && (
-            <p className="text-sm text-cool-grey">{t("Product.stale")}</p>
+            <p className="text-sm text-nike-grey">{t("Product.stale")}</p>
           )}
 
           {/* Structured option groups (Size: S M L, Color: Black White) */}
@@ -202,7 +202,7 @@ export default async function ProductPage({
           </div>
 
           {brandName && (
-            <p className="text-xs text-cool-grey">
+            <p className="text-xs text-nike-grey">
               {t("Product.checkoutAt", { brand: brandName })}
             </p>
           )}
@@ -211,7 +211,7 @@ export default async function ProductPage({
 
       {alternatives.length > 0 && (
         <section className="mt-12">
-          <h2 className="mb-4 text-lg font-medium text-ink-black">
+          <h2 className="mb-4 text-lg font-semibold text-ink-black">
             {t("Product.alternatives")}
           </h2>
           <ProductGrid
@@ -244,7 +244,7 @@ function optionLabel(name: string, t: (key: string) => string): string {
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex gap-2">
-      <span className="min-w-20 text-cool-grey">{label}</span>
+      <span className="min-w-20 text-nike-grey">{label}</span>
       <span className="text-ink-black">{value}</span>
     </div>
   );
@@ -281,10 +281,10 @@ function VariantTable({
 
   return (
     <div className="border-t border-stone-grey pt-4">
-      <h2 className="mb-3 text-sm font-medium text-ink-black">{labels.heading}</h2>
+      <h2 className="mb-3 text-sm font-semibold text-ink-black">{labels.heading}</h2>
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-stone-grey text-left text-cool-grey">
+          <tr className="border-b border-stone-grey text-left text-nike-grey">
             <th className="py-2 font-normal">{labels.sizes}</th>
             <th className="py-2 font-normal">{labels.price}</th>
             <th className="py-2 font-normal">{labels.availability}</th>
@@ -306,13 +306,13 @@ function VariantTable({
                         {formatPrice(v.price, currency, locale)}
                       </span>
                       {rowDiscount.show && v.compareAtPrice != null && (
-                        <span className="text-xs text-cool-grey line-through">
+                        <span className="text-xs text-nike-grey line-through">
                           {formatPrice(v.compareAtPrice, currency, locale)}
                         </span>
                       )}
                     </span>
                   ) : (
-                    <span className="text-cool-grey">—</span>
+                    <span className="text-nike-grey">—</span>
                   )}
                 </td>
                 <td className="py-2">
@@ -321,7 +321,7 @@ function VariantTable({
                   ) : v.availability === "out_of_stock" ? (
                     <span className="text-alert-red">{labels.outOfStock}</span>
                   ) : (
-                    <span className="text-cool-grey">{labels.unknown}</span>
+                    <span className="text-nike-grey">{labels.unknown}</span>
                   )}
                 </td>
               </tr>
@@ -342,7 +342,7 @@ function Gallery({
 }) {
   if (imageUrls.length === 0) {
     return (
-      <div className="flex aspect-[4/5] w-full items-center justify-center bg-stone-grey text-cool-grey">
+      <div className="flex aspect-square w-full items-center justify-center bg-stone-grey text-nike-grey">
         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" aria-hidden>
           <rect x="3" y="3" width="18" height="18" rx="2" />
           <circle cx="8.5" cy="8.5" r="1.5" />
@@ -356,7 +356,7 @@ function Gallery({
       {/* Merchant CDN imagery (06:49 — preserve original URLs). Plain <img>
           with unoptimized loading to avoid Next image optimizer round-trips for
           arbitrary merchant hosts. */}
-      <div className="aspect-[4/5] w-full overflow-hidden bg-stone-grey">
+      <div className="aspect-square w-full overflow-hidden bg-stone-grey">
         <img
           src={imageUrls[0]}
           alt={title}
@@ -368,7 +368,7 @@ function Gallery({
         <ul className="grid grid-cols-4 gap-2">
           {imageUrls.slice(1, 9).map((src, i) => (
             <li key={i}>
-              <div className="aspect-square w-full overflow-hidden rounded bg-stone-grey">
+              <div className="aspect-square w-full overflow-hidden rounded-default bg-stone-grey">
                 <img
                   src={src}
                   alt={`${title} ${i + 2}`}

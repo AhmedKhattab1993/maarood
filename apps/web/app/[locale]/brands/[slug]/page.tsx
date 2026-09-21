@@ -125,6 +125,7 @@ export default async function BrandPage({
           current={current}
           sort={toSort(sp.sort) ?? "newest"}
           title={brand.name}
+          heading="h2"
           hideAuthor
           emptyTitle={t("Search.noResults")}
           emptyHint={t("Search.noResultsHint")}

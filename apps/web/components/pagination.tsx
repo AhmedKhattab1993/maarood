@@ -52,7 +52,7 @@ function PaginationInner({
       </PagerButton>
       {pages.map((p) =>
         p === "…" ? (
-          <span key={`gap-${p}-${Math.random()}`} className="px-2 text-cool-grey">
+          <span key={`gap-${p}-${Math.random()}`} className="px-2 text-nike-grey">
             …
           </span>
         ) : (

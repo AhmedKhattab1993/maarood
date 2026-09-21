@@ -110,7 +110,7 @@ export function SaveButton({
           aria-pressed={saved}
           aria-busy={pending || undefined}
           aria-label={ariaLabel}
-          className={`rounded-default border px-4 py-2 text-sm transition-colors disabled:opacity-50 ${labelClass}`}
+          className={`rounded-default border px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 ${labelClass}`}
         >
           {visual === "pending"
             ? t("savePending")
