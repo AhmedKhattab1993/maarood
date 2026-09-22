@@ -10,7 +10,7 @@ describe("footer help", () => {
     expect(footer).not.toMatch(/t\("returns"\)/);
     expect(footer).toMatch(/orderHelp/);
     expect(footer).toMatch(/maaroudHelp/);
-    expect(footer).toMatch(/pathname: "\/help"/);
+    expect(footer).toMatch(/pathname: ['"]\/help['"]/);
     expect(existsSync(helpPage)).toBe(true);
     const help = readFileSync(helpPage, "utf8");
     expect(help).toMatch(/Help/);

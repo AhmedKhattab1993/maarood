@@ -1,17 +1,13 @@
-import { ProductCard } from "./product-card";
-import type { BrandSummary, PublicProduct } from "@/lib/api/types";
-import {
-  productItemClass,
-  productListClass,
-  type ProductLayout,
-} from "./product-feed-layout";
+import { ProductCard } from './product-card';
+import type { BrandSummary, PublicProduct } from '@/lib/api/types';
+import { productItemClass, productListClass, type ProductLayout } from './product-feed-layout';
 
 export {
   productFeedItemClass,
   productFeedListClass,
   productGridItemClass,
   productGridListClass,
-} from "./product-feed-layout";
+} from './product-feed-layout';
 
 /**
  * Product list. `layout="feed"` is the Following column. `layout="grid"` is
@@ -24,7 +20,7 @@ export function ProductGrid({
   savedIds,
   onUnsaved,
   hideAuthor = false,
-  layout = "grid",
+  layout = 'grid',
 }: {
   products: PublicProduct[];
   brands?: BrandSummary[];
@@ -40,7 +36,7 @@ export function ProductGrid({
   return (
     <ul className={productListClass(layout)}>
       {products.map((product, i) => (
-        <li key={product.id} className={productItemClass(layout)}>
+        <li key={product.id} data-product-id={product.id} className={productItemClass(layout)}>
           <ProductCard
             product={product}
             brands={brands}
@@ -59,22 +55,22 @@ export function ProductGrid({
 /** Skeleton matching the feed column or the catalog grid. */
 export function ProductGridSkeleton({
   count = 8,
-  layout = "grid",
+  layout = 'grid',
 }: {
   count?: number;
   layout?: ProductLayout;
 }) {
   return (
-    <ul className={productListClass(layout)}>
+    <ul aria-hidden="true" className={productListClass(layout)}>
       {Array.from({ length: count }).map((_, i) => (
         <li key={i} className={`${productItemClass(layout)} flex flex-col gap-2`}>
-          {layout === "feed" && (
+          {layout === 'feed' && (
             <div className="flex items-center gap-3">
-              <div className="maarood-skeleton h-10 w-10 shrink-0" />
+              <div className="maarood-skeleton h-10 w-10 shrink-0 rounded-full" />
               <div className="maarood-skeleton h-3 w-1/3" />
             </div>
           )}
-          <div className="maarood-skeleton aspect-square w-full" />
+          <div className="maarood-skeleton aspect-[4/5] w-full rounded-lg" />
           <div className="maarood-skeleton h-3 w-2/3" />
           <div className="maarood-skeleton h-3 w-1/4" />
         </li>

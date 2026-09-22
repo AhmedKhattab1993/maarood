@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
 
 /**
  * Brand logo with a letter-avatar fallback for missing or broken images.
@@ -29,13 +29,13 @@ export function BrandAvatar({
       referrerPolicy="no-referrer"
       onError={() => setLogoFailed(true)}
       style={{ width: size, height: size }}
-      className="shrink-0 bg-white object-contain"
+      className="shrink-0 rounded-full border border-stone-grey/70 bg-white object-contain p-1"
     />
   ) : (
     <span
       aria-hidden
       style={{ width: size, height: size, fontSize: Math.round(size * 0.35) }}
-      className="flex shrink-0 items-center justify-center bg-stone-grey font-semibold text-ink-black"
+      className="flex shrink-0 items-center justify-center rounded-full border border-maaroud-blue/10 bg-blue-soft font-semibold text-maaroud-blue"
     >
       {name.trim().charAt(0)}
     </span>

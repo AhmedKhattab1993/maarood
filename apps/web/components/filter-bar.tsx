@@ -1,210 +1,330 @@
-"use client";
+'use client';
 
-import { useTranslations } from "next-intl";
-import { useQueryParams } from "@/lib/use-query-params";
-import { facetChoices, shopperFacets } from "@/lib/facet-choices";
-import { nextPriceParams } from "@/lib/price-draft";
-import type { CatalogFacets } from "@/lib/api/types";
+import { useTranslations } from 'next-intl';
+import { useRouter } from '@/i18n/navigation';
+import { useQueryParams } from '@/lib/use-query-params';
+import { facetChoices, shopperFacets } from '@/lib/facet-choices';
+import { nextPriceParams } from '@/lib/price-draft';
+import {
+  CATALOG_FILTER_KEYS,
+  categoryHref,
+  clearFilterParams,
+  priceDraftError,
+} from '@/lib/catalog-filters';
+import type { BrandSummary, CatalogFacets, CategorySummary } from '@/lib/api/types';
 import {
   Suspense,
   useCallback,
   useEffect,
+  useId,
+  useRef,
   useState,
   type ChangeEvent,
   type ReactNode,
-} from "react";
-import type { BrandSummary } from "@/lib/api/types";
+} from 'react';
+import { CategoryStrip } from './category-strip';
 
 const EMPTY_FACETS: CatalogFacets = { colors: [], sizes: [] };
 
-/**
- * Filter drawer and desktop rail. Category is the scrolling row above the
- * listing. Price commits on blur or when the drawer closes. Color and size
- * are catalog choices, not free-text fields.
- */
-export function FilterBar({
-  brands,
-  facets = EMPTY_FACETS,
-  current,
-  open,
-  onToggle,
-  onRegisterCommit,
-}: {
+type FilterValues = Record<string, string | undefined>;
+type FilterBarProps = {
   brands: BrandSummary[];
+  categories?: CategorySummary[];
+  categoryNav?: 'query' | 'path';
   facets?: CatalogFacets;
-  current: Record<string, string | undefined>;
+  current: FilterValues;
   open: boolean;
-  onToggle: () => void;
-  /** Lets the header "Hide" control commit a price draft before closing. */
-  onRegisterCommit?: (commit: () => void) => void;
-}) {
+  onClose: () => void;
+  dialogId: string;
+};
+
+/** Desktop refinements stay in view; the mobile drawer applies its edits together. */
+export function FilterBar(props: FilterBarProps) {
   return (
     <Suspense fallback={null}>
-      <FilterBarInner
-        brands={brands}
-        facets={facets}
-        current={current}
-        open={open}
-        onToggle={onToggle}
-        onRegisterCommit={onRegisterCommit}
-      />
+      <FilterBarInner {...props} />
     </Suspense>
   );
 }
 
 function FilterBarInner({
   brands,
-  facets,
+  categories = [],
+  categoryNav = 'query',
+  facets = EMPTY_FACETS,
   current,
   open,
-  onToggle,
-  onRegisterCommit,
-}: {
-  brands: BrandSummary[];
-  facets: CatalogFacets;
-  current: Record<string, string | undefined>;
-  open: boolean;
-  onToggle: () => void;
-  onRegisterCommit?: (commit: () => void) => void;
-}) {
-  const t = useTranslations("Filters");
+  onClose,
+  dialogId,
+}: FilterBarProps) {
+  const t = useTranslations('Filters');
   const { searchParams, pushParams } = useQueryParams();
-  const [minDraft, setMinDraft] = useState(current.minPrice ?? "");
-  const [maxDraft, setMaxDraft] = useState(current.maxPrice ?? "");
+  const router = useRouter();
+  const [minDraft, setMinDraft] = useState(current.minPrice ?? '');
+  const [maxDraft, setMaxDraft] = useState(current.maxPrice ?? '');
+  const error = priceDraftError(minDraft, maxDraft);
 
   useEffect(() => {
-    setMinDraft(current.minPrice ?? "");
-    setMaxDraft(current.maxPrice ?? "");
+    setMinDraft(current.minPrice ?? '');
+    setMaxDraft(current.maxPrice ?? '');
   }, [current.minPrice, current.maxPrice]);
 
   const update = useCallback(
     (key: string, value: string) => {
-      const params = new URLSearchParams(searchParams.toString());
+      // A click can blur a price field and change another filter before the
+      // first navigation finishes. Carry that price draft into the same update.
+      const params =
+        (!error && nextPriceParams(searchParams, minDraft, maxDraft)) ||
+        new URLSearchParams(searchParams.toString());
       if (value) params.set(key, value);
       else params.delete(key);
-      pushParams(params, true);
+      if (key === 'category' && categoryNav === 'path') {
+        router.push(categoryHref(value, params) as Parameters<typeof router.push>[0]);
+      } else {
+        pushParams(params, true);
+      }
     },
-    [pushParams, searchParams],
+    [categoryNav, error, maxDraft, minDraft, pushParams, router, searchParams],
   );
 
   const commitPrice = useCallback(() => {
+    if (error) return;
     const next = nextPriceParams(searchParams, minDraft, maxDraft);
     if (next) pushParams(next, true);
-  }, [maxDraft, minDraft, pushParams, searchParams]);
-
-  useEffect(() => {
-    onRegisterCommit?.(commitPrice);
-  }, [commitPrice, onRegisterCommit]);
-
-  const close = () => {
-    commitPrice();
-    onToggle();
-  };
+  }, [error, maxDraft, minDraft, pushParams, searchParams]);
 
   const clearAll = () => {
-    const params = new URLSearchParams(searchParams.toString());
-    const q = params.get("q");
-    const kept = new URLSearchParams();
-    if (q) kept.set("q", q);
-    pushParams(kept);
+    setMinDraft('');
+    setMaxDraft('');
+    pushParams(clearFilterParams(searchParams), true);
   };
-
-  const activeCount =
-    (current.brand ? 1 : 0) +
-    (current.minPrice ? 1 : 0) +
-    (current.maxPrice ? 1 : 0) +
-    (current.color ? 1 : 0) +
-    (current.size ? 1 : 0) +
-    (current.availability ? 1 : 0);
-
-  if (!open) return null;
-
-  const facetList = (
-    <FacetList
-      brands={brands}
-      facets={facets}
-      current={current}
-      update={update}
-      minDraft={minDraft}
-      maxDraft={maxDraft}
-      onMinDraft={setMinDraft}
-      onMaxDraft={setMaxDraft}
-      onPriceBlur={commitPrice}
-    />
-  );
+  const hasFilters = CATALOG_FILTER_KEYS.some((key) => searchParams.has(key));
 
   return (
     <>
-      <aside className="hidden w-56 shrink-0 md:block">
-        <div className="sticky top-20 flex flex-col gap-4">
-          <FilterHeader onClear={clearAll} showClear={activeCount > 0} />
-          {facetList}
-        </div>
-      </aside>
-
-      <div className="fixed inset-0 z-50 md:hidden">
-        <button
-          type="button"
-          aria-label={t("hideFilters")}
-          onClick={close}
-          className="absolute inset-0 bg-ink-black/40"
-        />
-        <div className="absolute inset-y-0 start-0 flex w-[85%] max-w-sm flex-col gap-5 bg-white p-4 shadow-xl">
-          <div className="flex items-center justify-between">
-            <FilterHeader onClear={clearAll} showClear={activeCount > 0} />
-            <button
-              type="button"
-              aria-label={t("hideFilters")}
-              onClick={close}
-              className="text-nike-grey hover:text-ink-black"
-            >
-              ✕
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto">
-            <FacetList
-              brands={brands}
-              facets={facets}
-              current={current}
-              update={update}
-              minDraft={minDraft}
-              maxDraft={maxDraft}
-              onMinDraft={setMinDraft}
-              onMaxDraft={setMaxDraft}
-              onPriceBlur={commitPrice}
+      <aside
+        aria-label={t('title')}
+        className="sticky top-[calc(var(--header-height,5rem)+1rem)] hidden max-h-[calc(100dvh-var(--header-height,5rem)-2rem)] w-60 shrink-0 self-start overflow-y-auto overscroll-contain rounded-2xl border border-stone-grey bg-white p-4 md:block [scrollbar-gutter:stable]"
+      >
+        <FilterHeader onClear={clearAll} showClear={hasFilters || Boolean(minDraft || maxDraft)} />
+        {categories.length > 0 && (
+          <Facet label={t('category')}>
+            <CategoryStrip
+              categories={categories}
+              active={current.category}
+              mode={categoryNav}
+              vertical
+              onSelect={(value) => update('category', value)}
             />
-          </div>
-          <button
-            type="button"
-            onClick={close}
-            className="border border-ink-black bg-ink-black px-4 py-2.5 text-sm font-medium text-white"
-          >
-            {t("apply")}
-          </button>
-        </div>
-      </div>
+          </Facet>
+        )}
+        <FacetList
+          brands={brands}
+          facets={facets}
+          current={current}
+          update={update}
+          minDraft={minDraft}
+          maxDraft={maxDraft}
+          onMinDraft={setMinDraft}
+          onMaxDraft={setMaxDraft}
+          onPriceBlur={commitPrice}
+          priceError={error}
+        />
+      </aside>
+      {open && (
+        <MobileFilters
+          brands={brands}
+          categories={categories}
+          categoryNav={categoryNav}
+          facets={facets}
+          current={current}
+          onClose={onClose}
+          dialogId={dialogId}
+        />
+      )}
     </>
   );
 }
 
-function FilterHeader({
-  onClear,
-  showClear,
+function MobileFilters({
+  brands,
+  categories,
+  categoryNav,
+  facets,
+  current,
+  onClose,
+  dialogId,
 }: {
-  onClear: () => void;
-  showClear: boolean;
+  brands: BrandSummary[];
+  categories: CategorySummary[];
+  categoryNav: 'query' | 'path';
+  facets: CatalogFacets;
+  current: FilterValues;
+  onClose: () => void;
+  dialogId: string;
 }) {
-  const t = useTranslations("Filters");
+  const t = useTranslations('Filters');
+  const { searchParams, pushParams } = useQueryParams();
+  const router = useRouter();
+  const dialog = useRef<HTMLDialogElement>(null);
+  const [draft, setDraft] = useState<FilterValues>({ ...current });
+  const error = priceDraftError(draft.minPrice ?? '', draft.maxPrice ?? '');
+  const headingId = useId();
+
+  useEffect(() => {
+    const element = dialog.current;
+    if (!element) return;
+    const previousFocus =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const overflow = document.body.style.overflow;
+    element.showModal();
+    document.body.style.overflow = 'hidden';
+    // A desktop resize must release the mobile dialog and its scroll lock.
+    const desktop = window.matchMedia('(min-width: 768px)');
+    const onResize = () => {
+      if (desktop.matches) onClose();
+    };
+    desktop.addEventListener('change', onResize);
+    onResize();
+    return () => {
+      desktop.removeEventListener('change', onResize);
+      element.close();
+      document.body.style.overflow = overflow;
+      if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
+    };
+  }, [onClose]);
+
+  const update = (key: string, value: string) =>
+    setDraft((previous) => ({ ...previous, [key]: value }));
+  const clearAll = () => setDraft(categoryNav === 'path' ? { category: current.category } : {});
+  const hasFilters = CATALOG_FILTER_KEYS.some(
+    (key) => (key !== 'category' || categoryNav === 'query') && Boolean(draft[key]),
+  );
+
+  const apply = () => {
+    if (error) return;
+    const params = new URLSearchParams(searchParams.toString());
+    for (const key of CATALOG_FILTER_KEYS) {
+      const value = draft[key]?.trim();
+      if (value) params.set(key, value);
+      else params.delete(key);
+    }
+    params.delete('page');
+    if (categoryNav === 'path') {
+      const href = categoryHref(draft.category ?? '', params);
+      router.push(href as Parameters<typeof router.push>[0]);
+    } else {
+      pushParams(params, true);
+    }
+    onClose();
+  };
+
   return (
-    <div className="flex items-center justify-between border-b border-stone-grey pb-3">
-      <h2 className="text-base font-medium text-ink-black">{t("title")}</h2>
+    <dialog
+      ref={dialog}
+      id={dialogId}
+      aria-labelledby={headingId}
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
+      onKeyDown={(event) => {
+        if (event.key !== 'Tab') return;
+        const controls = Array.from(
+          event.currentTarget.querySelectorAll<HTMLElement>(
+            'button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), summary, [tabindex="0"]',
+          ),
+        ).filter((element) => element.getClientRects().length > 0);
+        const first = controls[0];
+        const last = controls[controls.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last?.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first?.focus();
+        }
+      }}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+      className="fixed inset-y-0 start-0 end-auto m-0 h-[100dvh] max-h-none w-[90vw] max-w-sm border-0 bg-white p-0 text-ink-black shadow-xl backdrop:bg-ink-black/40 md:hidden"
+    >
+      <div className="flex h-full flex-col">
+        <div className="flex items-center gap-4 border-b border-stone-grey px-5 py-4">
+          <h2 id={headingId} className="flex-1 text-lg font-semibold">
+            {t('title')}
+          </h2>
+          {hasFilters && (
+            <button
+              type="button"
+              onClick={clearAll}
+              className="min-h-10 text-sm font-medium text-maaroud-blue"
+            >
+              {t('clearAll')}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={t('hideFilters')}
+            autoFocus
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-warm-ivory text-xl"
+          >
+            ×
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto overscroll-contain px-5">
+          {categories.length > 0 && (
+            <Facet label={t('category')}>
+              <CategoryStrip
+                categories={categories}
+                active={draft.category}
+                mode={categoryNav}
+                vertical
+                onSelect={(value) => update('category', value)}
+              />
+            </Facet>
+          )}
+          <FacetList
+            brands={brands}
+            facets={facets}
+            current={draft}
+            update={update}
+            minDraft={draft.minPrice ?? ''}
+            maxDraft={draft.maxPrice ?? ''}
+            onMinDraft={(value) => update('minPrice', value)}
+            onMaxDraft={(value) => update('maxPrice', value)}
+            priceError={error}
+          />
+        </div>
+        <div className="border-t border-stone-grey bg-white px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <button
+            type="button"
+            onClick={apply}
+            disabled={Boolean(error)}
+            className="min-h-12 w-full rounded-xl bg-maaroud-blue px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-maaroud-blue-dark disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {t('apply')}
+          </button>
+        </div>
+      </div>
+    </dialog>
+  );
+}
+
+function FilterHeader({ onClear, showClear }: { onClear: () => void; showClear: boolean }) {
+  const t = useTranslations('Filters');
+  return (
+    <div className="flex min-h-10 items-center justify-between gap-2 border-b border-stone-grey pb-3">
+      <h2 className="text-base font-semibold text-ink-black">{t('title')}</h2>
       {showClear && (
         <button
           type="button"
           onClick={onClear}
-          className="text-xs text-maaroud-blue hover:underline"
+          className="text-xs font-medium text-maaroud-blue hover:underline"
         >
-          {t("clear")}
+          {t('clearAll')}
         </button>
       )}
     </div>
@@ -221,81 +341,96 @@ function FacetList({
   onMinDraft,
   onMaxDraft,
   onPriceBlur,
+  priceError,
 }: {
   brands: BrandSummary[];
   facets: CatalogFacets;
-  current: Record<string, string | undefined>;
+  current: FilterValues;
   update: (key: string, value: string) => void;
   minDraft: string;
   maxDraft: string;
   onMinDraft: (value: string) => void;
   onMaxDraft: (value: string) => void;
-  onPriceBlur: () => void;
+  onPriceBlur?: () => void;
+  priceError?: 'nonNegativePrice' | 'invalidRange';
 }) {
-  const t = useTranslations("Filters");
+  const t = useTranslations('Filters');
+  const errorId = useId();
   const shown = shopperFacets(facets);
   const colors = facetChoices(shown.colors, current.color);
   const sizes = facetChoices(shown.sizes, current.size);
   return (
-    <div className="flex flex-col divide-y divide-stone-grey">
+    <div className="flex flex-col">
       {brands.length > 0 && (
-        <Facet label={t("brand")}>
+        <Facet label={t('brand')}>
           <Select
-            value={current.brand ?? ""}
-            onChange={(event) => update("brand", event.target.value)}
+            label={t('brand')}
+            value={current.brand ?? ''}
+            onChange={(event) => update('brand', event.target.value)}
             options={[
-              { value: "", label: t("all") },
-              ...brands.map((brand) => ({ value: brand.slug, label: brand.name })),
+              { value: '', label: t('all') },
+              ...brands.map((brand) => ({
+                value: brand.slug,
+                label: `${brand.name} (${brand.productCount})`,
+              })),
             ]}
           />
         </Facet>
       )}
-      <Facet label={t("price")}>
-        <div className="flex items-center gap-2">
+      <Facet label={t('price')}>
+        <p className="text-xs text-nike-grey">{t('priceHint')}</p>
+        <div className="flex items-start gap-2">
           <NumberField
             value={minDraft}
             onChange={onMinDraft}
             onBlur={onPriceBlur}
-            placeholder={t("minPrice")}
-            label={t("minPrice")}
+            label={t('minPrice')}
+            invalid={Boolean(priceError)}
+            errorId={priceError ? errorId : undefined}
           />
-          <span className="text-nike-grey">–</span>
           <NumberField
             value={maxDraft}
             onChange={onMaxDraft}
             onBlur={onPriceBlur}
-            placeholder={t("maxPrice")}
-            label={t("maxPrice")}
+            label={t('maxPrice')}
+            invalid={Boolean(priceError)}
+            errorId={priceError ? errorId : undefined}
           />
         </div>
+        {priceError && (
+          <p id={errorId} role="alert" className="text-xs text-alert-red">
+            {t(priceError)}
+          </p>
+        )}
       </Facet>
-      <Facet label={t("availability")}>
+      <Facet label={t('availability')}>
         <Select
-          value={current.availability ?? ""}
-          onChange={(event) => update("availability", event.target.value)}
+          label={t('availability')}
+          value={current.availability ?? ''}
+          onChange={(event) => update('availability', event.target.value)}
           options={[
-            { value: "", label: t("all") },
-            { value: "in_stock", label: t("in_stock") },
-            { value: "out_of_stock", label: t("out_of_stock") },
-            { value: "unknown", label: t("unknown") },
+            { value: '', label: t('all') },
+            { value: 'in_stock', label: t('in_stock') },
+            { value: 'out_of_stock', label: t('out_of_stock') },
+            { value: 'unknown', label: t('unknown') },
           ]}
         />
       </Facet>
       {colors.length > 0 && (
-        <Facet label={t("color")}>
+        <Facet label={t('color')}>
           <ChoiceList
             values={colors}
             selected={current.color}
-            onSelect={(value) => update("color", value)}
+            onSelect={(value) => update('color', value)}
           />
         </Facet>
       )}
       {sizes.length > 0 && (
-        <Facet label={t("size")}>
+        <Facet label={t('size')}>
           <ChoiceList
             values={sizes}
             selected={current.size}
-            onSelect={(value) => update("size", value)}
+            onSelect={(value) => update('size', value)}
           />
         </Facet>
       )}
@@ -313,7 +448,7 @@ function ChoiceList({
   onSelect: (value: string) => void;
 }) {
   return (
-    <ul className="flex max-h-40 flex-wrap gap-2 overflow-y-auto">
+    <ul className="flex max-h-48 flex-wrap gap-2 overflow-y-auto p-0.5">
       {values.map((value) => {
         const active = selected?.toLocaleLowerCase() === value.toLocaleLowerCase();
         return (
@@ -321,12 +456,8 @@ function ChoiceList({
             <button
               type="button"
               aria-pressed={active}
-              onClick={() => onSelect(active ? "" : value)}
-              className={
-                active
-                  ? "border border-ink-black bg-ink-black px-2 py-1 text-xs text-white"
-                  : "border border-stone-grey px-2 py-1 text-xs text-ink-black hover:border-ink-black"
-              }
+              onClick={() => onSelect(active ? '' : value)}
+              className={`min-h-10 rounded-lg border px-3 py-2 text-xs transition-colors ${active ? 'border-maaroud-blue bg-maaroud-blue/10 font-semibold text-maaroud-blue' : 'border-stone-grey text-ink-black hover:border-maaroud-blue'}`}
             >
               {value}
             </button>
@@ -339,14 +470,17 @@ function ChoiceList({
 
 function Facet({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <details open className="group border-b border-stone-grey py-3">
-      <summary className="flex cursor-pointer list-none items-center justify-between py-1 text-sm font-medium text-ink-black">
+    <details open className="group border-b border-stone-grey py-3 last:border-b-0">
+      <summary className="flex min-h-9 cursor-pointer list-none items-center justify-between gap-2 text-sm font-semibold text-ink-black">
         {label}
-        <span className="text-nike-grey transition-transform group-open:rotate-180">
-          ▾
+        <span
+          aria-hidden="true"
+          className="text-nike-grey transition-transform group-open:rotate-180"
+        >
+          ⌄
         </span>
       </summary>
-      <div className="mt-3 flex flex-col gap-2">{children}</div>
+      <div className="mt-3 flex flex-col gap-3">{children}</div>
     </details>
   );
 }
@@ -355,19 +489,22 @@ function Select({
   value,
   onChange,
   options,
+  label,
 }: {
   value: string;
   onChange: (event: ChangeEvent<HTMLSelectElement>) => void;
   options: Array<{ value: string; label: string }>;
+  label: string;
 }) {
   return (
     <select
+      aria-label={label}
       value={value}
       onChange={onChange}
-      className="w-full rounded-default border border-cool-grey bg-white px-3 py-2 text-sm text-ink-black outline-none focus:border-ink-black"
+      className="min-h-11 w-full min-w-0 rounded-xl border border-stone-grey bg-white px-3 py-2 text-sm text-ink-black focus:border-maaroud-blue"
     >
       {options.map((option) => (
-        <option key={option.value || "all"} value={option.value}>
+        <option key={option.value || 'all'} value={option.value}>
           {option.label}
         </option>
       ))}
@@ -379,26 +516,33 @@ function NumberField({
   value,
   onChange,
   onBlur,
-  placeholder,
   label,
+  invalid,
+  errorId,
 }: {
   value: string;
   onChange: (value: string) => void;
-  onBlur: () => void;
-  placeholder?: string;
+  onBlur?: () => void;
   label: string;
+  invalid: boolean;
+  errorId?: string;
 }) {
   return (
-    <input
-      type="number"
-      inputMode="numeric"
-      min="0"
-      value={value}
-      aria-label={label}
-      onChange={(event) => onChange(event.target.value)}
-      onBlur={onBlur}
-      placeholder={placeholder}
-      className="w-full rounded-default border border-cool-grey bg-white px-3 py-2 text-sm text-ink-black outline-none focus:border-ink-black"
-    />
+    <label className="flex min-w-0 flex-1 flex-col gap-1.5 text-xs text-nike-grey">
+      {label}
+      <input
+        type="number"
+        inputMode="decimal"
+        min="0"
+        step="any"
+        value={value}
+        aria-invalid={invalid || undefined}
+        aria-describedby={errorId}
+        onChange={(event) => onChange(event.target.value)}
+        onBlur={onBlur}
+        placeholder="—"
+        className={`min-h-11 w-full min-w-0 rounded-xl border bg-white px-2.5 py-2 text-sm text-ink-black focus:border-maaroud-blue ${invalid ? 'border-alert-red' : 'border-stone-grey'}`}
+      />
+    </label>
   );
 }

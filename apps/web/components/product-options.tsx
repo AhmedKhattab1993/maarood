@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
 import {
   firstSelectableChip,
   isColorOptionName,
   isSizeOptionName,
   optionChips,
   type OptionChip,
-} from "@/lib/option-chips";
-import type { ProductOption, Variant } from "@/lib/api/types";
+} from '@/lib/option-chips';
+import type { ProductOption, Variant } from '@/lib/api/types';
 
 /** Size and color as chips. Out-of-stock values are disabled. */
 export function ProductOptions({
@@ -27,20 +27,19 @@ export function ProductOptions({
   colorLabel: string;
 }) {
   const product = { sizes, colors, options, variants };
-  const sizeChipList = optionChips("size", product);
-  const colorChipList = optionChips("color", product);
+  const sizeChipList = optionChips('size', product);
+  const colorChipList = optionChips('color', product);
   const other = options.filter(
     (option) => !isSizeOptionName(option.name) && !isColorOptionName(option.name),
   );
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
       <ChipGroup label={sizeLabel} chips={sizeChipList} />
       <ChipGroup label={colorLabel} chips={colorChipList} />
       {other.map((option) => (
         <p key={option.name} className="text-sm text-ink-black">
-          <span className="text-nike-grey">{option.name}</span>{" "}
-          {option.values.join(" · ")}
+          <span className="text-nike-grey">{option.name}</span> {option.values.join(' · ')}
         </p>
       ))}
     </div>
@@ -65,10 +64,10 @@ function ChipGroup({ label, chips }: { label: string; chips: OptionChip[] }) {
               onClick={() => setSelected(chip.value)}
               className={
                 chip.disabled
-                  ? "border border-stone-grey px-3 py-1.5 text-sm text-nike-grey line-through disabled:cursor-not-allowed"
+                  ? 'min-h-11 min-w-11 rounded-default border border-stone-grey bg-surface px-3 py-2 text-sm text-nike-grey line-through disabled:cursor-not-allowed'
                   : active
-                    ? "border border-ink-black bg-ink-black px-3 py-1.5 text-sm text-white"
-                    : "border border-stone-grey px-3 py-1.5 text-sm text-ink-black hover:border-ink-black"
+                    ? 'min-h-11 min-w-11 rounded-default border border-maaroud-blue bg-blue-soft px-3 py-2 text-sm font-medium text-maaroud-blue'
+                    : 'min-h-11 min-w-11 rounded-default border border-stone-grey bg-white px-3 py-2 text-sm text-ink-black transition-colors hover:border-maaroud-blue'
               }
             >
               {chip.value}

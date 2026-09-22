@@ -85,7 +85,7 @@ describe("AuthForm pending action", () => {
     expect(src).toMatch(/take\(\)/);
     expect(src).toMatch(/followBrand\(action\.merchantId\)/);
     expect(src).toMatch(/saveProduct\(action\.productId\)/);
-    expect(src).toMatch(/t\("cancel"\)/);
+    expect(src).toMatch(/t\(["']cancel["']\)/);
     expect(src).toMatch(/safeReturnTo/);
   });
 });

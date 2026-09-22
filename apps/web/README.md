@@ -52,8 +52,9 @@ npm run dev --workspace @maarood/web        # web on :3000
 ```
 
 The web app reads products, brands, categories, and search from the backend.
-Saved products and outbound-click redirects work without auth; the backend
-records outbound clicks on redirect (`/v1/products/:id/redirect`).
+Catalog discovery and outbound-click redirects are public. Saving products
+and following brands require an account. The backend records outbound clicks
+on redirect (`/v1/products/:id/redirect`).
 
 ## Crawl workflow host
 
@@ -65,7 +66,7 @@ Local: `npx next start` + `curl -H "Authorization: Bearer $CRON_SECRET"`
 `localhost:3000/api/cron/crawl` runs it via the Local World; `npx workflow inspect runs`
 shows runs. See [`deploy/README.md`](../../deploy/README.md).
 
-## Routes (the 8 locked screens — `01`/`04`/`08`)
+## Routes
 
 | Route | Page |
 |---|---|
@@ -76,9 +77,37 @@ shows runs. See [`deploy/README.md`](../../deploy/README.md).
 | `/[locale]/brands/[slug]` | Brand page |
 | `/[locale]/p/[id]` | Product detail |
 | `/[locale]/saved` | Saved products |
+| `/[locale]/favourites` | Account favourites |
+| `/[locale]/following` | Followed brands and their products |
+| `/[locale]/login`, `/[locale]/signup` | Account access |
+| `/[locale]/help` | Shopping and checkout help |
 
 All listing/search/category/brand pages are server-rendered with per-page
 `generateMetadata` and JSON-LD `Product` schema on product detail.
+
+## Discovery and browsing
+
+The home page defaults to **For you**. It requests a private ranking from
+`POST /v1/feed` on each visit. Opening product details teaches category and
+brand preferences; visible feed cards become recent impressions so fresh
+visits and **Fresh picks** can move unseen products to the top. Signed-in
+accounts also use saved products and followed brands. A bounded, seeded mix
+keeps room for discovery and prevents one brand from filling the page.
+
+Browsing history stays in localStorage, separated by account (or guest).
+Interests decay and expire after 30 days; recent impressions expire after
+7 days and are capped at 300 products. This browsing history does not sync
+across devices. Saved products and follows remain account-backed.
+
+The seed, preference snapshot, and recent impressions stay fixed while loading
+more products. A refresh starts a new ranking; the page does not reorder itself
+while someone is scrolling. Explicit newest/price sorts use ordinary catalog
+ordering. API failures retain the existing feed and expose a retry.
+
+Desktop catalog pages keep categories and filters in a sticky side rail.
+Mobile refinements use a keyboard-accessible modal drawer: Apply commits all
+edits together, while closing cancels the draft. Search supports keyboard
+suggestions, recent queries, Arabic/English shopping terms, and brand intent.
 
 ## Out of scope (deferred)
 

@@ -1,29 +1,41 @@
-"use client";
+'use client';
 
-import { Suspense } from "react";
-import { useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
-import { categoryName } from "@/lib/categories";
-import { useQueryParams } from "@/lib/use-query-params";
-import type { CategorySummary } from "@/lib/api/types";
+import { Suspense } from 'react';
+import { useFormatter, useTranslations } from 'next-intl';
+import { Link } from '@/i18n/navigation';
+import { categoryName } from '@/lib/categories';
+import { useQueryParams } from '@/lib/use-query-params';
+import { categoryHref } from '@/lib/catalog-filters';
+import type { CategorySummary } from '@/lib/api/types';
 
-type Href = Parameters<typeof Link>[0]["href"];
+type Href = Parameters<typeof Link>[0]['href'];
 
-/** One scrolling row of catalog categories, placed under the header tabs. */
+/** Compact mobile categories, or a vertical navigation inside the filter rail. */
 export function CategoryStrip({
   categories,
   active,
-  mode = "query",
+  mode = 'query',
+  vertical = false,
+  onSelect,
 }: {
   categories: CategorySummary[];
   active?: string;
   /** `query` sets ?category= on this page. `path` opens /c/[category]. */
-  mode?: "query" | "path";
+  mode?: 'query' | 'path';
+  vertical?: boolean;
+  /** The mobile drawer stages category changes until Apply. */
+  onSelect?: (value: string) => void;
 }) {
   if (categories.length === 0) return null;
   return (
     <Suspense fallback={null}>
-      <CategoryStripInner categories={categories} active={active} mode={mode} />
+      <CategoryStripInner
+        categories={categories}
+        active={active}
+        mode={mode}
+        vertical={vertical}
+        onSelect={onSelect}
+      />
     </Suspense>
   );
 }
@@ -32,61 +44,80 @@ function CategoryStripInner({
   categories,
   active,
   mode,
+  vertical,
+  onSelect,
 }: {
   categories: CategorySummary[];
   active?: string;
-  mode: "query" | "path";
+  mode: 'query' | 'path';
+  vertical: boolean;
+  onSelect?: (value: string) => void;
 }) {
-  const t = useTranslations("Filters");
-  const tCat = useTranslations("Category");
-  const tHome = useTranslations("Home");
+  const t = useTranslations('Filters');
+  const tCat = useTranslations('Category');
+  const tHome = useTranslations('Home');
+  const format = useFormatter();
   const { searchParams, pushParams } = useQueryParams();
 
   function selectQuery(value: string) {
+    if (onSelect) {
+      onSelect(value);
+      return;
+    }
     const params = new URLSearchParams(searchParams.toString());
-    if (value) params.set("category", value);
-    else params.delete("category");
+    if (value) params.set('category', value);
+    else params.delete('category');
     pushParams(params, true);
   }
 
-  function pathHref(value: string | null): string {
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete("category");
-    params.delete("page");
-    const qs = params.toString();
-    const path = value ? `/c/${encodeURIComponent(value)}` : "/";
-    return qs ? `${path}?${qs}` : path;
-  }
-
   return (
-    <nav aria-label={tHome("shopByCategory")} className="mb-4 overflow-x-auto">
-      <ul className="flex w-max flex-nowrap gap-2">
+    <nav
+      aria-label={tHome('shopByCategory')}
+      className={vertical ? 'min-w-0' : 'overflow-x-auto pb-1'}
+    >
+      <ul className={vertical ? 'flex flex-col gap-1' : 'flex w-max flex-nowrap gap-2'}>
         <li>
-          {mode === "path" ? (
-            <ChipLink href={pathHref(null)} active={!active}>
-              {t("all")}
+          {mode === 'path' && !onSelect ? (
+            <ChipLink href={categoryHref('', searchParams)} active={!active} vertical={vertical}>
+              {t('all')}
             </ChipLink>
           ) : (
-            <ChipButton active={!active} onClick={() => selectQuery("")}>
-              {t("all")}
+            <ChipButton active={!active} vertical={vertical} onClick={() => selectQuery('')}>
+              {t('all')}
             </ChipButton>
           )}
         </li>
         {categories.map((category) => {
           const isActive = category.name === active;
           const label = categoryName(category.name, tCat);
+          const content = (
+            <>
+              <span>{label}</span>
+              <span
+                className="text-xs tabular-nums opacity-70"
+                aria-label={t('categoryCount', { count: category.productCount })}
+              >
+                {format.number(category.productCount)}
+              </span>
+            </>
+          );
           return (
             <li key={category.name}>
-              {mode === "path" ? (
-                <ChipLink href={pathHref(isActive ? null : category.name)} active={isActive}>
-                  {label}
+              {mode === 'path' && !onSelect ? (
+                <ChipLink
+                  href={categoryHref(isActive ? '' : category.name, searchParams)}
+                  active={isActive}
+                  vertical={vertical}
+                >
+                  {content}
                 </ChipLink>
               ) : (
                 <ChipButton
                   active={isActive}
-                  onClick={() => selectQuery(isActive ? "" : category.name)}
+                  vertical={vertical}
+                  onClick={() => selectQuery(isActive ? '' : category.name)}
                 >
-                  {label}
+                  {content}
                 </ChipButton>
               )}
             </li>
@@ -97,23 +128,32 @@ function CategoryStripInner({
   );
 }
 
-function chipClass(active: boolean): string {
-  return active
-    ? "inline-flex items-center whitespace-nowrap border border-ink-black bg-ink-black px-3 py-2 text-sm text-white"
-    : "inline-flex items-center whitespace-nowrap border border-stone-grey bg-white px-3 py-2 text-sm text-ink-black hover:border-ink-black";
+function chipClass(active: boolean, vertical: boolean): string {
+  return `inline-flex min-h-10 items-center gap-3 rounded-xl px-3 py-2 text-start text-sm transition-colors ${vertical ? 'w-full justify-between' : 'whitespace-nowrap border'} ${
+    active
+      ? 'border-maaroud-blue/20 bg-maaroud-blue/10 font-semibold text-maaroud-blue'
+      : 'border-stone-grey text-ink-black hover:bg-warm-ivory'
+  }`;
 }
 
 function ChipButton({
   active,
+  vertical,
   onClick,
   children,
 }: {
   active: boolean;
+  vertical: boolean;
   onClick: () => void;
   children: React.ReactNode;
 }) {
   return (
-    <button type="button" aria-pressed={active} onClick={onClick} className={chipClass(active)}>
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={chipClass(active, vertical)}
+    >
       {children}
     </button>
   );
@@ -122,17 +162,19 @@ function ChipButton({
 function ChipLink({
   href,
   active,
+  vertical,
   children,
 }: {
   href: string;
   active: boolean;
+  vertical: boolean;
   children: React.ReactNode;
 }) {
   return (
     <Link
       href={href as Href}
-      aria-current={active ? "page" : undefined}
-      className={chipClass(active)}
+      aria-current={active ? 'page' : undefined}
+      className={chipClass(active, vertical)}
     >
       {children}
     </Link>

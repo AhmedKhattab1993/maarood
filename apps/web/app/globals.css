@@ -1,10 +1,10 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /*
  * Design tokens mapped into Tailwind v4's @theme so utilities like `bg-white`,
- * `text-ink-black`, `text-base`, `rounded-md` resolve. Visual system follows
- * Nike's product-discovery look: flat white canvas, near-black type, square
- * product cards, dense borderless grids. Arabic-first font pairing is loaded
+ * `text-ink-black`, `text-base`, `rounded-md` resolve. Clear blue accents,
+ * quiet surfaces, and generous spacing keep the products in focus.
+ * Arabic-first font pairing is loaded
  * via next/font in the locale layout (var --font-sans / --font-latin).
  */
 @theme {
@@ -21,19 +21,20 @@
   --color-success-green: #15803d;
   --color-alert-red: #dc2626;
   --color-warm-sand: #dbc4a3;
+  --color-surface: #f4f6fa;
+  --color-blue-soft: #eef3ff;
 
   /* Spacing — 4px base */
   --spacing: 4px;
 
-  /* Radius — Nike leans square for product chrome; keep scales for other UI. */
-  --radius-sm: 2px;
-  --radius-default: 4px;
-  --radius-md: 6px;
-  --radius-lg: 10px;
+  --radius-sm: 6px;
+  --radius-default: 10px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
   --radius-pill: 9999px;
 
   /* Container widths */
-  --container-max: 1280px;
+  --container-max: 1440px;
   --container-wide: 1600px;
   --container-prose: 720px;
 
@@ -70,11 +71,17 @@
 
 :root {
   color-scheme: light;
-  /* Nike-style flat white canvas. */
-  --background: #ffffff;
+  --background: #fbfcff;
   --foreground: var(--color-ink-black);
   --muted: var(--color-cool-grey);
-  --border: var(--color-stone-grey);
+  --border: #e6e9f0;
+  --header-height: 129px;
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --header-height: 81px;
+  }
 }
 
 /* Default border color for bare `border` widths. Layered so explicit
@@ -87,6 +94,7 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  scroll-padding-top: calc(var(--header-height) + 1rem);
 }
 
 body {
@@ -100,6 +108,46 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+::selection {
+  background: #dce7ff;
+  color: #173779;
+}
+
+button:not(:disabled),
+select {
+  cursor: pointer;
+}
+
+button,
+a,
+input,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+input,
+select,
+textarea {
+  accent-color: var(--color-maaroud-blue);
+}
+
+/* A keyboard user can reach the content without traversing both nav bars. */
+.skip-link {
+  position: fixed;
+  top: 0.75rem;
+  inset-inline-start: 0.75rem;
+  z-index: 100;
+  transform: translateY(-200%);
+  border-radius: var(--radius-default);
+  background: var(--color-maaroud-blue);
+  padding: 0.75rem 1.25rem;
+  color: white;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
 /* Consistent keyboard focus ring across browsers. */
 :focus-visible {
   outline: 2px solid var(--color-maaroud-blue);
@@ -107,10 +155,10 @@ body {
 }
 
 /* RTL/LTR-aware defaults. dir is set per locale on <html>. */
-[dir="rtl"] {
+[dir='rtl'] {
   text-align: right;
 }
-[dir="ltr"] {
+[dir='ltr'] {
   text-align: left;
 }
 
@@ -137,12 +185,8 @@ body {
 }
 
 .maarood-skeleton {
-  background: linear-gradient(
-    90deg,
-    var(--color-stone-grey) 25%,
-    #ffffff 50%,
-    var(--color-stone-grey) 75%
-  );
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, #edf0f5 25%, #ffffff 50%, #edf0f5 75%);
   background-size: 200% 100%;
   animation: maarood-shimmer 1.4s ease-in-out infinite;
 }

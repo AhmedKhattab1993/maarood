@@ -53,9 +53,9 @@ describe("FollowButton", () => {
 
   it("uses followIntent and calls followBrand when not following", () => {
     expect(src).toMatch(/followIntent\(Boolean\(getAuthToken\(\)\), following\)/);
-    expect(src).toMatch(/intent === "login"/);
+    expect(src).toMatch(/intent === ["']login["']/);
     expect(src).toMatch(/stash\(/);
-    expect(src).toMatch(/router\.push\("\/login"\)/);
+    expect(src).toMatch(/router\.push\(["']\/login["']\)/);
     expect(src).toMatch(/followBrand\(merchantId\)/);
     expect(src).toMatch(/unfollowBrand\(merchantId\)/);
     expect(src).toMatch(/setFailed\(true\)/);
@@ -72,9 +72,9 @@ describe("SaveButton", () => {
   it("uses saveIntent and stashes before login", () => {
     expect(src).toMatch(/saveIntent\(Boolean\(getAuthToken\(\)\), saved\)/);
     expect(src).toMatch(/stash\(/);
-    expect(src).toMatch(/router\.push\("\/login"\)/);
+    expect(src).toMatch(/router\.push\(["']\/login["']\)/);
     expect(src).toMatch(/setFailed\(true\)/);
-    const catchBlock = src.slice(src.indexOf("catch"));
+    const catchBlock = src.slice(src.indexOf("} catch (err)"), src.indexOf("const ariaLabel"));
     expect(catchBlock).toMatch(/setFailed\(true\)/);
     expect(catchBlock).not.toMatch(/setSaved\(true\)/);
   });

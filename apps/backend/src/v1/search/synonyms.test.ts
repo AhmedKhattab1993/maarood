@@ -1,46 +1,60 @@
 import { describe, it, expect } from 'vitest';
-import { expandSynonyms } from './synonyms';
-import { normalizeSearchQuery } from './normalize';
+import { buildSearchTerms } from './synonyms';
 
-describe('expandSynonyms', () => {
-  it('expands an Arabic bag query to English bag terms', () => {
-    const out = expandSynonyms(normalizeSearchQuery('شنطة'));
-    expect(out).toContain('bag');
-    expect(out).toContain('handbag');
-    expect(out).toContain('حقيبه');
+describe('buildSearchTerms', () => {
+  it('expands an Arabic bag query to equivalent English and Arabic terms', () => {
+    const terms = buildSearchTerms('شنطة');
+    expect(terms).toHaveLength(1);
+    expect(terms[0]?.alternatives).toEqual(expect.arrayContaining(['bag', 'handbag', 'حقيبه', 'شنطه']));
   });
 
   it('expands an English query to Arabic terms', () => {
-    const out = expandSynonyms(normalizeSearchQuery('shoes'));
-    expect(out).toContain('حذاء');
-    expect(out).toContain('احذيه');
+    expect(buildSearchTerms('shoes')[0]?.alternatives).toEqual(expect.arrayContaining(['حذاء', 'احذيه']));
   });
 
-  it('expands every token of a multi-term query', () => {
-    const out = expandSynonyms(normalizeSearchQuery('شنطة رياضية'));
-    expect(out).toContain('bag');
-    expect(out).toContain('sport');
-    expect(out).toContain('gym');
+  it('expands multiple concepts independently', () => {
+    const terms = buildSearchTerms('شنطة رياضية');
+    expect(terms).toHaveLength(2);
+    expect(terms[0]?.alternatives).toContain('bag');
+    expect(terms[1]?.alternatives).toEqual(expect.arrayContaining(['sport', 'gym']));
+    expect(terms[0]?.alternatives).not.toContain('sport');
   });
 
-  it('returns only terms the query does not already contain', () => {
-    const out = expandSynonyms(normalizeSearchQuery('bag'));
-    expect(out).not.toContain('bag');
-    expect(out).toContain('شنطه');
+  it('retains an unfamiliar word as its own required term', () => {
+    expect(buildSearchTerms('قهوة')).toEqual([
+      { token: 'قهوه', alternatives: ['قهوه'], color: false, productType: false },
+    ]);
   });
 
-  it('returns empty for words with no synonyms', () => {
-    expect(expandSynonyms(normalizeSearchQuery('قهوة'))).toEqual([]);
+  it('returns no terms for an empty or punctuation-only query', () => {
+    expect(buildSearchTerms('')).toEqual([]);
+    expect(buildSearchTerms('!!')).toEqual([]);
   });
 
-  it('returns empty for an empty query', () => {
-    expect(expandSynonyms('')).toEqual([]);
+  it('keeps color and product type as independent required intents', () => {
+    const [color, product] = buildSearchTerms('red shoes');
+    expect(color).toMatchObject({ token: 'red', color: true, productType: false });
+    expect(color?.alternatives).toContain('احمر');
+    expect(product).toMatchObject({ token: 'shoes', color: false, productType: true });
+    expect(product?.alternatives).toContain('حذاء');
+    expect(product?.alternatives).not.toContain('red');
   });
 
-  it('never duplicates a term across matched groups', () => {
-    const out = expandSynonyms(normalizeSearchQuery('شنطة bag'));
-    expect(new Set(out).size).toBe(out.length);
-    expect(out).not.toContain('شنطه');
-    expect(out).not.toContain('bag');
+  it('normalizes definite articles and diacritics in Arabic combinations', () => {
+    const terms = buildSearchTerms('الحِذَاء الأَحْمَر');
+    expect(terms.map((term) => term.token)).toEqual(['حذاء', 'احمر']);
+    expect(terms[0]?.alternatives).toContain('shoes');
+    expect(terms[1]?.alternatives).toContain('red');
+  });
+
+  it('keeps distinct garments separate instead of widening hoodie to any outerwear', () => {
+    expect(buildSearchTerms('hoodie')[0]?.alternatives).not.toContain('jacket');
+    expect(buildSearchTerms('hoodie')[0]?.alternatives).not.toContain('cardigan');
+    expect(buildSearchTerms('ring')[0]?.alternatives).not.toContain('necklace');
+  });
+
+  it('deduplicates translated intent and ignores natural-language connector words', () => {
+    expect(buildSearchTerms('the red احمر shoes')).toHaveLength(2);
+    expect(buildSearchTerms('bag شنطة')).toHaveLength(1);
   });
 });

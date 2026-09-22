@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeSearchQuery, toTsqueryString } from './normalize';
+import { normalizeSearchQuery, searchTokens } from './normalize';
 
 describe('normalizeSearchQuery', () => {
   it('lowercases and trims', () => {
@@ -30,16 +30,22 @@ describe('normalizeSearchQuery', () => {
   });
 });
 
-describe('toTsqueryString', () => {
-  it('joins terms with OR', () => {
-    expect(toTsqueryString('black tee')).toBe('black | tee');
+describe('searchTokens', () => {
+  it('preserves separate query intents', () => {
+    expect(searchTokens('black tee')).toEqual(['black', 'tee']);
   });
 
   it('drops empty/non-word tokens', () => {
-    expect(toTsqueryString('!!  --')).toBe('');
+    expect(searchTokens('!!  --')).toEqual([]);
   });
 
   it('returns empty string for empty input', () => {
-    expect(toTsqueryString('')).toBe('');
+    expect(searchTokens('')).toEqual([]);
+  });
+
+  it('separates punctuation safely and preserves shirt spellings', () => {
+    expect(searchTokens('black,shoes')).toEqual(['black', 'shoes']);
+    expect(searchTokens('T-shirt / تي شيرت')).toEqual(['tshirt', 'تيشيرت']);
+    expect(searchTokens("red');drop table products;--")).toEqual(['red', 'drop', 'table', 'products']);
   });
 });

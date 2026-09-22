@@ -1,5 +1,23 @@
 import { describe, it, expect } from 'vitest';
-import { categorize, CANONICAL_CATEGORIES } from './taxonomy';
+import { categorize, CANONICAL_CATEGORIES, normalizeCategory } from './taxonomy';
+
+describe('normalizeCategory', () => {
+  it('accepts canonical labels and complete English or Arabic aliases', () => {
+    expect(normalizeCategory(' Clothing ')).toBe('apparel');
+    expect(normalizeCategory('SHOES')).toBe('footwear');
+    expect(normalizeCategory('الأَحْذِيَة')).toBe('footwear');
+    expect(normalizeCategory('Jewellery')).toBe('jewelry');
+    expect(normalizeCategory('حقيبة')).toBe('bags');
+    expect(normalizeCategory('other')).toBe('other');
+  });
+
+  it('does not infer a category from substrings or an unknown label', () => {
+    expect(normalizeCategory('baggy')).toBeNull();
+    expect(normalizeCategory('shoe care')).toBeNull();
+    expect(normalizeCategory('unknown')).toBeNull();
+    expect(normalizeCategory('')).toBeNull();
+  });
+});
 
 describe('taxonomy.categorize', () => {
   it('matches apparel from title keywords', () => {
@@ -32,6 +50,9 @@ describe('taxonomy.categorize', () => {
     expect(categorize({ title: 'حذاء رياضي' }).category).toBe('footwear');
     expect(categorize({ title: 'تيشيرت قطن' }).category).toBe('apparel');
     expect(categorize({ title: 'شنطة يد' }).category).toBe('bags');
+    expect(categorize({ title: 'الحَقِيبَة الجلدية' }).category).toBe('bags');
+    expect(categorize({ title: 'أحذية رياضية' }).category).toBe('footwear');
+    expect(categorize({ title: 'قفازات شتوية' }).category).toBe('accessories');
   });
 
   it('falls back to other when nothing matches', () => {
@@ -56,6 +77,7 @@ describe('taxonomy.categorize', () => {
     expect(categorize({ title: 'Drawstring Pants' }).category).toBe('apparel');
     expect(categorize({ title: 'That cotton shirt' }).category).toBe('apparel');
     expect(categorize({ title: 'Steel water bottle' }).category).toBe('other');
+    expect(categorize({ title: 'Kids Water Bottle' }).category).toBe('other');
   });
 
   it('lets the merchant product type beat an incidental word in the title', () => {
@@ -66,6 +88,7 @@ describe('taxonomy.categorize', () => {
       }).category,
     ).toBe('accessories');
     expect(categorize({ title: 'Tote Bag', productType: 'Women / Bags' }).category).toBe('bags');
+    expect(categorize({ title: 'Bag Print Tee', productType: 'Clothing' }).category).toBe('apparel');
   });
 
   it('still matches plurals and real bag words', () => {

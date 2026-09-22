@@ -95,16 +95,32 @@ describe('buildFilters', () => {
     expect(text).toContain('black');
     expect(text).toContain('m');
   });
+
+  it('returns no matches when an explicit brand cannot be resolved', () => {
+    const q = productQuery.parse({ brand: 'missing-store' });
+    expect(sqlText(buildFilters(q, null))).toBe('false');
+  });
+
+  it('resolves complete category aliases without changing unknown labels', () => {
+    expect(sqlText(buildFilters(productQuery.parse({ category: 'أحذية' }), null))).toContain('footwear');
+    expect(sqlText(buildFilters(productQuery.parse({ category: 'baggy' }), null))).toContain('baggy');
+  });
 });
 
 describe('sortSql newest', () => {
   it('interleaves merchants so one recrawl cannot own the first page', () => {
     const text = sqlText(sortSql('newest'));
-    expect(sortSql('newest')).toHaveLength(2);
+    expect(sortSql('newest')).toHaveLength(3);
     expect(text).toMatch(/row_number/i);
     expect(text).toMatch(/partition/i);
     expect(text).toMatch(/merchant_id/);
     expect(text).toMatch(/in_stock/);
     expect(text).toMatch(/out_of_stock/);
+  });
+
+  it('uses a stable final tie-breaker for every sort', () => {
+    for (const sort of ['newest', 'price_asc', 'price_desc', 'relevance'] as const) {
+      expect(sqlText(sortSql(sort).slice(-1))).toMatch(/id.*asc/);
+    }
   });
 });

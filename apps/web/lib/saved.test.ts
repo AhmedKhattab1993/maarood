@@ -47,7 +47,7 @@ describe("SaveButton hydration", () => {
     expect(src).toMatch(/isProductSaved\(/);
     expect(src).toMatch(/savedProductIds\(/);
     expect(src).toMatch(/saveIntent\(Boolean\(getAuthToken\(\)\), saved\)/);
-    expect(src).toMatch(/intent === "unsave"/);
+    expect(src).toMatch(/intent === ["']unsave["']/);
     expect(src).toMatch(/unsaveProduct\(productId\)/);
   });
 });
@@ -81,6 +81,6 @@ describe("Favourites and cards pass saved through", () => {
     expect(grid).toMatch(/onUnsaved\?/);
     expect(grid).toMatch(/onUnsaved=\{onUnsaved\}/);
     expect(list).toMatch(/onUnsaved=\{\(productId\) =>/);
-    expect(list).toMatch(/items: s\.items\.filter\(\(item\) => item\.product\.id !== productId\)/);
+    expect(list).toMatch(/items: current\.items\.filter\(\(item\) => item\.product\.id !== productId\)/);
   });
 });

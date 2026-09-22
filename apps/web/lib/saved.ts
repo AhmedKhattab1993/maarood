@@ -1,24 +1,21 @@
-"use client";
+'use client';
 
-import type { SavedProduct } from "./api/types";
-import { ApiError, type ApiErrorBody } from "./api/types";
-import { publicBackendUrl } from "./api/backend-url";
-import { getAuthToken } from "./auth";
+import type { SavedProduct } from './api/types';
+import { ApiError, type ApiErrorBody } from './api/types';
+import { publicBackendUrl } from './api/backend-url';
+import { getAuthToken } from './auth';
 
-async function savedFetch(
-  path: string,
-  init: RequestInit,
-): Promise<Response> {
+async function savedFetch(path: string, init: RequestInit): Promise<Response> {
   const token = getAuthToken();
   if (!token) {
     throw new ApiError(401, {
-      error: { code: "unauthorized", message: "Sign in required" },
+      error: { code: 'unauthorized', message: 'Sign in required' },
     });
   }
   const res = await fetch(`${publicBackendUrl()}${path}`, {
     ...init,
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
       ...(init.headers ?? {}),
     },
@@ -28,7 +25,7 @@ async function savedFetch(
     try {
       body = (await res.json()) as ApiErrorBody;
     } catch {
-      body = { error: { code: "error", message: res.statusText } };
+      body = { error: { code: 'error', message: res.statusText } };
     }
     throw new ApiError(res.status, body);
   }
@@ -36,16 +33,26 @@ async function savedFetch(
 }
 
 let savedInflight: Promise<SavedProduct[]> | null = null;
+let savedToken: string | null = null;
 
 export function invalidateSaved(): void {
   savedInflight = null;
 }
 
 export async function listSaved(): Promise<SavedProduct[]> {
+  const token = getAuthToken();
+  if (token !== savedToken) {
+    invalidateSaved();
+    savedToken = token;
+  }
   if (!savedInflight) {
-    savedInflight = savedFetch("/v1/saved", { method: "GET" }).then(
+    const pending = savedFetch('/v1/saved', { method: 'GET' }).then(
       (res) => res.json() as Promise<SavedProduct[]>,
     );
+    savedInflight = pending;
+    void pending.catch(() => {
+      if (savedInflight === pending) savedInflight = null;
+    });
   }
   return savedInflight;
 }
@@ -77,7 +84,7 @@ export function isProductSaved(
 /** Save a product. Idempotent — returns true on 201. */
 export async function saveProduct(productId: string): Promise<boolean> {
   await savedFetch(`/v1/saved/${encodeURIComponent(productId)}`, {
-    method: "POST",
+    method: 'POST',
   });
   invalidateSaved();
   return true;
@@ -86,7 +93,7 @@ export async function saveProduct(productId: string): Promise<boolean> {
 /** Remove a saved product. No error if it wasn't saved. */
 export async function unsaveProduct(productId: string): Promise<boolean> {
   await savedFetch(`/v1/saved/${encodeURIComponent(productId)}`, {
-    method: "DELETE",
+    method: 'DELETE',
   });
   invalidateSaved();
   return true;

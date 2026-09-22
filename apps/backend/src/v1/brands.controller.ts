@@ -13,8 +13,8 @@ import {
   Param,
   Query,
 } from '@nestjs/common';
-import { and, count, desc, eq } from 'drizzle-orm';
-import { merchants, products } from '@maarood/schema';
+import { and, asc, count, eq } from 'drizzle-orm';
+import { merchants, normalizeCategory, products } from '@maarood/schema';
 import { DRIZZLE, type DrizzleDB } from '../db/db.module';
 import { productQuery } from './products/products.dto';
 import { mapProduct, type PaginatedResult, type PublicProduct } from './products/product-mapper';
@@ -26,9 +26,12 @@ export class BrandsController {
 
   @Get()
   async list(@Query('category') category?: string) {
+    const canonical = category ? (normalizeCategory(category) ?? category) : undefined;
     // Group by merchant. When `category` is given, product counts reflect only
     // brands that sell in that category (powers "brands in this category").
-    const productMatch = category ? and(eq(products.merchantId, merchants.id), eq(products.category, category)) : eq(products.merchantId, merchants.id);
+    const productMatch = canonical
+      ? and(eq(products.merchantId, merchants.id), eq(products.category, canonical))
+      : eq(products.merchantId, merchants.id);
     const rows = await this.db
       .select({
         id: merchants.id,
@@ -42,7 +45,7 @@ export class BrandsController {
       .leftJoin(products, productMatch)
       .where(eq(merchants.optedOut, false))
       .groupBy(merchants.id)
-      .orderBy(desc(merchants.name));
+      .orderBy(asc(merchants.name));
     return rows
       .map((r) => ({ ...r, productCount: Number(r.productCount) }))
       .filter((r) => (category ? r.productCount > 0 : true));

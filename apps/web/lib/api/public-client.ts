@@ -1,5 +1,6 @@
-import { publicBackendUrl } from "./backend-url";
-import { ApiError, NotFoundError, type ApiErrorBody } from "./types";
+import { publicBackendUrl } from './backend-url';
+import type { DiscoveryProfile } from '../discovery-profile';
+import { ApiError, NotFoundError, type ApiErrorBody } from './types';
 import type {
   BrandDetailResponse,
   BrandSummary,
@@ -7,15 +8,15 @@ import type {
   ProductQuery,
   PublicProduct,
   SearchResult,
-} from "./types";
+} from './types';
 
 function buildSearchParams(query: Record<string, unknown>): string {
   const sp = new URLSearchParams();
   for (const [key, value] of Object.entries(query)) {
-    if (value === undefined || value === null || value === "") continue;
+    if (value === undefined || value === null || value === '') continue;
     if (Array.isArray(value)) {
       for (const item of value) {
-        if (item === undefined || item === null || item === "") continue;
+        if (item === undefined || item === null || item === '') continue;
         sp.append(key, String(item));
       }
       continue;
@@ -23,12 +24,12 @@ function buildSearchParams(query: Record<string, unknown>): string {
     sp.set(key, String(value));
   }
   const str = sp.toString();
-  return str ? `?${str}` : "";
+  return str ? `?${str}` : '';
 }
 
 async function fetchJson<T>(pathAndQuery: string): Promise<T> {
   const res = await fetch(`${publicBackendUrl()}${pathAndQuery}`, {
-    headers: { Accept: "application/json" },
+    headers: { Accept: 'application/json' },
   });
 
   if (res.status === 204) return undefined as T;
@@ -38,7 +39,7 @@ async function fetchJson<T>(pathAndQuery: string): Promise<T> {
     try {
       body = (await res.json()) as ApiErrorBody;
     } catch {
-      body = { error: { code: "error", message: res.statusText } };
+      body = { error: { code: 'error', message: res.statusText } };
     }
     if (res.status === 404) throw new NotFoundError(body.error.message);
     throw new ApiError(res.status, body);
@@ -59,9 +60,7 @@ export async function publicSearchProducts(
   q: string,
   query: ProductQuery = {},
 ): Promise<SearchResult> {
-  return fetchJson<SearchResult>(
-    `/v1/search${buildSearchParams({ ...query, q })}`,
-  );
+  return fetchJson<SearchResult>(`/v1/search${buildSearchParams({ ...query, q })}`);
 }
 
 export async function publicGetBrand(
@@ -77,21 +76,58 @@ export async function publicGetBrands(): Promise<BrandSummary[]> {
   return fetchJson<BrandSummary[]>(`/v1/brands`);
 }
 
+export interface PersonalizedFeedRequest {
+  seed: string;
+  page: number;
+  limit: number;
+  query: ProductQuery;
+  profile: DiscoveryProfile;
+  seenIds: string[];
+}
+
+export async function publicGetPersonalizedFeed(
+  request: PersonalizedFeedRequest,
+  token: string | null,
+  signal?: AbortSignal,
+): Promise<PaginatedResult<PublicProduct>> {
+  const response = await fetch(`${publicBackendUrl()}/v1/feed`, {
+    method: 'POST',
+    cache: 'no-store',
+    signal,
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) {
+    let body: ApiErrorBody;
+    try {
+      body = (await response.json()) as ApiErrorBody;
+    } catch {
+      body = { error: { code: 'feed_error', message: response.statusText } };
+    }
+    throw new ApiError(response.status, body);
+  }
+  return response.json() as Promise<PaginatedResult<PublicProduct>>;
+}
+
 export type DiscoverySource =
-  | { kind: "products"; query: ProductQuery }
-  | { kind: "search"; q: string; query: ProductQuery }
-  | { kind: "brand"; slug: string; query: ProductQuery };
+  | { kind: 'products'; query: ProductQuery }
+  | { kind: 'search'; q: string; query: ProductQuery }
+  | { kind: 'brand'; slug: string; query: ProductQuery };
 
 export async function publicFetchDiscoveryPage(
   source: DiscoverySource,
   page: number,
 ): Promise<PaginatedResult<PublicProduct>> {
   const query = { ...source.query, page };
-  if (source.kind === "search") {
+  if (source.kind === 'search') {
     const result = await publicSearchProducts(source.q, query);
     return result;
   }
-  if (source.kind === "brand") {
+  if (source.kind === 'brand') {
     const result = await publicGetBrand(source.slug, query);
     return result.products;
   }

@@ -23,6 +23,38 @@ export const CANONICAL_CATEGORIES = [
 
 export type CanonicalCategory = (typeof CANONICAL_CATEGORIES)[number];
 
+function normalizeCategoryText(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[\u0617-\u061A\u064B-\u0652\u0670\u0640]/g, '')
+    .replace(/[أإآ]/g, 'ا')
+    .replace(/ى/g, 'ي')
+    .replace(/ة/g, 'ه')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+const CATEGORY_ALIASES: Record<CanonicalCategory, readonly string[]> = {
+  apparel: ['clothing', 'clothes', 'fashion', 'ملابس', 'الملابس', 'أزياء'],
+  footwear: ['shoe', 'shoes', 'أحذية', 'الأحذية', 'حذاء'],
+  accessories: ['accessory', 'إكسسوارات', 'اكسسوارات', 'اكسسوار', 'الإكسسوارات'],
+  bags: ['bag', 'handbags', 'شنط', 'شنطة', 'حقائب', 'حقيبة', 'الحقائب'],
+  jewelry: ['jewellery', 'jewels', 'مجوهرات', 'المجوهرات', 'حلي'],
+  other: ['others', 'miscellaneous', 'أخرى', 'اخري', 'متنوعات'],
+};
+
+const CATEGORY_INDEX = new Map<string, CanonicalCategory>();
+for (const category of CANONICAL_CATEGORIES) {
+  for (const alias of [category, ...CATEGORY_ALIASES[category]]) {
+    CATEGORY_INDEX.set(normalizeCategoryText(alias), category);
+  }
+}
+
+/** Resolve complete category labels only; "baggy" must never become "bags". */
+export function normalizeCategory(value: string): CanonicalCategory | null {
+  return CATEGORY_INDEX.get(normalizeCategoryText(value)) ?? null;
+}
+
 interface CategoryRule {
   category: CanonicalCategory;
   /** Lowercased whole words (or phrases) to match. */
@@ -47,6 +79,7 @@ const RULES: CategoryRule[] = [
       'loafers',
       // Arabic
       'حذاء',
+      'أحذية',
       'جزمة',
       'صندل',
       'كوتشي',
@@ -77,6 +110,7 @@ const RULES: CategoryRule[] = [
       'شنطه',
       'شنط',
       'حقيبة',
+      'حقائب',
       'محفظة',
       'محافظ',
     ],
@@ -98,8 +132,12 @@ const RULES: CategoryRule[] = [
       'jewellery',
       // Arabic
       'خاتم',
-      'خاتم',
       'ساعة',
+      'ساعات',
+      'مجوهرات',
+      'حلق',
+      'أقراط',
+      'أساور',
       'سلاسل',
       'قلادة',
     ],
@@ -131,6 +169,12 @@ const RULES: CategoryRule[] = [
       'حزام',
       'شارف',
       'نظارة',
+      'نظارات',
+      'وشاح',
+      'حجاب',
+      'طرحة',
+      'قفازات',
+      'جوارب',
     ],
   },
   {
@@ -231,10 +275,6 @@ const RULES: CategoryRule[] = [
       'denim',
       'jorts',
       'chino',
-      // Kids variants
-      'kids',
-      'newborn',
-      'baby',
       // Arabic
       'تيشيرت',
       'قميص',
@@ -279,11 +319,12 @@ interface CompiledRule {
  * (bag/bags) without treating a longer word as a hit (baggy, bootcut).
  */
 function keywordPattern(keyword: string): RegExp {
-  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const escaped = normalizeCategoryText(keyword).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const plural = /[a-z]$/.test(keyword) && !keyword.endsWith('s') ? 's?' : '';
+  const article = /[\u0600-\u06FF]/.test(keyword) ? '(?:ال)?' : '';
   // "Cap sleeve" is a neckline, not a cap.
   const notSleeve = keyword === 'cap' ? '(?!\\s+sleeve)' : '';
-  return new RegExp(`(?<![\\p{L}\\p{N}])${escaped}${plural}${notSleeve}(?![\\p{L}\\p{N}])`, 'iu');
+  return new RegExp(`(?<![\\p{L}\\p{N}])${article}${escaped}${plural}${notSleeve}(?![\\p{L}\\p{N}])`, 'iu');
 }
 
 const COMPILED_RULES: CompiledRule[] = RULES.map((rule) => ({
@@ -292,8 +333,10 @@ const COMPILED_RULES: CompiledRule[] = RULES.map((rule) => ({
 }));
 
 function matchText(text: string): CanonicalCategory | null {
-  const haystack = text.toLowerCase();
+  const haystack = normalizeCategoryText(text);
   if (!haystack.trim()) return null;
+  const canonical = normalizeCategory(haystack);
+  if (canonical) return canonical;
   for (const rule of COMPILED_RULES) {
     if (rule.patterns.some((pattern) => pattern.test(haystack))) return rule.category;
   }

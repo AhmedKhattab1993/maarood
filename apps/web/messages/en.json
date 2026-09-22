@@ -7,7 +7,14 @@
     "visitStore": "Visit store",
     "website": "Brand website",
     "notFound": "Brand not found",
-    "shopByCategory": "Shop by category"
+    "shopByCategory": "Shop by category",
+    "directoryTitle": "Find your next favourite brand",
+    "directoryHint": "Independent Egyptian brands, all in one place. Follow the ones you love.",
+    "searchPlaceholder": "Find a brand…",
+    "brandsCount": "{count} brands",
+    "noBrands": "No matching brands",
+    "noBrandsHint": "Try another name or clear your search.",
+    "viewCollection": "Explore collection"
   },
   "Category": {
     "brandsIn": "Brands in {category}",
@@ -27,7 +34,9 @@
     "brands": "Brands",
     "saved": "Saved",
     "categories": "Categories",
-    "language": "العربية"
+    "language": "العربية",
+    "primary": "Main navigation",
+    "skipToContent": "Skip to content"
   },
   "Auth": {
     "login": "Log in",
@@ -40,7 +49,13 @@
     "emailTaken": "That email is already registered. Try logging in.",
     "haveAccount": "Already have an account? Log in",
     "needAccount": "Need an account? Sign up",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "loginHint": "Pick up where you left off. Save your finds and follow your favourite brands.",
+    "signupHint": "Make it yours. Save the products you love and follow your favourite brands.",
+    "passwordHint": "Use at least 8 characters.",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "pending": "Please wait…"
   },
   "Follow": {
     "follow": "Follow",
@@ -54,12 +69,16 @@
     "loginHint": "Log in to see brands you follow.",
     "browse": "Explore",
     "suggested": "Suggested brands",
-    "yourBrands": "Your brands"
+    "yourBrands": "Your brands",
+    "feedHint": "New arrivals from the brands you follow, all in one place.",
+    "refresh": "Refresh feed",
+    "latest": "Latest from your brands"
   },
   "Favourites": {
     "empty": "No favourites yet",
     "emptyHint": "Save a product to keep it here, including items that are out of stock.",
-    "browse": "Explore"
+    "browse": "Explore",
+    "loginHint": "Log in to keep your favourites together"
   },
   "Search": {
     "placeholder": "Search brands or products…",
@@ -70,7 +89,17 @@
     "brands": "Brands",
     "products": "Products",
     "clear": "Clear search",
-    "startHint": "Use the search field above to find a brand or a product."
+    "startHint": "Use the search field above to find a brand or a product.",
+    "suggestions": "Suggestions",
+    "recent": "Recent searches",
+    "clearRecent": "Clear history",
+    "viewAll": "See all results for “{query}”",
+    "browseTitle": "Find your next favourite",
+    "browseHint": "Search a product, a brand, or a category. Try a color or style to narrow it down.",
+    "exploreCategories": "Explore categories",
+    "suggestionHint": "Press Enter to search all products",
+    "suggestionsUnavailable": "Suggestions are unavailable. You can still search.",
+    "tryWithoutFilters": "Search without filters"
   },
   "Filters": {
     "title": "Filters",
@@ -96,14 +125,19 @@
     "removeFilter": "Remove filter",
     "showAll": "Show all ({count})",
     "showLess": "Show less",
-    "all": "All"
+    "all": "All",
+    "priceHint": "Prices in EGP",
+    "nonNegativePrice": "Enter a price of 0 or more.",
+    "resultsCount": "{count, plural, one {# product} other {# products}}",
+    "categoryCount": "{count} products"
   },
   "Sort": {
     "label": "Sort",
     "newest": "Newest",
     "price_asc": "Price: Low to High",
     "price_desc": "Price: High to Low",
-    "relevance": "Most relevant"
+    "relevance": "Most relevant",
+    "forYou": "For you"
   },
   "Product": {
     "buyFromBrand": "Buy from brand",
@@ -134,7 +168,13 @@
     "onSale": "{percent}% off",
     "priceLabel": "Price",
     "availabilityLabel": "Availability",
-    "sizeAndAvailability": "Sizes & availability"
+    "sizeAndAvailability": "Sizes & availability",
+    "photos": "Product photos",
+    "previousPhoto": "Previous photo",
+    "nextPhoto": "Next photo",
+    "photoCount": "{current} of {total}",
+    "details": "Product details",
+    "optionsHint": "Choose your size and colour on the brand’s website."
   },
   "Saved": {
     "title": "Saved",
@@ -149,7 +189,9 @@
     "shopByCategory": "Shop by category",
     "newArrivals": "New arrivals",
     "browseCategories": "Categories",
-    "viewAll": "View all"
+    "viewAll": "View all",
+    "discoveryEyebrow": "LOCAL BRANDS. YOUR NEXT FIND.",
+    "discoveryHint": "Discover Egyptian brands, with something different every time you drop in."
   },
   "State": {
     "loading": "Loading…",
@@ -193,5 +235,19 @@
     "brandOrders": "Orders, payment, shipping, and returns happen with the brand, not with Maaroud.",
     "contactTitle": "Contact Maaroud",
     "contactBody": "Maaroud is a discovery platform: we pull product data from Egyptian brand websites. If a product looks outdated or its link is broken, visit the product page on the brand's own site."
+  },
+  "Feed": {
+    "title": "For you",
+    "hint": "A fresh mix shaped by what you browse, save, and follow.",
+    "refresh": "Fresh picks",
+    "refreshing": "Finding your next favourites…",
+    "freshReady": "See fresh picks",
+    "loading": "Loading your personal feed",
+    "updated": "Your fresh picks are ready",
+    "refreshError": "We couldn’t refresh your picks. Try again.",
+    "empty": "No finds with these filters",
+    "emptyHint": "Try another category or clear a filter to discover more.",
+    "caughtUp": "You’re all caught up. Refresh for a different mix.",
+    "shortHint": "Your taste. New discoveries."
   }
 }

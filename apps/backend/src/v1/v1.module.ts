@@ -9,6 +9,8 @@ import { SearchService } from './search/search.service';
 import { SavedController } from './saved/saved.controller';
 import { AuthController } from './auth/auth.controller';
 import { FollowingController } from './me/following.controller';
+import { FeedController } from './feed/feed.controller';
+import { FeedService } from './feed/feed.service';
 
 @Module({
   imports: [DbModule],
@@ -21,7 +23,8 @@ import { FollowingController } from './me/following.controller';
     SavedController,
     AuthController,
     FollowingController,
+    FeedController,
   ],
-  providers: [SearchService],
+  providers: [SearchService, FeedService],
 })
 export class V1Module {}

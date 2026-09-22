@@ -1,16 +1,15 @@
-import type { Metadata } from "next";
-import { getTranslations, setRequestLocale } from "next-intl/server";
-import { getBrand, getCategories, getFacets } from "@/lib/api/client";
-import { ProductListing } from "@/components/product-listing";
-import { FacetNav } from "@/components/facet-nav";
-import { FollowButton } from "@/components/follow-button";
-import { ErrorState } from "@/components/state-views";
-import { Breadcrumbs } from "@/components/breadcrumbs";
-import { BrandAvatar } from "@/components/brand-avatar";
-import { NotFoundError } from "@/lib/api/types";
-import { categoryItems } from "@/lib/categories";
-import { invalidPriceRange, toNumber, toSort } from "@/lib/query";
-import { notFound } from "next/navigation";
+import type { Metadata } from 'next';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { getBrand, getCategories, getFacets } from '@/lib/api/client';
+import { ProductListing } from '@/components/product-listing';
+import { FollowButton } from '@/components/follow-button';
+import { ErrorState } from '@/components/state-views';
+import { Breadcrumbs } from '@/components/breadcrumbs';
+import { BrandAvatar } from '@/components/brand-avatar';
+import { NotFoundError } from '@/lib/api/types';
+import { toAvailability, toNumber, toSort } from '@/lib/query';
+import { priceDraftError } from '@/lib/catalog-filters';
+import { notFound } from 'next/navigation';
 
 export async function generateMetadata({
   params,
@@ -18,7 +17,7 @@ export async function generateMetadata({
   params: Promise<{ locale: string; slug: string }>;
 }): Promise<Metadata> {
   const { locale, slug } = await params;
-  const t = await getTranslations({ locale, namespace: "Meta" });
+  const t = await getTranslations({ locale, namespace: 'Meta' });
   let name = slug;
   try {
     const { brand } = await getBrand(slug);
@@ -28,7 +27,7 @@ export async function generateMetadata({
     if (err instanceof NotFoundError) notFound();
     // keep slug as fallback title otherwise
   }
-  return { title: t("brandTitle", { brand: name }) };
+  return { title: t('brandTitle', { brand: name }) };
 }
 
 export default async function BrandPage({
@@ -42,7 +41,6 @@ export default async function BrandPage({
   setRequestLocale(locale);
   const sp = await searchParams;
   const t = await getTranslations({ locale });
-  const tCat = await getTranslations({ locale, namespace: "Category" });
 
   const current = {
     brand: slug,
@@ -57,13 +55,13 @@ export default async function BrandPage({
     category: current.category || undefined,
     minPrice: toNumber(current.minPrice),
     maxPrice: toNumber(current.maxPrice),
-    availability: current.availability as never,
+    availability: toAvailability(current.availability),
     color: current.color || undefined,
     size: current.size || undefined,
     sort: toSort(sp.sort),
     limit: 24,
   };
-  const invalid = invalidPriceRange(productQuery.minPrice, productQuery.maxPrice);
+  const invalid = priceDraftError(current.minPrice, current.maxPrice);
 
   let body: React.ReactNode;
   // The slug is only a fallback when the brand record itself failed to load.
@@ -76,46 +74,45 @@ export default async function BrandPage({
             products: { items: [], page: 1, limit: 24, total: 0 },
           }))
         : getBrand(slug, { ...productQuery, page: 1 }),
-      getCategories(slug).catch(() => []),
-      getFacets({
+      getCategories({
+        ...productQuery,
         brand: slug,
-        category: current.category || undefined,
+        ...(invalid ? { minPrice: undefined, maxPrice: undefined } : {}),
+      }).catch(() => []),
+      getFacets({
+        ...productQuery,
+        brand: slug,
+        ...(invalid ? { minPrice: undefined, maxPrice: undefined } : {}),
       }).catch(() => ({ colors: [] as string[], sizes: [] as string[] })),
     ]);
     brandName = brand.name;
 
     body = (
       <>
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex min-w-0 items-center gap-4">
-            <BrandAvatar name={brand.name} logoUrl={brand.logoUrl} size={64} />
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-5 rounded-3xl border border-stone-grey bg-warm-ivory p-5 md:p-8">
+          <div className="flex min-w-0 items-center gap-4 md:gap-6">
+            <span className="overflow-hidden rounded-2xl border border-stone-grey bg-white p-2">
+              <BrandAvatar name={brand.name} logoUrl={brand.logoUrl} size={64} />
+            </span>
             <div className="min-w-0">
-              <h1 className="text-2xl font-semibold text-ink-black">{brand.name}</h1>
+              <h1 className="break-words text-2xl font-semibold tracking-tight text-ink-black md:text-4xl">
+                {brand.name}
+              </h1>
               <a
                 href={`https://${brand.domain}`}
+                target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-maaroud-blue hover:underline"
+                className="mt-2 inline-block break-all text-sm text-maaroud-blue hover:underline"
               >
-                {t("Brand.website")} · {brand.domain} ↗
+                {t('Brand.website')} · {brand.domain} ↗
               </a>
             </div>
           </div>
           <FollowButton merchantId={brand.id} />
         </div>
-        <FacetNav
-          title={t("Brand.shopByCategory")}
-          paramKey="category"
-          activeValue={current.category || undefined}
-          basePath={`/brands/${slug}`}
-          baseQuery={withoutCategory(sp)}
-          items={categoryItems(brandCategories, tCat).map((c) => ({
-            label: c.label,
-            count: c.count,
-            value: c.value,
-          }))}
-        />
         <ProductListing
           result={products}
+          categories={brandCategories}
           brands={[
             {
               id: brand.id,
@@ -127,17 +124,18 @@ export default async function BrandPage({
             },
           ]}
           current={current}
-          sort={toSort(sp.sort) ?? "newest"}
-          title={brand.name}
+          sort={toSort(sp.sort) ?? 'newest'}
+          title={t('Search.products')}
           heading="h2"
           hideAuthor
-          emptyTitle={t("Search.noResults")}
-          emptyHint={t("Search.noResultsHint")}
+          hideBrandFilter
+          emptyTitle={t('Search.noResults')}
+          emptyHint={t('Search.noResultsHint')}
           facets={facets}
           feed={{
-            kind: "brand",
+            kind: 'brand',
             slug,
-            query: { ...productQuery, sort: toSort(sp.sort) ?? "newest" },
+            query: { ...productQuery, sort: toSort(sp.sort) ?? 'newest' },
           }}
         />
       </>
@@ -151,8 +149,8 @@ export default async function BrandPage({
     <div className="mx-auto max-w-[var(--container-max)] px-4 py-6 md:py-10">
       <Breadcrumbs
         items={[
-          { label: t("Nav.home"), href: { pathname: "/" } },
-          { label: t("Nav.brands"), href: { pathname: "/brands" } },
+          { label: t('Nav.home'), href: { pathname: '/' } },
+          { label: t('Nav.brands'), href: { pathname: '/brands' } },
           { label: brandName },
         ]}
       />
@@ -162,17 +160,5 @@ export default async function BrandPage({
 }
 
 function str(v: string | string[] | undefined): string {
-  return typeof v === "string" ? v : "";
-}
-
-/** Build a query object from the raw params, excluding the category key. */
-function withoutCategory(
-  sp: Record<string, string | string[] | undefined>,
-): Record<string, string | undefined> {
-  const out: Record<string, string | undefined> = {};
-  for (const [k, v] of Object.entries(sp)) {
-    if (k === "category") continue;
-    out[k] = str(v);
-  }
-  return out;
+  return typeof v === 'string' ? v : '';
 }

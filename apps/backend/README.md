@@ -48,24 +48,59 @@ npm run lint
 
 ## Public API (`/v1`)
 
-The public API serves the future web frontend and mobile app. No authentication; saved products are anonymous (keyed by a client-generated `X-Device-Id` UUID header).
+Catalog discovery is public. Saved products and followed brands require an
+account bearer token; the personalized feed accepts an optional verified token
+to add account preferences to anonymous browsing signals.
 
 | Method | Path | Purpose |
 |---|---|---|
 | GET | `/v1/products` | Paginated list with filters (`brand`, `category`, `minPrice`, `maxPrice`, `availability`, `color`, `size`, `sort`, `page`, `limit`) |
+| POST | `/v1/feed` | Private personalized discovery; read-only, optional bearer token |
 | GET | `/v1/products/:id` | Single product |
 | GET | `/v1/products/:id/redirect` | Log outbound click → 302 to merchant (primary success metric) |
 | GET | `/v1/brands` | Brands with product counts |
 | GET | `/v1/brands/:slug` | Brand detail + paginated products |
 | GET | `/v1/categories` | Distinct categories with counts |
 | GET | `/v1/search?q=` | Full-text search (FTS + typo-tolerant trigram) with the same filters |
-| GET | `/v1/saved` | Saved products for `X-Device-Id` |
-| POST | `/v1/saved/:productId` | Save a product (requires `X-Device-Id`) |
+| GET | `/v1/saved` | Saved products for the signed-in account |
+| POST | `/v1/saved/:productId` | Save a product (requires bearer token) |
 | DELETE | `/v1/saved/:productId` | Unsave a product |
 
 Pagination: `?page=1&limit=24` (max 60); responses return `{ items, page, limit, total }`.
 
-Search uses PostgreSQL full-text (tsvector over title/description/category) plus `pg_trgm` similarity for typo tolerance, with a simple Arabic+English normalizer and an Arabic↔English shopping-term synonym map.
+Search requires every requested concept to match, while accepting bilingual
+synonyms within each concept and whole-word typos for longer terms. Colors
+match the title or color options, not incidental description text. Brand names
+can stand alone or accompany a product query. Explicit sorts and catalog
+filters apply consistently; category aliases normalize to canonical categories.
+
+### Personalized feed
+
+`POST /v1/feed` accepts `{ seed, page?, limit?, query?, profile?, seenIds? }`:
+
+- `seed`: 1–120 characters; the web client uses `timestamp:uuid`, with the
+  timestamp in milliseconds to bound newly added saved/followed signals.
+- `page` / `limit`: ordinary pagination, with at most 60 products per page.
+- `query`: existing product filters. Explicit price/newest sorting belongs on
+  `/v1/products`; this endpoint always ranks recommendations.
+- `profile`: `{ categories: { [category]: weight }, merchants: { [uuid]: weight } }`.
+  Weights are finite numbers from 0 to 100; the request bounds map sizes.
+- `seenIds`: at most 300 product UUIDs to demote behind unseen products.
+
+The response is `{ items, page, limit, total }`, with
+`Cache-Control: private, no-store`. Preferences cannot supply an account ID:
+only a cryptographically verified optional bearer token selects account saves
+and follows. The endpoint has no writes and needs no schema migration.
+
+Ranking runs in PostgreSQL before pagination: weighted seeded exploration,
+recent-impression demotion, two-product merchant rounds, and a stable UUID
+tiebreak. Keep the seed, profile, and seen IDs unchanged while paging. Generate
+a new seed for a fresh visit or refresh. Catalog changes or removing saved/follow
+signals can still change a running page sequence; the client removes duplicates.
+
+Optional database regression suites use a dedicated test connection:
+`MAAROOD_FEED_TEST_DATABASE_URL=postgresql://... npx vitest run apps/backend/src/v1/feed`.
+Feed fixtures are read-only SQL CTEs and never modify catalog records.
 
 ## Admin API
 

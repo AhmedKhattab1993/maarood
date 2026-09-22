@@ -5,7 +5,7 @@
  */
 
 import { type SQL, and, eq, gte, inArray, isNotNull, lte, not, sql } from 'drizzle-orm';
-import { merchants, products } from '@maarood/schema';
+import { merchants, normalizeCategory, products } from '@maarood/schema';
 import type { ProductQuery } from './products.dto';
 import { AVAILABILITY_FRESHNESS_HOURS } from './availability';
 
@@ -26,7 +26,7 @@ export async function resolveBrandFilter(
   const rows = await db
     .select({ id: merchants.id, slug: merchants.slug })
     .from(merchants)
-    .where(eq(merchants.slug, q.brand))
+    .where(and(eq(merchants.slug, q.brand), eq(merchants.optedOut, false)))
     .limit(1);
   return rows[0] ?? null;
 }
@@ -62,11 +62,13 @@ export function buildFilters(
   options?: { excludeConfirmedOutOfStock?: boolean },
 ): SQL | undefined {
   const conditions: SQL[] = [];
+  // A misspelled or unavailable brand must never widen the request to all stores.
+  if (q.brand && !brand) conditions.push(sql`false`);
   if (q.merchantId && q.merchantId.length > 0) {
     conditions.push(inArray(products.merchantId, q.merchantId));
   }
   if (brand) conditions.push(eq(products.merchantId, brand.id));
-  if (q.category) conditions.push(eq(products.category, q.category));
+  if (q.category) conditions.push(eq(products.category, normalizeCategory(q.category) ?? q.category));
   if (q.availability) conditions.push(eq(products.availability, q.availability));
   if (q.minPrice !== undefined) conditions.push(gte(products.currentPrice, q.minPrice.toFixed(2)));
   if (q.maxPrice !== undefined) conditions.push(lte(products.currentPrice, q.maxPrice.toFixed(2)));
@@ -93,17 +95,18 @@ export function buildFilters(
 export function sortSql(sort: ProductQuery['sort']): SQL[] {
   switch (sort) {
     case 'price_asc':
-      return [sql`${products.currentPrice} asc nulls last`];
+      return [sql`${products.currentPrice} asc nulls last`, sql`${products.id} asc`];
     case 'price_desc':
-      return [sql`${products.currentPrice} desc nulls last`];
+      return [sql`${products.currentPrice} desc nulls last`, sql`${products.id} asc`];
     case 'relevance':
       // Placeholder; the search service overrides with its own relevance ordering.
-      return [sql`${products.lastSeenAt} desc nulls last`];
+      return [sql`${products.lastSeenAt} desc nulls last`, sql`${products.id} asc`];
     case 'newest':
     default:
       return [
-        sql`row_number() over (partition by ${products.merchantId} order by case when ${products.availability} = 'in_stock' and ${products.availabilityCheckedAt} is not null and ${availabilityCheckedAtIsFresh()} then 0 when ${products.availability} = 'out_of_stock' and ${products.availabilityCheckedAt} is not null and ${availabilityCheckedAtIsFresh()} then 2 else 1 end, ${products.lastSeenAt} desc nulls last)`,
+        sql`row_number() over (partition by ${products.merchantId} order by case when ${products.availability} = 'in_stock' and ${products.availabilityCheckedAt} is not null and ${availabilityCheckedAtIsFresh()} then 0 when ${products.availability} = 'out_of_stock' and ${products.availabilityCheckedAt} is not null and ${availabilityCheckedAtIsFresh()} then 2 else 1 end, ${products.lastSeenAt} desc nulls last, ${products.id} asc)`,
         sql`${products.lastSeenAt} desc nulls last`,
+        sql`${products.id} asc`,
       ];
   }
 }

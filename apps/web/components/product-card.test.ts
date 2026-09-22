@@ -25,7 +25,7 @@ describe("catalog grid card", () => {
     expect(gridCard).toMatch(/<Price/);
     expect(gridCard).toMatch(/absolute end-2 top-2/);
     expect(gridCard).toMatch(/<SaveButton/);
-    expect(gridCard).toMatch(/pathname: "\/p\/\[id\]"/);
+    expect(gridCard).toMatch(/pathname: ['"]\/p\/\[id\]['"]/);
   });
 
   it("does not follow or leave Maaroud from the tile", () => {
@@ -52,7 +52,7 @@ describe("Following feed post", () => {
 
   it("keeps save on the photo and the product link internal", () => {
     expect(feedPost).toMatch(/absolute end-2 top-2/);
-    expect(feedPost).toMatch(/pathname: "\/p\/\[id\]"/);
+    expect(feedPost).toMatch(/pathname: ['"]\/p\/\[id\]['"]/);
     expect(feedPost).not.toMatch(/ViewAtBrand/);
   });
 });
@@ -70,10 +70,10 @@ describe("Explore product posts", () => {
   it("passes brands into the catalog grid", () => {
     expect(explore).toMatch(/getBrands/);
     expect(explore).toMatch(/ProductListing/);
-    expect(listing).toMatch(/layout = "grid"/);
+    expect(listing).toMatch(/layout = ['"]grid['"]/);
     expect(listing).toMatch(/DiscoveryFeed/);
     expect(feed).toMatch(/ProductGrid/);
-    expect(feed).toMatch(/layout = "grid"/);
+    expect(feed).toMatch(/layout = ['"]grid['"]/);
   });
 
   it("keeps filters, sort, and load-more", () => {
@@ -92,8 +92,8 @@ describe("MAIN_TABS", () => {
     expect(tabs).toMatch(/following/);
     expect(tabs).toMatch(/explore/);
     expect(tabs).toMatch(/favourites/);
-    expect(tabs).toMatch(/pathname: "\/following"/);
-    expect(tabs).toMatch(/pathname: "\/"/);
-    expect(tabs).toMatch(/pathname: "\/favourites"/);
+    expect(tabs).toMatch(/pathname: ['"]\/following['"]/);
+    expect(tabs).toMatch(/pathname: ['"]\/['"]/);
+    expect(tabs).toMatch(/pathname: ['"]\/favourites['"]/);
   });
 });
